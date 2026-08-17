@@ -1,0 +1,204 @@
+export type UiLanguage = "CHS" | "CHT" | "DEU" | "ENG" | "ES-ES" | "ES-LA" | "FRA" | "ITA" | "JPN" | "KOR";
+
+export const LANGUAGE_OPTIONS: { code: UiLanguage; label: string; locale: string }[] = [
+  { code: "ES-LA", label: "Español (Latinoamérica)", locale: "es-MX" },
+  { code: "ES-ES", label: "Español (España)", locale: "es-ES" },
+  { code: "ENG", label: "English", locale: "en-US" },
+  { code: "DEU", label: "Deutsch", locale: "de-DE" },
+  { code: "FRA", label: "Français", locale: "fr-FR" },
+  { code: "ITA", label: "Italiano", locale: "it-IT" },
+  { code: "JPN", label: "日本語", locale: "ja-JP" },
+  { code: "KOR", label: "한국어", locale: "ko-KR" },
+  { code: "CHS", label: "简体中文", locale: "zh-CN" },
+  { code: "CHT", label: "繁體中文", locale: "zh-TW" },
+];
+
+type Copy = Record<string, string>;
+
+const ES: Copy = {
+  loading: "Ordenando las cajas…", load_error: "No pude abrir el catálogo", reload: "Recarga la página para intentarlo de nuevo.",
+  open_filters: "Abrir filtros", close_filters: "Cerrar filtros", of: "de", your_collection: "TU COLECCIÓN", design: "Diseña tu checklist",
+  preset_shiny: "Solo shinys", preset_shiny_desc: "Capturables y especiales", preset_special: "Especiales", preset_special_desc: "N, Dream, Shadow, intercambios y Cherish", preset_normal: "Colección normal", preset_normal_desc: "Una entrada por forma", preset_sv: "Todo SV", preset_sv_desc: "Normal + shiny",
+  variants: "VARIANTES", shiny_possible: "Shiny posible", catalog_review: "Catálogo en revisión", non_shiny: "No shiny", normal_specimen: "Ejemplar normal",
+  special_non_shiny: "No shiny en especiales", special_non_shiny_desc: "Añádelos aunque el perfil sea solo shiny", gender_differences: "DIMORFISMOS", all_gender_differences: "Todos los dimorfismos", all_gender_differences_desc: "Las 102 especies con diferencias visibles", notable_gender_differences_desc: "Solo los ocho destacados de Gen 5 en adelante", male: "Macho", female: "Hembra",
+  trainer_origin: "ORIGEN DEL ENTRENADOR", own_ot: "Capturable · tu OT", own_ot_desc: "Encuentros y regalos con tu nombre", event_ot: "Distribuido · OT ajeno", event_ot_desc: "Eventos y entrenadores del juego",
+  origin_marks: "MARCAS DE ORIGEN", gba_ports: "Ports de GBA en Switch", gba_ports_desc: "FR/LG y escenario rumoreado R/S/E", special_collections: "COLECCIONES ESPECIALES", special_ot_independent: "Filtro propio", special_ot_independent_desc: "Las colecciones seleccionadas se incluyen aunque el filtro global de OT esté apagado.", cherish_beta: "Lista aproximada, todavía sin verificación evento por evento.",
+  capacity: "CAPACIDAD DE REFERENCIA", current: "Oficial actual", future: "Escenario futuro", active_catalogs: "CATÁLOGOS ACTIVOS", next_expansion: "Próxima ampliación: más regalos con OT de personajes y verificación individual de eventos.",
+  export: "Exportar respaldo", import: "Importar", invalid_backup: "Ese archivo no es un respaldo válido de Origin Marks.",
+  page: "Página", search: "Buscar Pokémon…", missing_only: "Solo faltantes", page_view: "VISTA DE PÁGINA", page_desc: "Selecciona una caja para ver sus 30 posiciones en el orden exacto.", boxes_plan: "cajas del plan", available: "disponibles",
+  no_capacity: "Sin capacidad", free: "Libre", outside_home: "Fuera del plan HOME", box_available: "Caja disponible", obtained: "obtenidos", overflow: "Overflow", previous_page: "← Página anterior", next_page: "Página siguiente →", mark_page: "Marcar página", unmark_page: "Desmarcar página",
+  box_instruction: "Haz clic en cada Pokémon para alternar entre pendiente y obtenido.", page_view_button: "Vista de página", empty: "Vacío", shiny: "✦ Shiny", normal: "Normal", your_ot: "Tu OT", foreign_ot: "OT ajeno", pending: "pendientes", mark_box: "Marcar caja completa", unmark_box: "Desmarcar caja", official_art_pending: "Arte oficial pendiente", official_art: "Arte oficial de",
+  data: "DATOS", data_note: "Los encuentros de X/Y con tu OT están separados de sus distribuciones shiny. GO reserva los números 1–1025 incluso si hoy no se pueden transferir.", n_source: "Pokémon de N ↗", dream_source: "Dream World ↗", shadow_source: "Shadow ↗", trade_source: "Intercambios ↗", gender_source: "Dimorfismos ↗", art_source: "Arte: PokéAPI ↗",
+  go_note: "Planificación completa 1–1025", trade_note: "Incluye Yancy, Curtis y Partner Ribbon", collection_beta: "beta", language: "Idioma",
+};
+
+const EN: Copy = {
+  loading: "Organizing boxes…", load_error: "The catalog could not be opened", reload: "Reload the page to try again.", open_filters: "Open filters", close_filters: "Close filters", of: "of", your_collection: "YOUR COLLECTION", design: "Design your checklist",
+  preset_shiny: "Shiny only", preset_shiny_desc: "Catchable and special collections", preset_special: "Special collections", preset_special_desc: "N, Dream, Shadow, trades and Cherish", preset_normal: "Normal collection", preset_normal_desc: "One entry per form", preset_sv: "All SV", preset_sv_desc: "Normal + shiny",
+  variants: "VARIANTS", shiny_possible: "Shiny available", catalog_review: "Catalog under review", non_shiny: "Non-shiny", normal_specimen: "Normal specimen", special_non_shiny: "Non-shiny specials", special_non_shiny_desc: "Include them even in a shiny-only profile", gender_differences: "GENDER DIFFERENCES", all_gender_differences: "All gender differences", all_gender_differences_desc: "All 102 species with visible differences", notable_gender_differences_desc: "Only the eight notable species from Gen V onward", male: "Male", female: "Female",
+  trainer_origin: "TRAINER ORIGIN", own_ot: "Catchable · your OT", own_ot_desc: "Encounters and gifts bearing your name", event_ot: "Distributed · other OT", event_ot_desc: "Events and in-game trainers", origin_marks: "ORIGIN MARKS", gba_ports: "GBA ports on Switch", gba_ports_desc: "FR/LG and rumored R/S/E scenario", special_collections: "SPECIAL COLLECTIONS", special_ot_independent: "Independent filter", special_ot_independent_desc: "Selected collections stay included even when the global OT filter is off.", cherish_beta: "Approximate list; event-by-event verification is still pending.",
+  capacity: "REFERENCE CAPACITY", current: "Current official", future: "Future scenario", active_catalogs: "ACTIVE CATALOGS", next_expansion: "Next: more character-OT gifts and individual event verification.", export: "Export backup", import: "Import", invalid_backup: "That file is not a valid Origin Marks backup.",
+  page: "Page", search: "Search Pokémon…", missing_only: "Missing only", page_view: "PAGE VIEW", page_desc: "Select a box to see its 30 positions in exact order.", boxes_plan: "boxes in plan", available: "available", no_capacity: "No capacity", free: "Free", outside_home: "Outside HOME plan", box_available: "Available box", obtained: "obtained", overflow: "Overflow", previous_page: "← Previous page", next_page: "Next page →", mark_page: "Mark page", unmark_page: "Unmark page",
+  box_instruction: "Click each Pokémon to switch between missing and obtained.", page_view_button: "Page view", empty: "Empty", shiny: "✦ Shiny", normal: "Normal", your_ot: "Your OT", foreign_ot: "Other OT", pending: "missing", mark_box: "Mark full box", unmark_box: "Unmark box", official_art_pending: "Official art pending", official_art: "Official artwork of",
+  data: "DATA", data_note: "X/Y encounters with your OT are separate from their shiny distributions. GO reserves numbers 1–1025 even when transfer is currently unavailable.", n_source: "N's Pokémon ↗", dream_source: "Dream World ↗", shadow_source: "Shadow ↗", trade_source: "In-game trades ↗", gender_source: "Gender differences ↗", art_source: "Art: PokéAPI ↗", go_note: "Complete 1–1025 planning", trade_note: "Includes Yancy, Curtis and Partner Ribbon", collection_beta: "beta", language: "Language",
+};
+
+const DE: Copy = {
+  loading: "Boxen werden sortiert…", load_error: "Der Katalog konnte nicht geöffnet werden", reload: "Lade die Seite neu und versuche es erneut.", open_filters: "Filter öffnen", close_filters: "Filter schließen", of: "von", your_collection: "DEINE SAMMLUNG", design: "Gestalte deine Checkliste",
+  preset_shiny: "Nur Shinys", preset_shiny_desc: "Fangbar und Sondersammlungen", preset_special: "Sondersammlungen", preset_special_desc: "N, Traumwelt, Crypto, Tausch und Jubelball", preset_normal: "Normale Sammlung", preset_normal_desc: "Ein Eintrag pro Form", preset_sv: "Alles aus K/P", preset_sv_desc: "Normal + Shiny",
+  variants: "VARIANTEN", shiny_possible: "Shiny möglich", catalog_review: "Katalog in Prüfung", non_shiny: "Nicht-Shiny", normal_specimen: "Normales Exemplar", special_non_shiny: "Nicht-Shinys in Sonderlisten", special_non_shiny_desc: "Auch bei einem reinen Shiny-Profil einplanen", gender_differences: "GESCHLECHTSUNTERSCHIEDE", all_gender_differences: "Alle Geschlechtsunterschiede", all_gender_differences_desc: "Alle 102 Arten mit sichtbaren Unterschieden", notable_gender_differences_desc: "Nur die acht markanten Arten ab Generation V", male: "Männlich", female: "Weiblich",
+  trainer_origin: "TRAINER-HERKUNFT", own_ot: "Fangbar · deine OT", own_ot_desc: "Begegnungen und Geschenke mit deinem Namen", event_ot: "Verteilt · fremde OT", event_ot_desc: "Events und Trainer im Spiel", origin_marks: "HERKUNFTSZEICHEN", gba_ports: "GBA-Ports auf Switch", gba_ports_desc: "FR/BG und mögliches R/S/SM", special_collections: "SONDERSAMMLUNGEN", special_ot_independent: "Eigener Filter", special_ot_independent_desc: "Ausgewählte Sammlungen bleiben unabhängig vom globalen OT-Filter enthalten.", cherish_beta: "Ungefähre Liste; die Einzelprüfung der Events steht noch aus.",
+  capacity: "REFERENZKAPAZITÄT", current: "Aktuell offiziell", future: "Zukunftsszenario", active_catalogs: "AKTIVE KATALOGE", next_expansion: "Als Nächstes: weitere Geschenke mit Charakter-OT und Einzelprüfung der Events.", export: "Sicherung exportieren", import: "Importieren", invalid_backup: "Diese Datei ist keine gültige Origin-Marks-Sicherung.",
+  page: "Seite", search: "Pokémon suchen…", missing_only: "Nur fehlende", page_view: "SEITENANSICHT", page_desc: "Wähle eine Box, um ihre 30 Plätze in genauer Reihenfolge zu sehen.", boxes_plan: "Boxen im Plan", available: "verfügbar", no_capacity: "Keine Kapazität", free: "Frei", outside_home: "Außerhalb des HOME-Plans", box_available: "Verfügbare Box", obtained: "erhalten", overflow: "Überlauf", previous_page: "← Vorherige Seite", next_page: "Nächste Seite →", mark_page: "Seite markieren", unmark_page: "Markierung entfernen",
+  box_instruction: "Klicke ein Pokémon an, um zwischen fehlend und erhalten zu wechseln.", page_view_button: "Seitenansicht", empty: "Leer", shiny: "✦ Shiny", normal: "Normal", your_ot: "Deine OT", foreign_ot: "Fremde OT", pending: "fehlend", mark_box: "Ganze Box markieren", unmark_box: "Box zurücksetzen", official_art_pending: "Offizielles Artwork fehlt", official_art: "Offizielles Artwork von",
+  data: "DATEN", data_note: "X/Y-Begegnungen mit deiner OT sind von ihren Shiny-Verteilungen getrennt. GO reserviert die Nummern 1–1025, auch wenn ein Transfer derzeit nicht möglich ist.", n_source: "Ns Pokémon ↗", dream_source: "Traumwelt ↗", shadow_source: "Crypto-Pokémon ↗", trade_source: "Spielinterner Tausch ↗", gender_source: "Geschlechtsunterschiede ↗", art_source: "Artwork: PokéAPI ↗", go_note: "Komplette Planung 1–1025", trade_note: "Mit Yancy, Curtis und Partnerband", collection_beta: "Beta", language: "Sprache",
+};
+
+const FR: Copy = {
+  loading: "Organisation des Boîtes…", load_error: "Impossible d’ouvrir le catalogue", reload: "Rechargez la page pour réessayer.", open_filters: "Ouvrir les filtres", close_filters: "Fermer les filtres", of: "sur", your_collection: "VOTRE COLLECTION", design: "Créez votre checklist",
+  preset_shiny: "Chromatiques", preset_shiny_desc: "Capturables et collections spéciales", preset_special: "Collections spéciales", preset_special_desc: "N, Rêve, Obscurs, échanges et Mémoire", preset_normal: "Collection normale", preset_normal_desc: "Une entrée par forme", preset_sv: "Tout EV", preset_sv_desc: "Normal + chromatique",
+  variants: "VARIANTES", shiny_possible: "Chromatique possible", catalog_review: "Catalogue en révision", non_shiny: "Non chromatique", normal_specimen: "Spécimen normal", special_non_shiny: "Spéciaux non chromatiques", special_non_shiny_desc: "Les inclure même dans un profil chromatique", gender_differences: "DIMORPHISMES SEXUELS", all_gender_differences: "Tous les dimorphismes", all_gender_differences_desc: "Les 102 espèces aux différences visibles", notable_gender_differences_desc: "Seulement les huit espèces marquantes depuis la génération V", male: "Mâle", female: "Femelle",
+  trainer_origin: "ORIGINE DU DRESSEUR", own_ot: "Capturable · votre DO", own_ot_desc: "Rencontres et cadeaux à votre nom", event_ot: "Distribué · autre DO", event_ot_desc: "Événements et Dresseurs du jeu", origin_marks: "MARQUES D’ORIGINE", gba_ports: "Ports GBA sur Switch", gba_ports_desc: "RF/VF et scénario R/S/E supposé", special_collections: "COLLECTIONS SPÉCIALES", special_ot_independent: "Filtre indépendant", special_ot_independent_desc: "Les collections sélectionnées restent incluses sans dépendre du filtre global de DO.", cherish_beta: "Liste approximative, à vérifier événement par événement.",
+  capacity: "CAPACITÉ DE RÉFÉRENCE", current: "Officielle actuelle", future: "Scénario futur", active_catalogs: "CATALOGUES ACTIFS", next_expansion: "Prochaine étape : autres cadeaux avec DO de personnage et vérification des événements.", export: "Exporter la sauvegarde", import: "Importer", invalid_backup: "Ce fichier n’est pas une sauvegarde Origin Marks valide.",
+  page: "Page", search: "Rechercher un Pokémon…", missing_only: "Manquants", page_view: "VUE DE PAGE", page_desc: "Sélectionnez une Boîte pour voir ses 30 places dans l’ordre exact.", boxes_plan: "Boîtes du plan", available: "disponibles", no_capacity: "Capacité dépassée", free: "Libre", outside_home: "Hors du plan HOME", box_available: "Boîte disponible", obtained: "obtenus", overflow: "Dépassement", previous_page: "← Page précédente", next_page: "Page suivante →", mark_page: "Marquer la page", unmark_page: "Démarquer la page",
+  box_instruction: "Cliquez sur chaque Pokémon pour alterner entre manquant et obtenu.", page_view_button: "Vue de page", empty: "Vide", shiny: "✦ Chromatique", normal: "Normal", your_ot: "Votre DO", foreign_ot: "Autre DO", pending: "manquants", mark_box: "Marquer toute la Boîte", unmark_box: "Démarquer la Boîte", official_art_pending: "Illustration officielle indisponible", official_art: "Illustration officielle de",
+  data: "DONNÉES", data_note: "Les rencontres de X/Y avec votre DO sont séparées de leurs distributions chromatiques. GO réserve les numéros 1–1025 même si le transfert est indisponible.", n_source: "Pokémon de N ↗", dream_source: "Monde des Rêves ↗", shadow_source: "Pokémon Obscurs ↗", trade_source: "Échanges internes ↗", gender_source: "Dimorphismes ↗", art_source: "Illustrations : PokéAPI ↗", go_note: "Planification complète 1–1025", trade_note: "Inclut Yancy, Curtis et Ruban Partenaire", collection_beta: "bêta", language: "Langue",
+};
+
+const IT: Copy = {
+  loading: "Ordinamento dei Box…", load_error: "Impossibile aprire il catalogo", reload: "Ricarica la pagina per riprovare.", open_filters: "Apri filtri", close_filters: "Chiudi filtri", of: "di", your_collection: "LA TUA COLLEZIONE", design: "Crea la tua checklist",
+  preset_shiny: "Solo cromatici", preset_shiny_desc: "Catturabili e collezioni speciali", preset_special: "Collezioni speciali", preset_special_desc: "N, Dream World, Ombra, scambi e Pregio", preset_normal: "Collezione normale", preset_normal_desc: "Una voce per forma", preset_sv: "Tutto SV", preset_sv_desc: "Normale + cromatico",
+  variants: "VARIANTI", shiny_possible: "Cromatico possibile", catalog_review: "Catalogo in revisione", non_shiny: "Non cromatico", normal_specimen: "Esemplare normale", special_non_shiny: "Speciali non cromatici", special_non_shiny_desc: "Includili anche in un profilo solo cromatici", gender_differences: "DIMORFISMI SESSUALI", all_gender_differences: "Tutti i dimorfismi", all_gender_differences_desc: "Tutte le 102 specie con differenze visibili", notable_gender_differences_desc: "Solo le otto specie più evidenti dalla generazione V", male: "Maschio", female: "Femmina",
+  trainer_origin: "ORIGINE ALLENATORE", own_ot: "Catturabile · tuo AO", own_ot_desc: "Incontri e doni con il tuo nome", event_ot: "Distribuito · altro AO", event_ot_desc: "Eventi e Allenatori del gioco", origin_marks: "MARCHI D’ORIGINE", gba_ports: "Port GBA su Switch", gba_ports_desc: "RF/VF e possibile R/Z/S", special_collections: "COLLEZIONI SPECIALI", special_ot_independent: "Filtro indipendente", special_ot_independent_desc: "Le collezioni selezionate restano incluse indipendentemente dal filtro AO globale.", cherish_beta: "Lista approssimativa, ancora da verificare evento per evento.",
+  capacity: "CAPIENZA DI RIFERIMENTO", current: "Ufficiale attuale", future: "Scenario futuro", active_catalogs: "CATALOGHI ATTIVI", next_expansion: "Prossimamente: altri doni con AO dei personaggi e verifica degli eventi.", export: "Esporta backup", import: "Importa", invalid_backup: "Questo file non è un backup Origin Marks valido.",
+  page: "Pagina", search: "Cerca Pokémon…", missing_only: "Solo mancanti", page_view: "VISTA PAGINA", page_desc: "Seleziona un Box per vedere le 30 posizioni nell’ordine esatto.", boxes_plan: "Box nel piano", available: "disponibili", no_capacity: "Capienza esaurita", free: "Libero", outside_home: "Fuori dal piano HOME", box_available: "Box disponibile", obtained: "ottenuti", overflow: "Eccedenza", previous_page: "← Pagina precedente", next_page: "Pagina successiva →", mark_page: "Segna pagina", unmark_page: "Deseleziona pagina",
+  box_instruction: "Fai clic su ogni Pokémon per alternare tra mancante e ottenuto.", page_view_button: "Vista pagina", empty: "Vuoto", shiny: "✦ Cromatico", normal: "Normale", your_ot: "Tuo AO", foreign_ot: "Altro AO", pending: "mancanti", mark_box: "Segna tutto il Box", unmark_box: "Deseleziona Box", official_art_pending: "Artwork ufficiale non disponibile", official_art: "Artwork ufficiale di",
+  data: "DATI", data_note: "Gli incontri di X/Y con il tuo AO sono separati dalle distribuzioni cromatiche. GO riserva i numeri 1–1025 anche se il trasferimento non è disponibile.", n_source: "Pokémon di N ↗", dream_source: "Dream World ↗", shadow_source: "Pokémon Ombra ↗", trade_source: "Scambi nel gioco ↗", gender_source: "Dimorfismi ↗", art_source: "Artwork: PokéAPI ↗", go_note: "Pianificazione completa 1–1025", trade_note: "Include Yancy, Curtis e Fiocco Partner", collection_beta: "beta", language: "Lingua",
+};
+
+const JA: Copy = {
+  loading: "ボックスを整理しています…", load_error: "カタログを開けませんでした", reload: "ページを再読み込みしてください。", open_filters: "フィルターを開く", close_filters: "フィルターを閉じる", of: "/", your_collection: "コレクション", design: "チェックリストを作成",
+  preset_shiny: "色違いのみ", preset_shiny_desc: "捕獲可能＋特別コレクション", preset_special: "特別コレクション", preset_special_desc: "N・夢・ダーク・ゲーム内交換・プレシャス", preset_normal: "通常コレクション", preset_normal_desc: "フォルムごとに1枠", preset_sv: "SVすべて", preset_sv_desc: "通常＋色違い",
+  variants: "バリエーション", shiny_possible: "色違い可能", catalog_review: "確認中のカタログ", non_shiny: "通常色", normal_specimen: "通常個体", special_non_shiny: "特別枠の通常色", special_non_shiny_desc: "色違いのみの設定でも追加する", gender_differences: "性別による違い", all_gender_differences: "すべての性別差", all_gender_differences_desc: "見た目が異なる102種すべて", notable_gender_differences_desc: "第5世代以降の代表的な8種のみ", male: "オス", female: "メス",
+  trainer_origin: "おやの種類", own_ot: "捕獲・自分のおや", own_ot_desc: "自分の名前になる出会いと贈り物", event_ot: "配布・別のおや", event_ot_desc: "イベントとゲーム内トレーナー", origin_marks: "出身マーク", gba_ports: "SwitchのGBA移植", gba_ports_desc: "FR/LGと噂のR/S/E", special_collections: "特別コレクション", special_ot_independent: "独立フィルター", special_ot_independent_desc: "選択したコレクションは、おやフィルターに関係なく追加されます。", cherish_beta: "概算リストです。イベントごとの確認は未完了です。",
+  capacity: "参考容量", current: "現在の公式容量", future: "将来の想定", active_catalogs: "有効なカタログ", next_expansion: "次回：キャラクターのおやの贈り物追加とイベントの個別確認。", export: "バックアップを書き出す", import: "読み込む", invalid_backup: "Origin Marksの有効なバックアップではありません。",
+  page: "ページ", search: "ポケモンを検索…", missing_only: "未入手のみ", page_view: "ページ表示", page_desc: "ボックスを選ぶと30枠を正しい順番で表示します。", boxes_plan: "計画中のボックス", available: "利用可能", no_capacity: "容量不足", free: "空き", outside_home: "HOME計画外", box_available: "利用可能なボックス", obtained: "入手済み", overflow: "超過", previous_page: "← 前のページ", next_page: "次のページ →", mark_page: "ページを入手済みにする", unmark_page: "ページの印を外す",
+  box_instruction: "各ポケモンをクリックして未入手／入手済みを切り替えます。", page_view_button: "ページ表示", empty: "空き", shiny: "✦ 色違い", normal: "通常", your_ot: "自分のおや", foreign_ot: "別のおや", pending: "未入手", mark_box: "ボックス全体を入手済みにする", unmark_box: "ボックスの印を外す", official_art_pending: "公式イラスト未対応", official_art: "公式イラスト：",
+  data: "データ", data_note: "X/Yで自分がおやになる伝説の捕獲個体と色違い配布を分離しました。GOは現在転送できなくても全国図鑑1～1025を確保します。", n_source: "Nのポケモン ↗", dream_source: "ポケモンドリームワールド ↗", shadow_source: "ダークポケモン ↗", trade_source: "ゲーム内交換 ↗", gender_source: "性別による違い ↗", art_source: "イラスト：PokéAPI ↗", go_note: "全国図鑑1～1025", trade_note: "ルリ・テツとあいぼうリボンを含む", collection_beta: "ベータ", language: "言語",
+};
+
+const KO: Copy = {
+  loading: "박스를 정리하는 중…", load_error: "카탈로그를 열 수 없습니다", reload: "페이지를 새로고침해 주세요.", open_filters: "필터 열기", close_filters: "필터 닫기", of: "/", your_collection: "내 컬렉션", design: "체크리스트 만들기",
+  preset_shiny: "이로치만", preset_shiny_desc: "포획 가능＋특별 컬렉션", preset_special: "특별 컬렉션", preset_special_desc: "N, 드림월드, 다크, 게임 내 교환, 프레셔스", preset_normal: "일반 컬렉션", preset_normal_desc: "폼마다 한 칸", preset_sv: "SV 전체", preset_sv_desc: "일반＋이로치",
+  variants: "종류", shiny_possible: "이로치 가능", catalog_review: "검토 중인 카탈로그", non_shiny: "일반색", normal_specimen: "일반 개체", special_non_shiny: "특별 컬렉션 일반색", special_non_shiny_desc: "이로치 전용 설정에서도 포함", gender_differences: "성별 차이", all_gender_differences: "모든 성별 차이", all_gender_differences_desc: "외형 차이가 있는 102종 전체", notable_gender_differences_desc: "5세대 이후 대표적인 8종만", male: "수컷", female: "암컷",
+  trainer_origin: "트레이너 출처", own_ot: "포획 · 내 어버이", own_ot_desc: "내 이름이 붙는 만남과 선물", event_ot: "배포 · 다른 어버이", event_ot_desc: "이벤트와 게임 내 트레이너", origin_marks: "출신 마크", gba_ports: "Switch GBA 이식", gba_ports_desc: "FR/LG 및 예상 R/S/E", special_collections: "특별 컬렉션", special_ot_independent: "독립 필터", special_ot_independent_desc: "선택한 컬렉션은 전체 어버이 필터와 관계없이 포함됩니다.", cherish_beta: "대략적인 목록이며 이벤트별 검증이 필요합니다.",
+  capacity: "기준 용량", current: "현재 공식", future: "향후 예상", active_catalogs: "활성 카탈로그", next_expansion: "다음: 캐릭터 어버이 선물 추가 및 이벤트별 검증.", export: "백업 내보내기", import: "가져오기", invalid_backup: "올바른 Origin Marks 백업 파일이 아닙니다.",
+  page: "페이지", search: "포켓몬 검색…", missing_only: "미보유만", page_view: "페이지 보기", page_desc: "박스를 선택하면 30칸을 정확한 순서로 표시합니다.", boxes_plan: "계획 박스", available: "사용 가능", no_capacity: "용량 없음", free: "빈 박스", outside_home: "HOME 계획 밖", box_available: "사용 가능한 박스", obtained: "보유", overflow: "초과", previous_page: "← 이전 페이지", next_page: "다음 페이지 →", mark_page: "페이지 모두 표시", unmark_page: "페이지 표시 해제",
+  box_instruction: "각 포켓몬을 눌러 미보유와 보유를 전환합니다.", page_view_button: "페이지 보기", empty: "비어 있음", shiny: "✦ 이로치", normal: "일반", your_ot: "내 어버이", foreign_ot: "다른 어버이", pending: "미보유", mark_box: "박스 전체 표시", unmark_box: "박스 표시 해제", official_art_pending: "공식 일러스트 준비 중", official_art: "공식 일러스트:",
+  data: "데이터", data_note: "X/Y에서 내 어버이로 잡는 전설과 이로치 배포를 분리했습니다. GO는 현재 전송 불가여도 전국도감 1–1025의 자리를 확보합니다.", n_source: "N의 포켓몬 ↗", dream_source: "포켓몬 드림월드 ↗", shadow_source: "다크 포켓몬 ↗", trade_source: "게임 내 교환 ↗", gender_source: "성별 차이 ↗", art_source: "일러스트: PokéAPI ↗", go_note: "전국도감 1–1025", trade_note: "루리·철권과 파트너리본 포함", collection_beta: "베타", language: "언어",
+};
+
+const ZHS: Copy = {
+  loading: "正在整理盒子…", load_error: "无法打开目录", reload: "请刷新页面后重试。", open_filters: "打开筛选", close_filters: "关闭筛选", of: "/", your_collection: "你的收藏", design: "设计收藏清单",
+  preset_shiny: "仅异色", preset_shiny_desc: "可捕获与特殊收藏", preset_special: "特殊收藏", preset_special_desc: "N、梦境、黑暗、游戏内交换与贵重球", preset_normal: "普通收藏", preset_normal_desc: "每种形态一个位置", preset_sv: "全部朱紫", preset_sv_desc: "普通＋异色",
+  variants: "版本", shiny_possible: "可为异色", catalog_review: "目录审核中", non_shiny: "非异色", normal_specimen: "普通个体", special_non_shiny: "特殊收藏中的非异色", special_non_shiny_desc: "即使只收藏异色也加入盒子", gender_differences: "性别差异", all_gender_differences: "所有性别差异", all_gender_differences_desc: "全部102种具有可见差异的宝可梦", notable_gender_differences_desc: "仅第5世代起最显著的8种", male: "雄性", female: "雌性",
+  trainer_origin: "训练家来源", own_ot: "可捕获 · 你的初训家", own_ot_desc: "使用你名字的相遇与礼物", event_ot: "配信 · 其他初训家", event_ot_desc: "活动与游戏内训练家", origin_marks: "起源标记", gba_ports: "Switch 的 GBA 移植", gba_ports_desc: "FR/LG 与传闻中的 R/S/E", special_collections: "特殊收藏", special_ot_independent: "独立筛选", special_ot_independent_desc: "已选择的收藏不受全局初训家筛选影响。", cherish_beta: "近似列表，仍需逐个活动验证。",
+  capacity: "参考容量", current: "当前官方", future: "未来规划", active_catalogs: "已启用目录", next_expansion: "下一步：更多角色初训家礼物和活动逐项验证。", export: "导出备份", import: "导入", invalid_backup: "该文件不是有效的 Origin Marks 备份。",
+  page: "页面", search: "搜索宝可梦…", missing_only: "仅未获得", page_view: "页面视图", page_desc: "选择盒子以按准确顺序查看30个位置。", boxes_plan: "计划盒子", available: "可用", no_capacity: "容量不足", free: "空闲", outside_home: "超出 HOME 规划", box_available: "可用盒子", obtained: "已获得", overflow: "超出", previous_page: "← 上一页", next_page: "下一页 →", mark_page: "标记整页", unmark_page: "取消整页标记",
+  box_instruction: "点击宝可梦可在未获得和已获得之间切换。", page_view_button: "页面视图", empty: "空", shiny: "✦ 异色", normal: "普通", your_ot: "你的初训家", foreign_ot: "其他初训家", pending: "未获得", mark_box: "标记整个盒子", unmark_box: "取消盒子标记", official_art_pending: "暂无官方绘图", official_art: "官方绘图：",
+  data: "数据", data_note: "X/Y 中以你为初训家的传说捕获个体已与异色配信分开。GO 会预留全国图鉴1–1025，即使目前无法传送。", n_source: "N的宝可梦 ↗", dream_source: "宝可梦梦境世界 ↗", shadow_source: "黑暗宝可梦 ↗", trade_source: "游戏内交换 ↗", gender_source: "性别差异 ↗", art_source: "绘图：PokéAPI ↗", go_note: "完整规划1–1025", trade_note: "包含琉璃、铁男与搭档奖章", collection_beta: "测试版", language: "语言",
+};
+
+const ZHT: Copy = {
+  ...ZHS,
+  loading: "正在整理盒子…", load_error: "無法開啟目錄", reload: "請重新整理頁面後再試。", open_filters: "開啟篩選", close_filters: "關閉篩選", your_collection: "你的收藏", design: "設計收藏清單",
+  preset_shiny: "僅異色", preset_shiny_desc: "可捕捉與特殊收藏", preset_special: "特殊收藏", preset_special_desc: "N、夢境、黑暗、遊戲內交換與貴重球", preset_normal: "普通收藏", preset_normal_desc: "每種形態一個位置", variants: "種類", shiny_possible: "可為異色", catalog_review: "目錄審核中", non_shiny: "非異色", normal_specimen: "普通個體", special_non_shiny: "特殊收藏中的非異色", special_non_shiny_desc: "即使只收藏異色也加入盒子", gender_differences: "性別差異", all_gender_differences: "所有性別差異", all_gender_differences_desc: "全部102種具有可見差異的寶可夢", notable_gender_differences_desc: "僅第5世代起最顯著的8種", male: "雄性", female: "雌性",
+  trainer_origin: "訓練家來源", own_ot: "可捕捉 · 你的初訓家", own_ot_desc: "使用你名字的相遇與禮物", event_ot: "配信 · 其他初訓家", event_ot_desc: "活動與遊戲內訓練家", origin_marks: "起源標記", gba_ports: "Switch 的 GBA 移植", gba_ports_desc: "FR/LG 與傳聞中的 R/S/E", special_collections: "特殊收藏", special_ot_independent: "獨立篩選", special_ot_independent_desc: "已選擇的收藏不受全域初訓家篩選影響。", cherish_beta: "近似清單，仍需逐一驗證活動。",
+  capacity: "參考容量", current: "目前官方", future: "未來規劃", active_catalogs: "已啟用目錄", next_expansion: "下一步：更多角色初訓家禮物和活動逐項驗證。", export: "匯出備份", import: "匯入", invalid_backup: "此檔案不是有效的 Origin Marks 備份。",
+  page: "頁面", search: "搜尋寶可夢…", missing_only: "僅未獲得", page_view: "頁面檢視", page_desc: "選擇盒子以正確順序查看30個位置。", boxes_plan: "規劃盒子", available: "可用", no_capacity: "容量不足", free: "空閒", outside_home: "超出 HOME 規劃", box_available: "可用盒子", obtained: "已獲得", overflow: "超出", previous_page: "← 上一頁", next_page: "下一頁 →", mark_page: "標記整頁", unmark_page: "取消整頁標記",
+  box_instruction: "點擊寶可夢可在未獲得與已獲得之間切換。", page_view_button: "頁面檢視", empty: "空", your_ot: "你的初訓家", foreign_ot: "其他初訓家", pending: "未獲得", mark_box: "標記整個盒子", unmark_box: "取消盒子標記", official_art_pending: "暫無官方繪圖", official_art: "官方繪圖：",
+  data: "資料", data_note: "X/Y 中以你為初訓家的傳說捕捉個體已與異色配信分開。GO 會預留全國圖鑑1–1025，即使目前無法傳送。", n_source: "N的寶可夢 ↗", dream_source: "寶可夢夢境世界 ↗", shadow_source: "黑暗寶可夢 ↗", trade_source: "遊戲內交換 ↗", gender_source: "性別差異 ↗", art_source: "繪圖：PokéAPI ↗", go_note: "完整規劃1–1025", trade_note: "包含琉璃、鐵男與搭檔獎章", collection_beta: "測試版", language: "語言",
+};
+
+const UI_OVERRIDES: Record<UiLanguage, Copy> = {
+  "ES-LA": {
+    preset_shiny: "Solo brillantes", preset_shiny_desc: "Brillantes y colecciones especiales", preset_normal: "Living Dex", preset_normal_desc: "Una entrada por forma",
+    shiny_possible: "Brillante posible", non_shiny: "No brillante", special_non_shiny: "No brillantes en especiales", special_non_shiny_desc: "Añádelos aunque el perfil sea solo brillante", shiny: "Brillante",
+    acquisition: "PROCEDENCIA", in_game_trades: "Intercambios internos", in_game_trades_desc: "Pokémon de N y entrenadores del juego", events: "Eventos", events_desc: "Distribuciones brillantes por marca y Cherish Ball", other_games_apps: "Otros juegos y apps", other_games_apps_desc: "Colosseum, XD, Dream World, Dream Radar y GO",
+    data_note: "Las distribuciones brillantes están separadas por marca. Xerneas e Yveltal existen como eventos con Pentágono; Zygarde brillante aparece con marca de Alola. GO reserva los números 1–1025.", radar_source: "Dream Radar ↗", event_source: "Eventos brillantes ↗", github_repo: "Abrir el repositorio de Home Checklist en GitHub",
+  },
+  "ES-ES": {
+    preset_shiny: "Solo variocolor", preset_shiny_desc: "Variocolor y colecciones especiales", preset_normal: "Living Dex", preset_normal_desc: "Una entrada por forma",
+    shiny_possible: "Variocolor posible", non_shiny: "No variocolor", special_non_shiny: "No variocolor en especiales", special_non_shiny_desc: "Añádelos aunque el perfil sea solo variocolor", shiny: "Variocolor",
+    acquisition: "PROCEDENCIA", in_game_trades: "Intercambios internos", in_game_trades_desc: "Pokémon de N y entrenadores del juego", events: "Eventos", events_desc: "Distribuciones variocolor por marca y Gloria Ball", other_games_apps: "Otros juegos y aplicaciones", other_games_apps_desc: "Colosseum, XD, Dream World, Dream Radar y GO",
+    data_note: "Las distribuciones variocolor están separadas por marca. Xerneas e Yveltal existen como eventos con Pentágono; Zygarde variocolor aparece con marca de Alola. GO reserva los números 1–1025.", radar_source: "Dream Radar ↗", event_source: "Eventos variocolor ↗", github_repo: "Abrir el repositorio de Home Checklist en GitHub",
+  },
+  ENG: {
+    preset_normal: "Living Dex", preset_shiny_desc: "Shiny and special collections", shiny: "Shiny", acquisition: "ACQUISITION", in_game_trades: "In-game trades", in_game_trades_desc: "N's Pokémon and in-game trainers", events: "Events", events_desc: "Distributed Shiny Pokémon by origin mark and Cherish Ball", other_games_apps: "Other games and apps", other_games_apps_desc: "Colosseum, XD, Dream World, Dream Radar and GO", radar_source: "Dream Radar ↗", event_source: "Shiny events ↗", github_repo: "Open the Home Checklist repository on GitHub",
+  },
+  DEU: {
+    preset_normal: "Living Dex", shiny: "Shiny", acquisition: "ERHALTSART", in_game_trades: "Spielinterner Tausch", in_game_trades_desc: "Ns Pokémon und Trainer im Spiel", events: "Events", events_desc: "Verteilte Shinys nach Herkunftszeichen und Jubelball", other_games_apps: "Andere Spiele und Apps", other_games_apps_desc: "Colosseum, XD, Traumwelt, Traumradar und GO", radar_source: "Traumradar ↗", event_source: "Shiny-Events ↗", github_repo: "Home-Checklist-Repository auf GitHub öffnen",
+  },
+  FRA: {
+    preset_normal: "Living Dex", shiny: "Chromatique", acquisition: "OBTENTION", in_game_trades: "Échanges internes", in_game_trades_desc: "Pokémon de N et Dresseurs du jeu", events: "Événements", events_desc: "Pokémon chromatiques distribués par marque et Mémoire Ball", other_games_apps: "Autres jeux et applis", other_games_apps_desc: "Colosseum, XD, Monde des Rêves, RAdar Pokémon et GO", radar_source: "RAdar Pokémon ↗", event_source: "Événements chromatiques ↗", github_repo: "Ouvrir le dépôt Home Checklist sur GitHub",
+  },
+  ITA: {
+    preset_normal: "Living Dex", shiny: "Cromatico", acquisition: "OTTENIMENTO", in_game_trades: "Scambi nel gioco", in_game_trades_desc: "Pokémon di N e Allenatori del gioco", events: "Eventi", events_desc: "Pokémon cromatici distribuiti per marchio e Pregio Ball", other_games_apps: "Altri giochi e app", other_games_apps_desc: "Colosseum, XD, Dream World, Dream Radar e GO", radar_source: "Dream Radar ↗", event_source: "Eventi cromatici ↗", github_repo: "Apri il repository Home Checklist su GitHub",
+  },
+  JPN: {
+    preset_normal: "Living Dex", shiny: "色違い", acquisition: "入手方法", in_game_trades: "ゲーム内交換", in_game_trades_desc: "Nのポケモンとゲーム内トレーナー", events: "配布イベント", events_desc: "出身マーク別の色違い配布とプレシャスボール", other_games_apps: "他のゲーム・アプリ", other_games_apps_desc: "コロシアム・XD・夢・ARサーチャー・GO", radar_source: "ARサーチャー ↗", event_source: "色違い配布 ↗", github_repo: "GitHubでHome Checklistのリポジトリを開く",
+  },
+  KOR: {
+    preset_normal: "Living Dex", shiny: "이로치", acquisition: "입수 방법", in_game_trades: "게임 내 교환", in_game_trades_desc: "N의 포켓몬과 게임 내 트레이너", events: "이벤트", events_desc: "출신 마크별 이로치 배포와 프레셔스볼", other_games_apps: "다른 게임 및 앱", other_games_apps_desc: "콜로세움, XD, 드림월드, 드림 레이더, GO", radar_source: "드림 레이더 ↗", event_source: "이로치 이벤트 ↗", github_repo: "GitHub에서 Home Checklist 저장소 열기",
+  },
+  CHS: {
+    preset_normal: "Living Dex", shiny: "异色", acquisition: "获得方式", in_game_trades: "游戏内交换", in_game_trades_desc: "N的宝可梦与游戏内训练家", events: "活动", events_desc: "按起源标记整理的异色配信与贵重球", other_games_apps: "其他游戏与应用", other_games_apps_desc: "Colosseum、XD、梦境世界、梦境雷达与GO", radar_source: "梦境雷达 ↗", event_source: "异色活动 ↗", github_repo: "在GitHub打开Home Checklist仓库",
+  },
+  CHT: {
+    preset_normal: "Living Dex", shiny: "異色", acquisition: "獲得方式", in_game_trades: "遊戲內交換", in_game_trades_desc: "N的寶可夢與遊戲內訓練家", events: "活動", events_desc: "依起源標記整理的異色配信與貴重球", other_games_apps: "其他遊戲與應用程式", other_games_apps_desc: "Colosseum、XD、夢境世界、夢境雷達與GO", radar_source: "夢境雷達 ↗", event_source: "異色活動 ↗", github_repo: "在GitHub開啟Home Checklist儲存庫",
+  },
+};
+
+export const UI_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": ES,
+  "ES-ES": ES,
+  ENG: EN,
+  DEU: DE,
+  FRA: FR,
+  ITA: IT,
+  JPN: JA,
+  KOR: KO,
+  CHS: ZHS,
+  CHT: ZHT,
+};
+
+const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
+  "Sin marca": { ENG: "No mark", DEU: "Ohne Zeichen", FRA: "Sans marque", ITA: "Senza marchio", JPN: "マークなし", KOR: "마크 없음", CHS: "无标记", CHT: "無標記" },
+  GB: { ENG: "Game Boy", DEU: "Game Boy", FRA: "Game Boy", ITA: "Game Boy", JPN: "ゲームボーイ", KOR: "게임보이", CHS: "Game Boy", CHT: "Game Boy" },
+  P: { ENG: "Pentagon", DEU: "Fünfeck", FRA: "Pentagone", ITA: "Pentagono", JPN: "カロスマーク", KOR: "칼로스 마크", CHS: "五边形", CHT: "五邊形" },
+  USUM: { ENG: "Alola", DEU: "Alola", FRA: "Alola", ITA: "Alola", JPN: "アローラ", KOR: "알로라", CHS: "阿罗拉", CHT: "阿羅拉" },
+  LGPE: { ENG: "Let's Go", DEU: "Let's Go", FRA: "Let's Go", ITA: "Let's Go", JPN: "Let's Go", KOR: "레츠고", CHS: "Let's Go", CHT: "Let's Go" },
+  SwSh: { ENG: "Galar", DEU: "Galar", FRA: "Galar", ITA: "Galar", JPN: "ガラル", KOR: "가라르", CHS: "伽勒尔", CHT: "伽勒爾" },
+  LA: { ENG: "Hisui", DEU: "Hisui", FRA: "Hisui", ITA: "Hisui", JPN: "ヒスイ", KOR: "히스이", CHS: "洗翠", CHT: "洗翠" },
+  BDSP: { ENG: "Sinnoh", DEU: "Sinnoh", FRA: "Sinnoh", ITA: "Sinnoh", JPN: "シンオウ", KOR: "신오", CHS: "神奥", CHT: "神奧" },
+  SV: { ENG: "Scarlet / Violet", DEU: "Karmesin / Purpur", FRA: "Écarlate / Violet", ITA: "Scarlatto / Violetto", JPN: "スカーレット / バイオレット", KOR: "스칼렛 / 바이올렛", CHS: "朱 / 紫", CHT: "朱 / 紫" },
+  LZA: { ENG: "Lumiose", DEU: "Illumina", FRA: "Illumis", ITA: "Luminopoli", JPN: "ミアレ", KOR: "미르", CHS: "密阿雷", CHT: "密阿雷" },
+  GBA: { ENG: "GBA", DEU: "GBA", FRA: "GBA", ITA: "GBA", JPN: "GBA", KOR: "GBA", CHS: "GBA", CHT: "GBA" },
+  n: { ENG: "N's Pokémon", DEU: "Ns Pokémon", FRA: "Pokémon de N", ITA: "Pokémon di N", JPN: "Nのポケモン", KOR: "N의 포켓몬", CHS: "N的宝可梦", CHT: "N的寶可夢" },
+  dream: { ENG: "Dream World", DEU: "Traumwelt", FRA: "Monde des Rêves", ITA: "Dream World", JPN: "ポケモンドリームワールド", KOR: "포켓몬 드림월드", CHS: "宝可梦梦境世界", CHT: "寶可夢夢境世界" },
+  radar: { ENG: "Dream Radar", DEU: "Pokémon Traumradar", FRA: "RAdar Pokémon", ITA: "Pokémon Dream Radar", JPN: "ポケモンARサーチャー", KOR: "포켓몬 AR 서처", CHS: "宝可梦梦境雷达", CHT: "寶可夢夢境雷達" },
+  "shadow-colosseum": { ENG: "Shadow · Colosseum", DEU: "Crypto · Colosseum", FRA: "Obscur · Colosseum", ITA: "Ombra · Colosseum", JPN: "ダーク · コロシアム", KOR: "다크 · 콜로세움", CHS: "黑暗 · Colosseum", CHT: "黑暗 · Colosseum" },
+  "shadow-xd": { ENG: "Shadow · XD", DEU: "Crypto · XD", FRA: "Obscur · XD", ITA: "Ombra · XD", JPN: "ダーク · XD", KOR: "다크 · XD", CHS: "黑暗 · XD", CHT: "黑暗 · XD" },
+  cherish: { ENG: "Cherish Ball", DEU: "Jubelball", FRA: "Mémoire Ball", ITA: "Pregio Ball", JPN: "プレシャスボール", KOR: "프레셔스볼", CHS: "贵重球", CHT: "貴重球" },
+  trades: { ENG: "In-game trades", DEU: "Spielinterner Tausch", FRA: "Échanges internes", ITA: "Scambi nel gioco", JPN: "ゲーム内交換", KOR: "게임 내 교환", CHS: "游戏内交换", CHT: "遊戲內交換" },
+  go: { ENG: "Pokémon GO", DEU: "Pokémon GO", FRA: "Pokémon GO", ITA: "Pokémon GO", JPN: "Pokémon GO", KOR: "Pokémon GO", CHS: "Pokémon GO", CHT: "Pokémon GO" },
+};
+
+export function copy(language: UiLanguage, key: string) {
+  if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
+  return UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+}
+
+export function groupName(language: UiLanguage, key: string) {
+  return GROUPS[key]?.[language] ?? (language.startsWith("ES") ? ({ P: "Pentágono", USUM: "Alola", LGPE: "Let's Go", SwSh: "Galar", LA: "Hisui", BDSP: "Sinnoh", SV: "Escarlata / Púrpura", LZA: "Lumiose", GBA: "GBA", "Sin marca": "Sin marca", GB: "GB", n: "Pokémon de N", dream: "Dream World", radar: "Pokémon Dream Radar", "shadow-colosseum": "Shadow · Colosseum", "shadow-xd": "Shadow · XD", cherish: "Cherish Ball", trades: "Intercambios internos", go: "Pokémon GO" } as Record<string, string>)[key] : undefined) ?? key;
+}
