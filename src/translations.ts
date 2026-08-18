@@ -194,6 +194,34 @@ const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   go: { ENG: "Pokémon GO", DEU: "Pokémon GO", FRA: "Pokémon GO", ITA: "Pokémon GO", JPN: "Pokémon GO", KOR: "Pokémon GO", CHS: "Pokémon GO", CHT: "Pokémon GO" },
 };
 
+const VIVILLON_FORMS: Record<string, Record<UiLanguage, string>> = {
+  "Icy Snow": { "ES-LA": "Motivo Polar", "ES-ES": "Motivo Polar", ENG: "Icy Snow Pattern", DEU: "Frostmuster", FRA: "Motif Blizzard", ITA: "Motivo Nevi Perenni", JPN: "ひょうせつのもよう", KOR: "빙설의 모양", CHS: "冰雪花纹", CHT: "冰雪花紋" },
+  Polar: { "ES-LA": "Motivo Taiga", "ES-ES": "Motivo Taiga", ENG: "Polar Pattern", DEU: "Schneefeldmuster", FRA: "Motif Banquise", ITA: "Motivo Nordico", JPN: "ゆきぐにのもよう", KOR: "설국의 모양", CHS: "雪国花纹", CHT: "雪國花紋" },
+  Tundra: { "ES-LA": "Motivo Tundra", "ES-ES": "Motivo Tundra", ENG: "Tundra Pattern", DEU: "Flockenmuster", FRA: "Motif Glace", ITA: "Motivo Manto di Neve", JPN: "せつげんのもよう", KOR: "설원의 모양", CHS: "雪原花纹", CHT: "雪原花紋" },
+  Continental: { "ES-LA": "Motivo Continental", "ES-ES": "Motivo Continental", ENG: "Continental Pattern", DEU: "Kontinentalmuster", FRA: "Motif Continent", ITA: "Motivo Continentale", JPN: "たいりくのもよう", KOR: "대륙의 모양", CHS: "大陆花纹", CHT: "大陸花紋" },
+  Garden: { "ES-LA": "Motivo Vergel", "ES-ES": "Motivo Vergel", ENG: "Garden Pattern", DEU: "Ziergartenmuster", FRA: "Motif Verdure", ITA: "Motivo Prato", JPN: "ていえんのもよう", KOR: "정원의 모양", CHS: "庭园花纹", CHT: "庭園花紋" },
+  Elegant: { "ES-LA": "Motivo Oriental", "ES-ES": "Motivo Oriental", ENG: "Elegant Pattern", DEU: "Prunkmuster", FRA: "Motif Monarchie", ITA: "Motivo Eleganza", JPN: "みやびなもよう", KOR: "우아한 모양", CHS: "高雅花纹", CHT: "高雅花紋" },
+  Meadow: { "ES-LA": "Motivo Pradera", "ES-ES": "Motivo Pradera", ENG: "Meadow Pattern", DEU: "Blumenmeermuster", FRA: "Motif Floraison", ITA: "Motivo Giardinfiore", JPN: "はなぞののもよう", KOR: "화원의 모양", CHS: "花园花纹", CHT: "花園花紋" },
+  Modern: { "ES-LA": "Motivo Moderno", "ES-ES": "Motivo Moderno", ENG: "Modern Pattern", DEU: "Innovationsmuster", FRA: "Motif Métropole", ITA: "Motivo Trendy", JPN: "モダンなもよう", KOR: "모던한 모양", CHS: "摩登花纹", CHT: "摩登花紋" },
+  Marine: { "ES-LA": "Motivo Marino", "ES-ES": "Motivo Marino", ENG: "Marine Pattern", DEU: "Aquamarinmuster", FRA: "Motif Rivage", ITA: "Motivo Marino", JPN: "マリンのもよう", KOR: "마린의 모양", CHS: "大海花纹", CHT: "大海花紋" },
+  Archipelago: { "ES-LA": "Motivo Isleño", "ES-ES": "Motivo Isleño", ENG: "Archipelago Pattern", DEU: "Archipelmuster", FRA: "Motif Archipel", ITA: "Motivo Arcipelago", JPN: "ぐんとうのもよう", KOR: "군도의 모양", CHS: "群岛花纹", CHT: "群島花紋" },
+  "High Plains": { "ES-LA": "Motivo Estepa", "ES-ES": "Motivo Estepa", ENG: "High Plains Pattern", DEU: "Dürremuster", FRA: "Motif Sécheresse", ITA: "Motivo Deserto", JPN: "こうやのもよう", KOR: "황야의 모양", CHS: "荒野花纹", CHT: "荒野花紋" },
+  Sandstorm: { "ES-LA": "Motivo Desierto", "ES-ES": "Motivo Desierto", ENG: "Sandstorm Pattern", DEU: "Sandmuster", FRA: "Motif Sable", ITA: "Motivo Sabbia", JPN: "さじんのもよう", KOR: "사진의 모양", CHS: "沙尘花纹", CHT: "沙塵花紋" },
+  River: { "ES-LA": "Motivo Oasis", "ES-ES": "Motivo Oasis", ENG: "River Pattern", DEU: "Flussdeltamuster", FRA: "Motif Delta", ITA: "Motivo Fluviale", JPN: "たいがのもよう", KOR: "대하의 모양", CHS: "大河花纹", CHT: "大河花紋" },
+  Monsoon: { "ES-LA": "Motivo Monzón", "ES-ES": "Motivo Monzón", ENG: "Monsoon Pattern", DEU: "Monsunmuster", FRA: "Motif Cyclone", ITA: "Motivo Pluviale", JPN: "スコールのもよう", KOR: "스콜의 모양", CHS: "骤雨花纹", CHT: "驟雨花紋" },
+  Savanna: { "ES-LA": "Motivo Pantano", "ES-ES": "Motivo Pantano", ENG: "Savanna Pattern", DEU: "Savannenmuster", FRA: "Motif Mangrove", ITA: "Motivo Savana", JPN: "サバンナのもよう", KOR: "사바나의 모양", CHS: "热带草原花纹", CHT: "熱帶草原花紋" },
+  Sun: { "ES-LA": "Motivo Solar", "ES-ES": "Motivo Solar", ENG: "Sun Pattern", DEU: "Sonnenmuster", FRA: "Motif Zénith", ITA: "Motivo Solare", JPN: "たいようのもよう", KOR: "태양의 모양", CHS: "太阳花纹", CHT: "太陽花紋" },
+  Ocean: { "ES-LA": "Motivo Océano", "ES-ES": "Motivo Océano", ENG: "Ocean Pattern", DEU: "Ozeanmuster", FRA: "Motif Soleil Levant", ITA: "Motivo Oceanico", JPN: "オーシャンのもよう", KOR: "오션의 모양", CHS: "大洋花纹", CHT: "大洋花紋" },
+  Jungle: { "ES-LA": "Motivo Jungla", "ES-ES": "Motivo Jungla", ENG: "Jungle Pattern", DEU: "Dschungelmuster", FRA: "Motif Jungle", ITA: "Motivo Giungla", JPN: "ジャングルのもよう", KOR: "정글의 모양", CHS: "热带雨林花纹", CHT: "熱帶雨林花紋" },
+  Fancy: { "ES-LA": "Motivo Fantasía", "ES-ES": "Motivo Fantasía", ENG: "Fancy Pattern", DEU: "Fantasiemuster", FRA: "Motif Fantaisie", ITA: "Motivo Sbarazzino", JPN: "ファンシーなもよう", KOR: "팬시한 모양", CHS: "幻彩花纹", CHT: "幻彩花紋" },
+  "Poké Ball": { "ES-LA": "Motivo Pokébola", "ES-ES": "Motivo Poké Ball", ENG: "Poké Ball Pattern", DEU: "Pokéball-Muster", FRA: "Motif Poké Ball", ITA: "Motivo Poké Ball", JPN: "ボールのもよう", KOR: "볼의 모양", CHS: "球球花纹", CHT: "球球花紋" },
+};
+
+export function formName(language: UiLanguage, dex: number, form: string | null) {
+  if (!form) return null;
+  return dex === 666 ? VIVILLON_FORMS[form]?.[language] ?? form : form;
+}
+
 export function copy(language: UiLanguage, key: string) {
   if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
   return UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;

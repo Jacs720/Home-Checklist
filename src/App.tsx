@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { LANGUAGE_OPTIONS, UiLanguage, copy, groupName } from "./translations";
+import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
 
 type PokemonEntry = {
   id: string;
@@ -95,7 +95,7 @@ const OWN_OT_SHINY_LOCKS_BY_MARK: Record<string, ReadonlySet<number>> = {
   LGPE: new Set([151, 808, 809]),
   SwSh: new Set([151, 251, 385, 386, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721, 772, 773, 789, 790, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905]),
   LA: new Set([480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 641, 642, 645, 905]),
-  BDSP: new Set([151, 251, 385, 386, 490, 491, 492, 494, 647, 648, 649, 719, 720, 721, 772, 773, 789, 790, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905]),
+  BDSP: new Set([151, 251, 385, 386, 490, 494, 647, 648, 649, 719, 720, 721, 772, 773, 789, 790, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905]),
   SV: new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 380, 381, 382, 383, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025]),
   LZA: new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488, 490, 491, 492, 493, 494, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025]),
 };
@@ -107,52 +107,111 @@ const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
   "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
 ]);
 const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
+const LZA_SHINY_VIVILLON_FORMS = new Set(["Garden", "Meadow"]);
+const VIVILLON_FORM_ART_IDS: Record<string, number> = {
+  Meadow: 666, "Icy Snow": 10086, Polar: 10087, Tundra: 10088, Continental: 10089, Garden: 10090, Elegant: 10091,
+  Modern: 10092, Marine: 10093, Archipelago: 10094, "High Plains": 10095, Sandstorm: 10096, River: 10097,
+  Monsoon: 10098, Savanna: 10099, Sun: 10100, Ocean: 10101, Jungle: 10102, Fancy: 10161, "Poké Ball": 10162,
+};
+const FURFROU_TRIM_ART_IDS = [
+  ["Heart", 10067], ["Star", 10068], ["Diamond", 10069], ["Debutante", 10070], ["Matron", 10071],
+  ["Dandy", 10072], ["La Reine", 10073], ["Kabuki", 10074], ["Pharaoh", 10075],
+] as const;
+
+function insertCatalogEntry(entries: PokemonEntry[], addition: PokemonEntry) {
+  if (entries.some((entry) => entry.id === addition.id)) return entries;
+  const insertionIndex = entries.findIndex((entry) => entry.mark === addition.mark && entry.dex > addition.dex);
+  if (insertionIndex >= 0) return [...entries.slice(0, insertionIndex), addition, ...entries.slice(insertionIndex)];
+  const lastMarkIndex = entries.map((entry) => entry.mark).lastIndexOf(addition.mark);
+  return lastMarkIndex >= 0
+    ? [...entries.slice(0, lastMarkIndex + 1), addition, ...entries.slice(lastMarkIndex + 1)]
+    : [...entries, addition];
+}
 
 function applyCatalogCorrections(entries: PokemonEntry[]) {
   let correctedEntries = entries;
-  if (!entries.some((entry) => entry.id === "P:phione")) {
-    const template = entries.find((entry) => entry.dex === 489);
-    if (template) {
-      const pentagonPhione: PokemonEntry = {
-        ...template,
-        id: "P:phione",
-        sourceNumber: undefined,
-        mark: "P",
-        note: "Crianza en X/Y u ORAS · huevo con tu OT",
-        shinyEligible: true,
-        shinyReview: "verified-correction",
-        availability: "standard",
-        normalEligible: true,
-        ownOtNormal: true,
-        ownOtShiny: true,
-      };
-      const insertionIndex = entries.findIndex((entry) => entry.mark === "P" && entry.dex > 489);
-      correctedEntries = insertionIndex >= 0
-        ? [...entries.slice(0, insertionIndex), pentagonPhione, ...entries.slice(insertionIndex)]
-        : [...entries, pentagonPhione];
+  const phioneTemplate = entries.find((entry) => entry.dex === 489);
+  if (phioneTemplate) {
+    const breedingMarks: Record<string, string> = {
+      P: "Crianza en X/Y u ORAS · huevo con tu OT",
+      USUM: "Crianza en SM/USUM · huevo con tu OT",
+      BDSP: "Crianza en BDSP · huevo con tu OT",
+    };
+    for (const [mark, note] of Object.entries(breedingMarks)) {
+      correctedEntries = insertCatalogEntry(correctedEntries, {
+        ...phioneTemplate, id: `${mark}:phione`, sourceNumber: undefined, mark, note,
+        shinyEligible: true, shinyReview: "verified-correction", availability: "standard",
+        normalEligible: true, ownOtNormal: true, ownOtShiny: true,
+      });
     }
   }
 
+  for (const dex of [491, 492]) {
+    const template = entries.find((entry) => entry.dex === dex);
+    if (!template) continue;
+    correctedEntries = insertCatalogEntry(correctedEntries, {
+      ...template,
+      id: `BDSP:${template.keyword}`,
+      sourceNumber: undefined,
+      mark: "BDSP",
+      note: dex === 491
+        ? "BDSP · Carné Socio por regalo misterioso · Newmoon Island · captura con tu OT"
+        : "BDSP · Carta del Prof. Oak por regalo misterioso · Flower Paradise · captura con tu OT",
+      shinyEligible: true,
+      shinyReview: "verified-correction",
+      availability: "standard",
+      normalEligible: true,
+      ownOtNormal: true,
+      ownOtShiny: true,
+    });
+  }
+
+  for (const mark of ["P", "USUM"]) {
+    const base = correctedEntries.find((entry) => entry.id === `${mark}:furfrou`);
+    if (!base) continue;
+    FURFROU_TRIM_ART_IDS.forEach(([form, artId], index) => {
+      correctedEntries = insertCatalogEntry(correctedEntries, {
+        ...base, id: `${mark}:furfrou-${index + 1}`, sourceNumber: undefined, form, artId,
+        keyword: `furfrou-${index + 1}`, note: `${base.note} · corte conservado en cajas mediante Legends: Z-A`,
+      });
+    });
+  }
+
   return correctedEntries.map((entry) => {
-    if (entry.dex === 678 && entry.gender === "female") {
-      return { ...entry, artId: 10025, shinyArtStyle: "home" as const };
+    let correctedEntry = entry;
+    if (correctedEntry.dex === 678 && correctedEntry.gender === "female") {
+      correctedEntry = { ...correctedEntry, artId: 10025, shinyArtStyle: "home" as const };
     }
-    if (entry.dex === 670 && entry.form === "Eternal Flower") {
+    const vivillonForm = correctedEntry.dex === 666 ? correctedEntry.form : null;
+    if (vivillonForm && VIVILLON_FORM_ART_IDS[vivillonForm]) {
+      correctedEntry = { ...correctedEntry, artId: VIVILLON_FORM_ART_IDS[vivillonForm] };
+      if (correctedEntry.mark === "LZA" && !LZA_SHINY_VIVILLON_FORMS.has(vivillonForm)) {
+        return { ...correctedEntry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
+      }
+    }
+    if (correctedEntry.dex === 676 && correctedEntry.form) {
+      const trimArtId = FURFROU_TRIM_ART_IDS.find(([form]) => form === correctedEntry.form)?.[1];
+      if (trimArtId) correctedEntry = { ...correctedEntry, artId: trimArtId };
+    }
+    if (correctedEntry.mark === "GBA" && correctedEntry.dex === 385) {
+      return { ...correctedEntry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
+    }
+    if (correctedEntry.dex === 670 && correctedEntry.form === "Eternal Flower") {
       return {
-        ...entry,
-        availability: entry.mark === "LZA" ? "standard" as const : "excluded" as const,
+        ...correctedEntry,
+        availability: correctedEntry.mark === "LZA" ? "standard" as const : "excluded" as const,
         shinyEligible: false,
         ownOtShiny: false,
         shinyReview: "verified-correction" as const,
       };
     }
-    if (entry.dex === 550 && entry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(entry.mark ?? "")) {
-      return { ...entry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
+    if (correctedEntry.dex === 550 && correctedEntry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(correctedEntry.mark ?? "")) {
+      return { ...correctedEntry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
     }
-    const formKey = `${entry.mark}:${entry.dex}:${entry.form ?? ""}`;
-    const isLocked = Boolean(entry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[entry.mark]?.has(entry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
-    if (!isLocked) return entry;
-    return { ...entry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
+    const formKey = `${correctedEntry.mark}:${correctedEntry.dex}:${correctedEntry.form ?? ""}`;
+    const isLocked = Boolean(correctedEntry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[correctedEntry.mark]?.has(correctedEntry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
+    if (!isLocked) return correctedEntry;
+    return { ...correctedEntry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
   });
 }
 
@@ -249,6 +308,7 @@ export default function App() {
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
   const displayName = (entry: PokemonEntry) => pokemonNames?.[String(entry.dex)]?.[language] ?? entry.name;
+  const displayForm = (entry: PokemonEntry) => formName(language, entry.dex, entry.form);
   const displayNote = (entry: PokemonEntry) => language === "ES-ES"
     ? entry.note.replace(/shiny/gi, "variocolor")
     : language === "ES-LA" ? entry.note.replace(/shiny/gi, "brillante") : entry.note;
@@ -323,7 +383,7 @@ export default function App() {
   useEffect(() => setPageIndex((current) => Math.min(current, totalPages - 1)), [totalPages]);
 
   const matchesSearch = (entry: PlannedEntry) => {
-    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
+    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
     return matchesQuery && (!missingOnly || !owned.has(entry.planId));
   };
 
@@ -530,7 +590,7 @@ export default function App() {
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span><strong>{beyondCapacity ? t("no_capacity") : t("free")}</strong><small>{beyondCapacity ? t("outside_home") : t("box_available")}</small>
                     </div>
                   );
-                  const previewLabel = box.entries.map((entry) => `${displayName(entry)}${entry.form ? ` ${entry.form}` : ""}`).join(", ");
+                  const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   return (
                     <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
@@ -565,10 +625,11 @@ export default function App() {
                   const isOwned = owned.has(entry.planId);
                   const visible = matchesSearch(entry);
                   const localizedName = displayName(entry);
+                  const localizedForm = displayForm(entry);
                   const genderDetail = entry.gender ? t(entry.gender) : null;
-                  const detail = [entry.displayDetail || entry.form || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
+                  const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
                   return (
-                    <button className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${entry.form ? ` · ${entry.form}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
+                    <button className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
                       <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                       <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
                       <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
