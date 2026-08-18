@@ -132,8 +132,8 @@ h1 { font-size: 20px; margin-bottom: 0; letter-spacing: -.035em; }
 .detail-nav button { min-height: 34px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(12, 40, 36, .7); font-size: 10px; }
 
 .page-grid { display: grid; grid-template-columns: repeat(6, minmax(116px, 1fr)); gap: 8px; min-width: 780px; }
-.box-tile { position: relative; min-height: 119px; padding: 13px 11px 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: linear-gradient(155deg, rgba(17, 55, 50, .9), rgba(7, 29, 27, .92)); text-align: left; transition: transform .16s, border-color .16s, opacity .16s; }
-button.box-tile:hover { transform: translateY(-2px); border-color: rgba(85, 224, 192, .42); }
+.box-tile { position: relative; min-height: 119px; padding: 13px 11px 10px; overflow: visible; border: 1px solid var(--line); border-radius: 11px; background: linear-gradient(155deg, rgba(17, 55, 50, .9), rgba(7, 29, 27, .92)); text-align: left; transition: transform .16s, border-color .16s, opacity .16s; }
+button.box-tile:hover, button.box-tile:focus-visible { z-index: 40; transform: translateY(-2px); border-color: rgba(85, 224, 192, .42); }
 .box-tile .box-position { position: absolute; top: 9px; right: 10px; color: #5f7f7a; font-size: 8px; font-weight: 800; }
 .mark-accent { display: block; width: 18px; height: 3px; margin-bottom: 10px; border-radius: 4px; }
 .box-tile strong, .box-tile small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -145,6 +145,15 @@ button.box-tile:hover { transform: translateY(-2px); border-color: rgba(85, 224,
 .mini-grid i.owned { background: var(--teal); box-shadow: 0 0 5px rgba(85, 224, 192, .42); }
 .mini-grid i.pending { background: #274c46; }
 .mini-grid i.vacant { opacity: .25; }
+.box-preview { pointer-events: none; position: absolute; top: calc(100% + 8px); left: 50%; z-index: 50; display: grid; grid-template-columns: repeat(6, 32px); gap: 4px; width: 230px; padding: 9px; visibility: hidden; opacity: 0; transform: translate(-50%, 6px); border: 1px solid var(--line-strong); border-radius: 12px; background: rgba(5, 24, 22, .97); box-shadow: 0 18px 45px rgba(0, 0, 0, .48); transition: opacity .14s, transform .14s, visibility .14s; }
+.box-preview > span { display: grid; place-items: center; width: 32px; height: 32px; overflow: hidden; border-radius: 7px; background: #0d312c; }
+.box-preview > span.owned { box-shadow: inset 0 0 0 1px rgba(85, 224, 192, .48); background: rgba(35, 114, 99, .28); }
+.box-preview img { width: 30px; height: 30px; object-fit: contain; }
+button.box-tile:hover .box-preview, button.box-tile:focus-visible .box-preview { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
+.box-tile:nth-child(6n + 1) .box-preview { left: 0; transform: translate(0, 6px); }
+.box-tile:nth-child(6n + 1):hover .box-preview, .box-tile:nth-child(6n + 1):focus-visible .box-preview { transform: translate(0, 0); }
+.box-tile:nth-child(6n) .box-preview { right: 0; left: auto; transform: translate(0, 6px); }
+.box-tile:nth-child(6n):hover .box-preview, .box-tile:nth-child(6n):focus-visible .box-preview { transform: translate(0, 0); }
 .box-tile.empty { display: flex; flex-direction: column; justify-content: center; border-style: dashed; background: rgba(7, 28, 26, .38); color: var(--dim); }
 .box-tile.empty small { margin-top: 4px; }
 .box-tile.locked { opacity: .38; background: repeating-linear-gradient(-45deg, rgba(19, 49, 45, .4), rgba(19, 49, 45, .4) 5px, rgba(8, 28, 26, .45) 5px, rgba(8, 28, 26, .45) 10px); }

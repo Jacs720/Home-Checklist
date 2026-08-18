@@ -206,14 +206,18 @@ function buildBoxes(
   return boxes;
 }
 
-function PokemonArtwork({ entry, owned, displayName, language }: { entry: PlannedEntry; owned: boolean; displayName: string; language: UiLanguage }) {
-  const [failed, setFailed] = useState(false);
+function pokemonArtworkUrl(entry: PlannedEntry) {
   const artPath = entry.variant === "shiny" && entry.shinyArtStyle === "home"
     ? "home/shiny/"
     : `official-artwork/${entry.variant === "shiny" ? "shiny/" : ""}`;
-  const url = entry.artId
+  return entry.artId
     ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/${artPath}${entry.artId}.png`
     : null;
+}
+
+function PokemonArtwork({ entry, owned, displayName, language }: { entry: PlannedEntry; owned: boolean; displayName: string; language: UiLanguage }) {
+  const [failed, setFailed] = useState(false);
+  const url = pokemonArtworkUrl(entry);
 
   if (!url || failed) return <span className="art-placeholder" aria-label={copy(language, "official_art_pending")} />;
   return <img className="pokemon-art" src={url} alt={`${copy(language, "official_art")} ${displayName}`} onError={() => setFailed(true)} data-owned={owned} />;
@@ -526,12 +530,14 @@ export default function App() {
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span><strong>{beyondCapacity ? t("no_capacity") : t("free")}</strong><small>{beyondCapacity ? t("outside_home") : t("box_available")}</small>
                     </div>
                   );
+                  const previewLabel = box.entries.map((entry) => `${displayName(entry)}${entry.form ? ` ${entry.form}` : ""}`).join(", ");
                   return (
-                    <button className={`box-tile ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
                       <span className="mini-grid">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; return <i className={entry ? owned.has(entry.planId) ? "owned" : "pending" : "vacant"} key={index} />; })}</span>
+                      <span className="box-preview" aria-hidden="true">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; const url = entry ? pokemonArtworkUrl(entry) : null; return <span className={entry && owned.has(entry.planId) ? "owned" : ""} key={index}>{url && <img src={url} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />}</span>; })}</span>
                       {beyondCapacity && <em>{t("overflow")}</em>}
                     </button>
                   );
