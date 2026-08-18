@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
 
 type PokemonEntry = {
@@ -82,6 +82,24 @@ const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   "shadow-xd": "external",
   go: "external",
 };
+
+function CompactCheckbox({ checked, onChange, accent }: { checked: boolean; onChange: () => void; accent: string }) {
+  return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
+}
+
+function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
+  const filterId = `goo-${useId().replace(/:/g, "")}`;
+  return (
+    <span className="gooey-checkbox">
+      <span className="gooey-control">
+        <input id={id} type="checkbox" checked={checked} onChange={onChange} />
+        <span className="gooey-splash" style={{ filter: `url(#${filterId})` }} />
+        <svg className="gooey-check" width="15" height="14" viewBox="0 0 15 14" fill="none" aria-hidden="true"><path d="M2 8.36364L6.23077 12L13 2" /></svg>
+      </span>
+      <svg className="gooey-filter" aria-hidden="true"><defs><filter id={filterId}><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" /><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo" /><feBlend in="SourceGraphic" in2="goo" /></filter></defs></svg>
+    </span>
+  );
+}
 
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const chunk = <T,>(items: T[], size: number) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
@@ -265,13 +283,18 @@ function buildBoxes(
   return boxes;
 }
 
+function unownSpriteKey(form: string | null) {
+  if (form === "!") return "exclamation";
+  if (form === "?") return "question";
+  return form?.toLowerCase() ?? null;
+}
+
 function pokemonArtworkUrl(entry: PlannedEntry) {
-  const artPath = entry.variant === "shiny" && entry.shinyArtStyle === "home"
-    ? "home/shiny/"
-    : `official-artwork/${entry.variant === "shiny" ? "shiny/" : ""}`;
-  return entry.artId
-    ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/${artPath}${entry.artId}.png`
-    : null;
+  if (!entry.artId) return null;
+  const unownForm = entry.dex === 201 ? unownSpriteKey(entry.form) : null;
+  const suffix = unownForm ? `-${unownForm}` : entry.genderVariant === "extra" ? "-female" : "";
+  const filename = `${String(entry.artId).padStart(4, "0")}${suffix}.webp`;
+  return assetUrl(`assets/pokemon/${entry.variant}/${filename}`);
 }
 
 function PokemonArtwork({ entry, owned, displayName, language }: { entry: PlannedEntry; owned: boolean; displayName: string; language: UiLanguage }) {
@@ -503,30 +526,30 @@ export default function App() {
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>
-            <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b><small>{t("catalog_review")}</small></span><input id="variant-shiny" type="checkbox" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
-            <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b><small>{t("normal_specimen")}</small></span><input id="variant-normal" type="checkbox" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
-            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b><small>{t("special_non_shiny_desc")}</small></span><input id="special-non-shiny" type="checkbox" checked={includeNonShinySpecials} onChange={(event) => setIncludeNonShinySpecials(event.target.checked)} /></label>
+            <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b><small>{t("catalog_review")}</small></span><GooeyCheckbox id="variant-shiny" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
+            <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b><small>{t("normal_specimen")}</small></span><GooeyCheckbox id="variant-normal" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
+            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b><small>{t("special_non_shiny_desc")}</small></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => setIncludeNonShinySpecials(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("gender_differences")}</p>
-            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b><small>{genderMode === "all" ? t("all_gender_differences_desc") : t("notable_gender_differences_desc")}</small></span><input id="all-gender-differences" type="checkbox" checked={genderMode === "all"} onChange={(event) => setGenderMode(event.target.checked ? "all" : "notable")} /></label>
+            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b><small>{genderMode === "all" ? t("all_gender_differences_desc") : t("notable_gender_differences_desc")}</small></span><GooeyCheckbox id="all-gender-differences" checked={genderMode === "all"} onChange={(event) => setGenderMode(event.target.checked ? "all" : "notable")} /></label>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("acquisition")}</p>
-            <label className="switch-row" htmlFor="acquisition-own" aria-label={t("own_ot")}><span><b>{t("own_ot")}</b><small>{t("own_ot_desc")}</small></span><input id="acquisition-own" type="checkbox" checked={acquisitions.own} onChange={() => setAcquisition("own")} /></label>
-            <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b><small>{t("in_game_trades_desc")}</small></span><input id="acquisition-trade" type="checkbox" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
-            <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b><small>{t("events_desc")}</small></span><input id="acquisition-event" type="checkbox" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
-            <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b><small>{t("other_games_apps_desc")}</small></span><input id="acquisition-external" type="checkbox" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
+            <label className="switch-row" htmlFor="acquisition-own" aria-label={t("own_ot")}><span><b>{t("own_ot")}</b><small>{t("own_ot_desc")}</small></span><GooeyCheckbox id="acquisition-own" checked={acquisitions.own} onChange={() => setAcquisition("own")} /></label>
+            <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b><small>{t("in_game_trades_desc")}</small></span><GooeyCheckbox id="acquisition-trade" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
+            <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b><small>{t("events_desc")}</small></span><GooeyCheckbox id="acquisition-event" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
+            <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b><small>{t("other_games_apps_desc")}</small></span><GooeyCheckbox id="acquisition-external" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>
             {MARKS.map((mark) => (
               <label className="mark-row" key={mark}>
-                <input type="checkbox" checked={selectedMarks.includes(mark)} onChange={() => toggleMark(mark)} />
-                <i style={{ background: MARK_COLORS[mark] }} /><span>{groupName(language, mark)}</span><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
+                <CompactCheckbox checked={selectedMarks.includes(mark)} onChange={() => toggleMark(mark)} accent={MARK_COLORS[mark]} />
+                <span>{groupName(language, mark)}</span><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
               </label>
             ))}
             {selectedMarks.includes("GBA") && <div className="sub-rule static-rule"><span aria-hidden="true">↗</span><span><b>{t("gba_ports")}</b><small>{t("gba_ports_desc")}</small></span></div>}
@@ -536,8 +559,8 @@ export default function App() {
             <p className="panel-label">{t("special_collections")}</p>
             {COLLECTIONS.map((collection) => (
               <label className="mark-row" key={collection}>
-                <input type="checkbox" checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} />
-                <i style={{ background: GROUP_COLORS[collection] }} /><span>{groupName(language, collection)}</span><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
+                <CompactCheckbox checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} accent={GROUP_COLORS[collection]} />
+                <span>{groupName(language, collection)}</span><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
               </label>
             ))}
             <div className="catalog-caveat"><b>{groupName(language, "cherish")}</b><span>{t("cherish_beta")}</span></div>
@@ -568,7 +591,7 @@ export default function App() {
             </nav>
             <div className="search-tools">
               <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
-              <label className="missing-filter"><input type="checkbox" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /> {t("missing_only")}</label>
+              <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
             </div>
           </div>
 
