@@ -110,6 +110,15 @@ const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
 
 function applyCatalogCorrections(entries: PokemonEntry[]) {
   return entries.map((entry) => {
+    if (entry.dex === 670 && entry.form === "Eternal Flower") {
+      return {
+        ...entry,
+        availability: entry.mark === "LZA" ? "standard" as const : "excluded" as const,
+        shinyEligible: false,
+        ownOtShiny: false,
+        shinyReview: "verified-correction" as const,
+      };
+    }
     if (entry.dex === 550 && entry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(entry.mark ?? "")) {
       return { ...entry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
     }
