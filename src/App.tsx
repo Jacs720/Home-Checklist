@@ -109,7 +109,34 @@ const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
 const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
 
 function applyCatalogCorrections(entries: PokemonEntry[]) {
-  return entries.map((entry) => {
+  let correctedEntries = entries;
+  if (!entries.some((entry) => entry.id === "P:phione")) {
+    const template = entries.find((entry) => entry.dex === 489);
+    if (template) {
+      const pentagonPhione: PokemonEntry = {
+        ...template,
+        id: "P:phione",
+        sourceNumber: undefined,
+        mark: "P",
+        note: "Crianza en X/Y u ORAS · huevo con tu OT",
+        shinyEligible: true,
+        shinyReview: "verified-correction",
+        availability: "standard",
+        normalEligible: true,
+        ownOtNormal: true,
+        ownOtShiny: true,
+      };
+      const insertionIndex = entries.findIndex((entry) => entry.mark === "P" && entry.dex > 489);
+      correctedEntries = insertionIndex >= 0
+        ? [...entries.slice(0, insertionIndex), pentagonPhione, ...entries.slice(insertionIndex)]
+        : [...entries, pentagonPhione];
+    }
+  }
+
+  return correctedEntries.map((entry) => {
+    if (entry.dex === 678 && entry.gender === "female") {
+      return { ...entry, artId: 10025, shinyArtStyle: "home" as const };
+    }
     if (entry.dex === 670 && entry.form === "Eternal Flower") {
       return {
         ...entry,
