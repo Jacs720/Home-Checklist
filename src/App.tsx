@@ -13,6 +13,7 @@ type PokemonEntry = {
   keyword: string;
   note: string;
   artId: number | null;
+  shinyArtStyle?: "home";
   shinyEligible: boolean;
   shinyReview: "verified-correction" | "pending";
   availability: "standard" | "hypothetical" | "excluded";
@@ -138,8 +139,11 @@ function buildBoxes(
 
 function PokemonArtwork({ entry, owned, displayName, language }: { entry: PlannedEntry; owned: boolean; displayName: string; language: UiLanguage }) {
   const [failed, setFailed] = useState(false);
+  const artPath = entry.variant === "shiny" && entry.shinyArtStyle === "home"
+    ? "home/shiny/"
+    : `official-artwork/${entry.variant === "shiny" ? "shiny/" : ""}`;
   const url = entry.artId
-    ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${entry.variant === "shiny" ? "shiny/" : ""}${entry.artId}.png`
+    ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/${artPath}${entry.artId}.png`
     : null;
 
   if (!url || failed) return <span className="art-placeholder" aria-label={copy(language, "official_art_pending")} />;
