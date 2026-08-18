@@ -106,9 +106,13 @@ const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
   "SV:901:Bloodmoon", "SV:999:Roaming Form",
   "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
 ]);
+const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
 
-function applyOwnOtShinyLocks(entries: PokemonEntry[]) {
+function applyCatalogCorrections(entries: PokemonEntry[]) {
   return entries.map((entry) => {
+    if (entry.dex === 550 && entry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(entry.mark ?? "")) {
+      return { ...entry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
+    }
     const formKey = `${entry.mark}:${entry.dex}:${entry.form ?? ""}`;
     const isLocked = Boolean(entry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[entry.mark]?.has(entry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
     if (!isLocked) return entry;
@@ -216,7 +220,7 @@ export default function App() {
         return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json()]);
       })
       .then(([baseValue, specialValue, namesValue]: [Dataset, SpecialDataset, PokemonNames]) => {
-        setDataset({ ...baseValue, entries: applyOwnOtShinyLocks(baseValue.entries) });
+        setDataset({ ...baseValue, entries: applyCatalogCorrections(baseValue.entries) });
         setSpecialDataset(specialValue);
         setPokemonNames(namesValue);
       })
