@@ -6,4 +6,4 @@ It allows you to organize Pokémon by origin marks, boxes, variants, source, and
 
 ## IMPORTANT NOTICE
 
-It is highly recommended to use the backup option at the bottom left, as the information is stored within the browser.
+It is highly recommended to use the backup option at the bottom left, as the application is fully static and does not use a server, accounts, or a database. Progress is stored in the browser's `localStorage`; the **Export** and **Import** buttons create and restore JSON backups.
