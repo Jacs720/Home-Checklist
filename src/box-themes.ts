@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export type ThemeGame = "swsh" | "sv" | "bdsp" | "home" | "lza";
+export type ThemeGame = "swsh" | "sv" | "bdsp" | "home" | "lza" | "concept-bdsp" | "concept-swsh" | "concept-la";
 
 export type BoxTheme =
   | { kind: "default" }
@@ -26,13 +26,35 @@ const themeAssetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.repla
 const numberedWallpapers = (folder: string, prefix: string, count: number, extension = "png") =>
   Array.from({ length: count }, (_, index) => themeAssetUrl(`assets/themes/${folder}/${prefix}-${String(index + 1).padStart(2, "0")}.${extension}`));
 
-export const THEME_GAMES: { id: ThemeGame; label: string; wallpapers: string[]; appColor: string; primary: string; secondary: string }[] = [
-  { id: "swsh", label: "Sword / Shield", wallpapers: numberedWallpapers("swsh", "swsh", 19), appColor: "#173643", primary: "#29c5d9", secondary: "#e94c87" },
-  { id: "sv", label: "Scarlet / Violet", wallpapers: [...numberedWallpapers("sv", "sv", 19), themeAssetUrl("assets/themes/sv/sv-20-scarlet.png"), themeAssetUrl("assets/themes/sv/sv-20-violet.png")], appColor: "#2d2349", primary: "#8f6bea", secondary: "#ef6b56" },
-  { id: "bdsp", label: "Brilliant Diamond / Shining Pearl", wallpapers: numberedWallpapers("bdsp", "bdsp", 32), appColor: "#213453", primary: "#62aef4", secondary: "#f0a04d" },
-  { id: "home", label: "Pokémon HOME", wallpapers: numberedWallpapers("home", "home", 49, "webp"), appColor: "#102e44", primary: "#42cbe8", secondary: "#f0ce58" },
-  { id: "lza", label: "Legends Z-A", wallpapers: numberedWallpapers("lza", "lza", 25, "webp"), appColor: "#183329", primary: "#62d4a8", secondary: "#d7b65e" },
+const conceptWallpapers = (game: string, locations: string[]) =>
+  locations.map((location) => themeAssetUrl(`assets/themes/concept-art/${game}/${location.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.webp`));
+
+const BDSP_CONCEPT_NAMES = ["Celestic Town", "Eterna City", "Eterna Forest", "Hearthome City", "Jubilife City", "Lake Verity", "Oreburgh City", "Pastoria City", "Sandgem Town", "Solaceon Town", "Sunyshore City", "Twinleaf Town", "Veilstone City"];
+const SWSH_CONCEPT_NAMES = ["Ballonlea", "Gym", "Hometown", "Master Dojo", "Player House", "Wyndon Stadium"];
+const LA_CONCEPT_NAMES = ["Ancient Retreat", "Firespit Island"];
+
+export type ThemeGameOption = { id: ThemeGame; label: string; shortLabel: string; category: "boxes" | "concept"; wallpapers: string[]; wallpaperLabels?: string[]; appColor: string; primary: string; secondary: string };
+
+export const THEME_GAMES: ThemeGameOption[] = [
+  { id: "swsh", label: "Sword / Shield", shortLabel: "SwSh", category: "boxes", wallpapers: numberedWallpapers("swsh", "swsh", 19), appColor: "#173643", primary: "#29c5d9", secondary: "#e94c87" },
+  { id: "sv", label: "Scarlet / Violet", shortLabel: "SV", category: "boxes", wallpapers: [...numberedWallpapers("sv", "sv", 19), themeAssetUrl("assets/themes/sv/sv-20-scarlet.png"), themeAssetUrl("assets/themes/sv/sv-20-violet.png")], appColor: "#2d2349", primary: "#8f6bea", secondary: "#ef6b56" },
+  { id: "bdsp", label: "Brilliant Diamond / Shining Pearl", shortLabel: "BDSP", category: "boxes", wallpapers: numberedWallpapers("bdsp", "bdsp", 32), appColor: "#213453", primary: "#62aef4", secondary: "#f0a04d" },
+  { id: "home", label: "Pokémon HOME", shortLabel: "HOME", category: "boxes", wallpapers: numberedWallpapers("home", "home", 49, "webp"), appColor: "#102e44", primary: "#42cbe8", secondary: "#f0ce58" },
+  { id: "lza", label: "Legends Z-A", shortLabel: "LZA", category: "boxes", wallpapers: numberedWallpapers("lza", "lza", 25, "webp"), appColor: "#183329", primary: "#62d4a8", secondary: "#d7b65e" },
+  { id: "concept-bdsp", label: "BDSP · Concept Art", shortLabel: "BDSP", category: "concept", wallpapers: conceptWallpapers("bdsp", BDSP_CONCEPT_NAMES), wallpaperLabels: BDSP_CONCEPT_NAMES, appColor: "#26364b", primary: "#88b9ee", secondary: "#e1b36a" },
+  { id: "concept-swsh", label: "SwSh · Concept Art", shortLabel: "SwSh", category: "concept", wallpapers: conceptWallpapers("swsh", SWSH_CONCEPT_NAMES), wallpaperLabels: SWSH_CONCEPT_NAMES, appColor: "#263c42", primary: "#53cfdb", secondary: "#e974a5" },
+  { id: "concept-la", label: "LA · Concept Art", shortLabel: "LA", category: "concept", wallpapers: conceptWallpapers("la", LA_CONCEPT_NAMES), wallpaperLabels: LA_CONCEPT_NAMES, appColor: "#393327", primary: "#78c4bd", secondary: "#d3a761" },
 ];
+
+export const BOX_THEME_GAMES = THEME_GAMES.filter((game) => game.category === "boxes");
+export const CONCEPT_ART_GAMES = THEME_GAMES.filter((game) => game.category === "concept");
+
+export function presetThemeName(gameId: ThemeGame, wallpaper: string) {
+  const game = THEME_GAMES.find((option) => option.id === gameId);
+  if (!game) return gameId;
+  const index = game.wallpapers.indexOf(wallpaper);
+  return index >= 0 ? game.wallpaperLabels?.[index] ?? game.label : game.label;
+}
 
 const allowedWallpapers = new Set(THEME_GAMES.flatMap((game) => game.wallpapers));
 const isHexColor = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);

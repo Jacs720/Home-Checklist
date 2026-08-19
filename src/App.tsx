@@ -2,6 +2,8 @@ import { ChangeEvent, CSSProperties, useEffect, useId, useMemo, useRef, useState
 import {
   BoxTheme,
   BoxThemeConfig,
+  BOX_THEME_GAMES,
+  CONCEPT_ART_GAMES,
   DEFAULT_BOX_THEME,
   EMPTY_THEME_CONFIG,
   THEME_GAMES,
@@ -10,6 +12,7 @@ import {
   boxThemeStyle,
   createPresetTheme,
   parseThemeConfig,
+  presetThemeName,
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
@@ -62,7 +65,7 @@ type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
 type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
 type ThemeScope = "all" | "mark" | "box";
-type ThemeTab = ThemeGame | "custom";
+type ThemeTab = ThemeGame | "concept" | "custom";
 type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
 type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
 
@@ -456,6 +459,7 @@ export default function App() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [themeScope, setThemeScope] = useState<ThemeScope>("all");
   const [themeTab, setThemeTab] = useState<ThemeTab>("swsh");
+  const [conceptGame, setConceptGame] = useState<ThemeGame>("concept-bdsp");
   const [themeDraft, setThemeDraft] = useState<BoxTheme>(DEFAULT_BOX_THEME);
   const [customThemeDraft, setCustomThemeDraft] = useState<BoxTheme | null>(null);
   const [customColors, setCustomColors] = useState({ appColor: "#102e2a", primary: "#55e0c0", secondary: "#f3c857" });
@@ -466,7 +470,7 @@ export default function App() {
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
-  const displayThemeName = (theme: BoxTheme) => theme.kind === "default" ? t("original_theme") : theme.kind === "custom" ? t("custom") : THEME_GAMES.find((game) => game.id === theme.game)?.label ?? theme.game;
+  const displayThemeName = (theme: BoxTheme) => theme.kind === "default" ? t("original_theme") : theme.kind === "custom" ? t("custom") : presetThemeName(theme.game, theme.wallpaper);
   const displayName = (entry: PokemonEntry) => pokemonNames?.[String(entry.dex)]?.[language] ?? entry.name;
   const displayForm = (entry: PokemonEntry) => formName(language, entry.dex, entry.form);
   const displayNote = (entry: PokemonEntry) => language === "ES-ES"
@@ -605,7 +609,13 @@ export default function App() {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
     setThemeScope(selectedBox ? "box" : "all");
     setThemeDraft(current);
-    if (current.kind === "preset") setThemeTab(current.game);
+    if (current.kind === "preset") {
+      const game = THEME_GAMES.find((option) => option.id === current.game);
+      if (game?.category === "concept") {
+        setConceptGame(current.game);
+        setThemeTab("concept");
+      } else setThemeTab(current.game);
+    }
     if (current.kind === "custom") {
       setThemeTab("custom");
       setCustomThemeDraft(current);
@@ -620,11 +630,25 @@ export default function App() {
       if (customThemeDraft?.kind === "custom") setThemeDraft(customThemeDraft);
       return;
     }
+    if (tab === "concept") {
+      setThemeDraft(createPresetTheme(conceptGame));
+      return;
+    }
     setThemeDraft(createPresetTheme(tab));
   };
 
+  const chooseConceptGame = (game: ThemeGame) => {
+    setConceptGame(game);
+    setThemeTab("concept");
+    setThemeDraft(createPresetTheme(game));
+  };
+
   const chooseWallpaper = (game: ThemeGame, wallpaper: string) => {
-    setThemeTab(game);
+    const option = THEME_GAMES.find((candidate) => candidate.id === game);
+    if (option?.category === "concept") {
+      setConceptGame(game);
+      setThemeTab("concept");
+    } else setThemeTab(game);
     setThemeDraft(createPresetTheme(game, wallpaper));
   };
 
@@ -755,7 +779,7 @@ export default function App() {
   }));
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
   const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every((entry) => owned.has(entry.planId));
-  const themeGameOption = themeTab === "custom" ? null : THEME_GAMES.find((game) => game.id === themeTab) ?? THEME_GAMES[0];
+  const themeGameOption = themeTab === "custom" ? null : themeTab === "concept" ? CONCEPT_ART_GAMES.find((game) => game.id === conceptGame) ?? CONCEPT_ART_GAMES[0] : BOX_THEME_GAMES.find((game) => game.id === themeTab) ?? BOX_THEME_GAMES[0];
   const themeCanApply = themeTab !== "custom" || themeDraft.kind === "custom";
 
   return (
@@ -801,12 +825,20 @@ export default function App() {
               </div>
               <div className="theme-picker-content">
                 <div className="theme-tabs" role="tablist" aria-label={t("theme_games")}>
-                  {THEME_GAMES.map((game) => <button role="tab" aria-selected={themeTab === game.id} className={themeTab === game.id ? "active" : ""} key={game.id} onClick={() => chooseThemeTab(game.id)}>{game.id === "swsh" ? "SwSh" : game.id.toUpperCase()}</button>)}
+                  {BOX_THEME_GAMES.map((game) => <button role="tab" aria-selected={themeTab === game.id} className={themeTab === game.id ? "active" : ""} key={game.id} onClick={() => chooseThemeTab(game.id)}>{game.shortLabel}</button>)}
+                  <button role="tab" aria-selected={themeTab === "concept"} className={themeTab === "concept" ? "active" : ""} onClick={() => chooseThemeTab("concept")}>{t("concept_art")}</button>
                   <button role="tab" aria-selected={themeTab === "custom"} className={themeTab === "custom" ? "active" : ""} onClick={() => chooseThemeTab("custom")}>{t("custom")}</button>
                 </div>
                 {themeGameOption ? (
-                  <div className="wallpaper-gallery" role="tabpanel" aria-label={themeGameOption.label}>
-                    {themeGameOption.wallpapers.map((wallpaper, index) => <button aria-label={`${themeGameOption.label} · ${t("wallpaper")} ${index + 1}`} aria-pressed={themeDraft.kind === "preset" && themeDraft.wallpaper === wallpaper} className={themeDraft.kind === "preset" && themeDraft.wallpaper === wallpaper ? "active" : ""} key={wallpaper} onClick={() => chooseWallpaper(themeGameOption.id, wallpaper)} style={{ backgroundImage: `linear-gradient(rgba(4, 14, 13, .08), rgba(4, 14, 13, .08)), url("${wallpaper}")` }}><span>{String(index + 1).padStart(2, "0")}</span></button>)}
+                  <div role="tabpanel" aria-label={themeGameOption.label}>
+                    {themeTab === "concept" && <div className="concept-game-tabs" aria-label={t("concept_art_games")}>{CONCEPT_ART_GAMES.map((game) => <button className={conceptGame === game.id ? "active" : ""} key={game.id} onClick={() => chooseConceptGame(game.id)}>{game.shortLabel}</button>)}</div>}
+                    <div className={`wallpaper-gallery ${themeTab === "concept" ? "concept-gallery" : ""}`}>
+                      {themeGameOption.wallpapers.map((wallpaper, index) => {
+                        const wallpaperLabel = themeGameOption.wallpaperLabels?.[index] ?? String(index + 1).padStart(2, "0");
+                        const active = themeDraft.kind === "preset" && themeDraft.wallpaper === wallpaper;
+                        return <button aria-label={`${themeGameOption.label} · ${wallpaperLabel}`} aria-pressed={active} className={`${themeTab === "concept" ? "concept-wallpaper " : ""}${active ? "active" : ""}`} key={wallpaper} onClick={() => chooseWallpaper(themeGameOption.id, wallpaper)} style={{ backgroundImage: `linear-gradient(rgba(4, 14, 13, .08), rgba(4, 14, 13, .08)), url("${wallpaper}")` }}><span>{wallpaperLabel}</span></button>;
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="custom-theme-panel" role="tabpanel">
