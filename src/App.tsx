@@ -186,6 +186,9 @@ const FURFROU_TRIM_ART_IDS = [
   ["Dandy", 10072], ["La Reine", 10073], ["Kabuki", 10074], ["Pharaoh", 10075],
 ] as const;
 const FURFROU_FORM_INDEX = new Map<string, number>([["", 0], ...FURFROU_TRIM_ART_IDS.map(([form], index) => [form, index + 1] as [string, number])]);
+const FLOWER_COLOR_INDEX = new Map<string, number>([
+  ["Red Flower", 0], ["Yellow Flower", 1], ["Orange Flower", 2], ["Blue Flower", 3], ["White Flower", 4],
+]);
 const ALCREMIE_CREAMS = ["Vanilla Cream", "Ruby Cream", "Matcha Cream", "Mint Cream", "Lemon Cream", "Salted Cream", "Ruby Swirl", "Caramel Swirl", "Rainbow Swirl"] as const;
 const ALCREMIE_SWEETS = ["Strawberry", "Berry", "Love", "Star", "Clover", "Flower", "Ribbon"] as const;
 const MINIOR_CORES = ["Red Core", "Orange Core", "Yellow Core", "Green Core", "Blue Core", "Indigo Core", "Violet Core"] as const;
@@ -403,11 +406,14 @@ function pokemonArtworkUrl(entry: PlannedEntry) {
   if (!entry.artId) return null;
   const vivillonIndex = entry.dex === 666 && entry.form ? VIVILLON_FORM_INDEX.get(entry.form) : undefined;
   const furfrouIndex = entry.dex === 676 ? FURFROU_FORM_INDEX.get(entry.form ?? "") : undefined;
+  const flowerIndex = entry.form ? FLOWER_COLOR_INDEX.get(entry.form) : undefined;
   const alcremieCream = entry.dex === 869 && entry.form ? ALCREMIE_CREAMS.findIndex((cream) => entry.form?.startsWith(`${cream}, `)) : -1;
   const alcremieSweet = entry.dex === 869 && entry.form ? ALCREMIE_SWEETS.findIndex((sweet) => entry.form?.endsWith(`, ${sweet}`)) : -1;
   let customKey: string | null = null;
   if (vivillonIndex !== undefined) customKey = `0666-${String(vivillonIndex).padStart(2, "0")}`;
   if (furfrouIndex !== undefined) customKey = `0676-${String(furfrouIndex).padStart(2, "0")}`;
+  if (entry.dex >= 669 && entry.dex <= 671 && flowerIndex !== undefined) customKey = `${String(entry.dex).padStart(4, "0")}-${String(flowerIndex).padStart(2, "0")}`;
+  if (entry.dex === 670 && entry.form === "Eternal Flower" && entry.variant === "normal") customKey = "0670-05";
   if (alcremieCream >= 0 && alcremieSweet >= 0) customKey = entry.variant === "shiny" ? `0869-shiny-${alcremieSweet}` : `0869-${alcremieCream}-${alcremieSweet}`;
   if (entry.dex === 774 && entry.variant === "shiny") customKey = "10136";
   if (customKey) return assetUrl(`assets/pokemon/${entry.variant}/${customKey}.webp`);
