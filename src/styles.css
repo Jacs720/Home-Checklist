@@ -200,13 +200,14 @@ button.box-tile:hover .box-preview, button.box-tile:focus-visible .box-preview {
   box-shadow: inset 1px 1px 0 rgba(255,255,255,.28), inset -1px -1px 0 rgba(255,255,255,.08), 0 6px 16px rgba(0,0,0,.18), 0 0 20px rgba(0,0,0,.08);
   -webkit-backdrop-filter: blur(4px) saturate(1.24);
   backdrop-filter: blur(4px) saturate(1.24);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
 }
 .box-theme-stage.is-themed .pokemon-slot.owned {
   border-color: color-mix(in srgb, var(--box-theme-primary) 62%, rgba(255,255,255,.34));
   background: linear-gradient(145deg, color-mix(in srgb, var(--box-theme-primary) 13%, rgba(255,255,255,.1)), rgba(255,255,255,.025) 48%, rgba(3,15,14,.12));
   box-shadow: inset 1px 1px 0 rgba(255,255,255,.34), inset -1px -1px 0 color-mix(in srgb, var(--box-theme-primary) 18%, transparent), 0 6px 18px rgba(0,0,0,.2), 0 0 22px color-mix(in srgb, var(--box-theme-primary) 8%, transparent);
 }
-.box-theme-stage.is-themed button.pokemon-slot:hover { border-color: color-mix(in srgb, var(--box-theme-primary) 72%, rgba(255,255,255,.42)); background-color: rgba(255,255,255,.055); }
+.box-theme-stage.is-themed button.pokemon-slot:hover { border-color: color-mix(in srgb, var(--box-theme-primary) 72%, rgba(255,255,255,.42)); background: linear-gradient(145deg, rgba(255,255,255,.18), rgba(255,255,255,.05) 42%, rgba(3,15,14,.1)); }
 .box-theme-stage.is-themed .pokemon-slot .slot-number { color: color-mix(in srgb, var(--box-theme-secondary) 76%, #fff 24%); }
 .box-theme-stage.is-themed .pokemon-slot .status-dot { border-color: var(--box-theme-primary); }
 .box-theme-stage.is-themed .pokemon-slot.owned .status-dot { background: var(--box-theme-primary); }
@@ -261,7 +262,7 @@ button.pokemon-slot:hover { transform: translateY(-2px); border-color: rgba(85, 
 .theme-live-preview > span { color: rgba(255,255,255,.7); font-size: 7px; font-weight: 800; letter-spacing: .16em; }
 .theme-live-preview > b { margin-top: 4px; color: #fff; font-size: 12px; }
 .theme-live-preview > div { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 15px; }
-.theme-live-preview i { display: block; aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--box-theme-primary, #55e0c0) 38%, rgba(255,255,255,.18)); border-radius: 6px; background: color-mix(in srgb, var(--box-theme-base, #0b2421) 68%, rgba(5,20,18,.52)); backdrop-filter: blur(4px); }
+.theme-live-preview i { display: block; aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--box-theme-primary, #55e0c0) 32%, rgba(255,255,255,.3)); border-radius: 6px; background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.035) 45%, rgba(3,15,14,.12)); box-shadow: inset 1px 1px 0 rgba(255,255,255,.25); -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2); }
 .theme-live-preview i:nth-child(3n + 1) { box-shadow: inset 0 0 10px color-mix(in srgb, var(--box-theme-secondary, #35b99d) 18%, transparent); }
 .theme-picker-content { min-width: 0; overflow: hidden; }
 .theme-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
