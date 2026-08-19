@@ -1,4 +1,17 @@
 import { ChangeEvent, CSSProperties, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  BoxTheme,
+  BoxThemeConfig,
+  DEFAULT_BOX_THEME,
+  EMPTY_THEME_CONFIG,
+  THEME_GAMES,
+  ThemeGame,
+  boxThemeKey,
+  boxThemeStyle,
+  createPresetTheme,
+  parseThemeConfig,
+  resolveBoxTheme,
+} from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
 
 type PokemonEntry = {
@@ -48,6 +61,8 @@ type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
 type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
+type ThemeScope = "all" | "mark" | "box";
+type ThemeTab = ThemeGame | "custom";
 type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
 type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
 
@@ -71,6 +86,7 @@ const GROUP_COLORS: Record<string, string> = {
   go: "#57a6e6",
 };
 const STORAGE_KEY = "origin-marks-home-checklist-v1";
+const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
 const CATALOG_VERSION = 6;
 const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
 const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
@@ -106,6 +122,33 @@ function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const chunk = <T,>(items: T[], size: number) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+
+async function prepareThemeImage(file: File) {
+  if (!/^image\/(?:png|jpeg|webp)$/i.test(file.type) || file.size > 12_000_000) throw new Error("invalid-image");
+  const source = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("invalid-image"));
+    reader.onerror = () => reject(new Error("invalid-image"));
+    reader.readAsDataURL(file);
+  });
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("invalid-image"));
+    element.src = source;
+  });
+  const scale = Math.min(1, 1600 / image.naturalWidth, 900 / image.naturalHeight);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("invalid-image");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  let prepared = canvas.toDataURL("image/webp", .78);
+  if (prepared.length > 3_000_000) prepared = canvas.toDataURL("image/webp", .58);
+  if (prepared.length > 3_500_000) throw new Error("invalid-image");
+  return prepared;
+}
 
 // In the base catalog, only Bulbapedia's ✔ combinations belong to the player-OT shiny list.
 // Event and transfer shinies (marked ~) remain in special-collections.json with their external OT.
@@ -403,11 +446,21 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [missingOnly, setMissingOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [themeConfig, setThemeConfig] = useState<BoxThemeConfig>(EMPTY_THEME_CONFIG);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [themeScope, setThemeScope] = useState<ThemeScope>("all");
+  const [themeTab, setThemeTab] = useState<ThemeTab>("swsh");
+  const [themeDraft, setThemeDraft] = useState<BoxTheme>(DEFAULT_BOX_THEME);
+  const [customThemeDraft, setCustomThemeDraft] = useState<BoxTheme | null>(null);
+  const [customColors, setCustomColors] = useState({ appColor: "#102e2a", primary: "#55e0c0", secondary: "#f3c857" });
   const [hydrated, setHydrated] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const themeImportRef = useRef<HTMLInputElement>(null);
+  const themeImageRef = useRef<HTMLInputElement>(null);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
+  const displayThemeName = (theme: BoxTheme) => theme.kind === "default" ? t("original_theme") : theme.kind === "custom" ? t("custom") : THEME_GAMES.find((game) => game.id === theme.game)?.label ?? theme.game;
   const displayName = (entry: PokemonEntry) => pokemonNames?.[String(entry.dex)]?.[language] ?? entry.name;
   const displayForm = (entry: PokemonEntry) => formName(language, entry.dex, entry.form);
   const displayNote = (entry: PokemonEntry) => language === "ES-ES"
@@ -456,6 +509,11 @@ export default function App() {
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       }
+      const savedThemes = localStorage.getItem(THEME_STORAGE_KEY);
+      if (savedThemes) {
+        const parsedThemes = parseThemeConfig(JSON.parse(savedThemes));
+        if (parsedThemes) setThemeConfig(parsedThemes);
+      }
     } catch { /* A damaged local backup should never block the app. */ }
     setHydrated(true);
   }, []);
@@ -464,6 +522,19 @@ export default function App() {
     if (!hydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity }));
   }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeConfig)); }
+    catch { window.alert(copy(language, "theme_storage_error")); }
+  }, [themeConfig, hydrated, language]);
+
+  useEffect(() => {
+    if (!themeOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setThemeOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [themeOpen]);
 
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale ?? "es-MX";
@@ -479,6 +550,7 @@ export default function App() {
   const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(owned.has(entry.planId)), 0), [plannedEntries, owned]);
   const progress = plannedEntries.length ? Math.round((ownedCount / plannedEntries.length) * 100) : 0;
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
+  const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
   const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}`;
 
@@ -523,6 +595,80 @@ export default function App() {
     if (preset === "normal") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
   };
 
+  const openThemeDialog = () => {
+    const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
+    setThemeScope(selectedBox ? "box" : "all");
+    setThemeDraft(current);
+    if (current.kind === "preset") setThemeTab(current.game);
+    if (current.kind === "custom") {
+      setThemeTab("custom");
+      setCustomThemeDraft(current);
+      setCustomColors({ appColor: current.appColor, primary: current.primary, secondary: current.secondary });
+    }
+    setThemeOpen(true);
+  };
+
+  const chooseThemeTab = (tab: ThemeTab) => {
+    setThemeTab(tab);
+    if (tab === "custom") {
+      if (customThemeDraft?.kind === "custom") setThemeDraft(customThemeDraft);
+      return;
+    }
+    setThemeDraft(createPresetTheme(tab));
+  };
+
+  const chooseWallpaper = (game: ThemeGame, wallpaper: string) => {
+    setThemeTab(game);
+    setThemeDraft(createPresetTheme(game, wallpaper));
+  };
+
+  const importCustomThemeImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const wallpaper = await prepareThemeImage(file);
+      const customTheme: BoxTheme = { kind: "custom", wallpaper, ...customColors };
+      setCustomThemeDraft(customTheme);
+      setThemeDraft(customTheme);
+      setThemeTab("custom");
+    } catch { window.alert(t("theme_image_error")); }
+    event.target.value = "";
+  };
+
+  const updateCustomColor = (key: "appColor" | "primary" | "secondary", value: string) => {
+    setCustomColors((current) => ({ ...current, [key]: value }));
+    setCustomThemeDraft((current) => current?.kind === "custom" ? { ...current, [key]: value } : current);
+    setThemeDraft((current) => current.kind === "custom" ? { ...current, [key]: value } : current);
+  };
+
+  const applyBoxTheme = () => {
+    if (themeTab === "custom" && themeDraft.kind !== "custom") return;
+    setThemeConfig((current) => {
+      if (themeScope === "all") return { global: themeDraft, marks: {}, boxes: {} };
+      if (!selectedBox) return current;
+      if (themeScope === "mark") {
+        const prefix = `${selectedBox.groupKey}:`;
+        return { ...current, marks: { ...current.marks, [selectedBox.groupKey]: themeDraft }, boxes: Object.fromEntries(Object.entries(current.boxes).filter(([key]) => !key.startsWith(prefix))) };
+      }
+      return { ...current, boxes: { ...current.boxes, [boxThemeKey(selectedBox.groupKey, selectedBox.number)]: themeDraft } };
+    });
+    setThemeOpen(false);
+  };
+
+  const resetBoxTheme = () => {
+    setThemeConfig((current) => {
+      if (themeScope === "all") return { global: DEFAULT_BOX_THEME, marks: {}, boxes: {} };
+      if (!selectedBox) return current;
+      if (themeScope === "mark") {
+        const prefix = `${selectedBox.groupKey}:`;
+        return { ...current, marks: { ...current.marks, [selectedBox.groupKey]: DEFAULT_BOX_THEME }, boxes: Object.fromEntries(Object.entries(current.boxes).filter(([key]) => !key.startsWith(prefix))) };
+      }
+      return { ...current, boxes: { ...current.boxes, [boxThemeKey(selectedBox.groupKey, selectedBox.number)]: DEFAULT_BOX_THEME } };
+    });
+    setThemeDraft(DEFAULT_BOX_THEME);
+    setThemeOpen(false);
+  };
+
   const exportBackup = () => {
     const payload = { version: 6, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity };
     const link = document.createElement("a");
@@ -530,6 +676,30 @@ export default function App() {
     link.download = "origin-marks-checklist-backup.json";
     link.click();
     URL.revokeObjectURL(link.href);
+  };
+
+  const exportThemeBackup = () => {
+    const payload = { type: "origin-marks-box-themes", version: 1, exportedAt: new Date().toISOString(), themes: themeConfig };
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    link.download = "origin-marks-themes-backup.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const importThemeBackup = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    file.text().then((text) => {
+      try {
+        const value = JSON.parse(text);
+        if (value.type !== "origin-marks-box-themes") throw new Error("invalid");
+        const themes = parseThemeConfig(value.themes);
+        if (!themes) throw new Error("invalid");
+        setThemeConfig(themes);
+      } catch { window.alert(t("invalid_theme_backup")); }
+    });
+    event.target.value = "";
   };
 
   const importBackup = (event: ChangeEvent<HTMLInputElement>) => {
@@ -579,6 +749,8 @@ export default function App() {
   }));
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
   const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every((entry) => owned.has(entry.planId));
+  const themeGameOption = themeTab === "custom" ? null : THEME_GAMES.find((game) => game.id === themeTab) ?? THEME_GAMES[0];
+  const themeCanApply = themeTab !== "custom" || themeDraft.kind === "custom";
 
   return (
     <main className="app-shell">
@@ -600,6 +772,54 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {themeOpen && (
+        <div className="theme-modal-layer">
+          <button className="theme-modal-scrim" aria-label={t("close_theme")} onClick={() => setThemeOpen(false)} />
+          <section className="theme-dialog" role="dialog" aria-modal="true" aria-labelledby="theme-dialog-title">
+            <header className="theme-dialog-header">
+              <div><p className="eyebrow teal">{t("box_appearance")}</p><h2 id="theme-dialog-title">{t("theme_title")}</h2><p>{t("theme_intro")}</p></div>
+              <button className="theme-close" aria-label={t("close_theme")} onClick={() => setThemeOpen(false)}>×</button>
+            </header>
+            <div className="theme-scope-section">
+              <span className="theme-section-label">{t("apply_to")}</span>
+              <div className="theme-scope-options">
+                <button className={themeScope === "all" ? "active" : ""} onClick={() => setThemeScope("all")}><b>{t("all_boxes")}</b><small>{t("all_boxes_desc")}</small></button>
+                <button className={themeScope === "mark" ? "active" : ""} disabled={!selectedBox} onClick={() => setThemeScope("mark")}><b>{t("origin_mark_boxes")}</b><small>{selectedBox ? groupName(language, selectedBox.groupKey) : t("open_a_box")}</small></button>
+                <button className={themeScope === "box" ? "active" : ""} disabled={!selectedBox} onClick={() => setThemeScope("box")}><b>{t("this_box")}</b><small>{selectedBox?.label ?? t("open_a_box")}</small></button>
+              </div>
+            </div>
+            <div className="theme-picker-layout">
+              <div className={`theme-live-preview ${themeDraft.kind === "default" ? "is-default" : "is-themed"}`} style={boxThemeStyle(themeDraft)}>
+                <span>{t("preview")}</span><b>{displayThemeName(themeDraft)}</b><div>{Array.from({ length: 30 }, (_, index) => <i key={index} />)}</div>
+              </div>
+              <div className="theme-picker-content">
+                <div className="theme-tabs" role="tablist" aria-label={t("theme_games")}>
+                  {THEME_GAMES.map((game) => <button role="tab" aria-selected={themeTab === game.id} className={themeTab === game.id ? "active" : ""} key={game.id} onClick={() => chooseThemeTab(game.id)}>{game.id === "swsh" ? "SwSh" : game.id.toUpperCase()}</button>)}
+                  <button role="tab" aria-selected={themeTab === "custom"} className={themeTab === "custom" ? "active" : ""} onClick={() => chooseThemeTab("custom")}>{t("custom")}</button>
+                </div>
+                {themeGameOption ? (
+                  <div className="wallpaper-gallery" role="tabpanel" aria-label={themeGameOption.label}>
+                    {themeGameOption.wallpapers.map((wallpaper, index) => <button aria-label={`${themeGameOption.label} · ${t("wallpaper")} ${index + 1}`} aria-pressed={themeDraft.kind === "preset" && themeDraft.wallpaper === wallpaper} className={themeDraft.kind === "preset" && themeDraft.wallpaper === wallpaper ? "active" : ""} key={wallpaper} onClick={() => chooseWallpaper(themeGameOption.id, wallpaper)} style={{ backgroundImage: `linear-gradient(rgba(4, 14, 13, .08), rgba(4, 14, 13, .08)), url("${wallpaper}")` }}><span>{String(index + 1).padStart(2, "0")}</span></button>)}
+                  </div>
+                ) : (
+                  <div className="custom-theme-panel" role="tabpanel">
+                    <button className="custom-upload" onClick={() => themeImageRef.current?.click()}><span>＋</span><b>{customThemeDraft ? t("change_background") : t("upload_background")}</b><small>{t("theme_image_types")}</small></button>
+                    <input ref={themeImageRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={importCustomThemeImage} hidden />
+                    <div className="theme-color-grid">
+                      <label><span>{t("app_color")}</span><div><input type="color" value={customColors.appColor} onChange={(event) => updateCustomColor("appColor", event.target.value)} /><code>{customColors.appColor}</code></div></label>
+                      <label><span>{t("primary_highlight")}</span><div><input type="color" value={customColors.primary} onChange={(event) => updateCustomColor("primary", event.target.value)} /><code>{customColors.primary}</code></div></label>
+                      <label><span>{t("secondary_highlight")}</span><div><input type="color" value={customColors.secondary} onChange={(event) => updateCustomColor("secondary", event.target.value)} /><code>{customColors.secondary}</code></div></label>
+                    </div>
+                    <p className="custom-theme-note">{t("custom_color_note")}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <footer className="theme-dialog-actions"><button className="reset-theme" onClick={resetBoxTheme}>{t("reset_original")}</button><button className="apply-theme" onClick={applyBoxTheme} disabled={!themeCanApply}>{themeCanApply ? t("apply_theme") : t("upload_to_continue")}</button></footer>
+          </section>
+        </div>
+      )}
 
       <div className="workspace">
         {filtersOpen && <button className="drawer-scrim" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)} />}
@@ -665,13 +885,12 @@ export default function App() {
             </div>
           </section>
 
-          <section className="roadmap-card">
-            <p className="panel-label">{t("active_catalogs")}</p>
-            <div><span>{groupName(language, "dream")}</span><span>{groupName(language, "radar")}</span><span>{t("events")}</span><span>{groupName(language, "cherish")} · {t("collection_beta")}</span><span>{groupName(language, "trades")}</span><span>{groupName(language, "go")}</span></div>
-            <small>{t("next_expansion")}</small>
-          </section>
-
-          <div className="backup-actions"><button onClick={exportBackup}>{t("export")}</button><button onClick={() => importRef.current?.click()}>{t("import")}</button><input ref={importRef} type="file" accept="application/json" onChange={importBackup} hidden /></div>
+          <div className="backup-actions">
+            <span>{t("checklist_backup")}</span>
+            <button onClick={exportBackup}>{t("export")}</button><button onClick={() => importRef.current?.click()}>{t("import")}</button><input ref={importRef} type="file" accept="application/json" onChange={importBackup} hidden />
+            <span>{t("theme_backup")}</span>
+            <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
+          </div>
         </aside>
 
         <section className="collection-view">
@@ -681,6 +900,7 @@ export default function App() {
               {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
             </nav>
             <div className="search-tools">
+              <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>
               <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
               <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
             </div>
@@ -705,8 +925,9 @@ export default function App() {
                     </div>
                   );
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
+                  const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
@@ -732,7 +953,8 @@ export default function App() {
                 <div className="detail-nav"><button onClick={() => setSelectedBoxIndex(Math.max(0, selectedBox.globalIndex - 1))} disabled={selectedBox.globalIndex === 0}>←</button><button onClick={() => setSelectedBoxIndex(null)}>{t("page_view_button")}</button><button onClick={() => setSelectedBoxIndex(Math.min(boxes.length - 1, selectedBox.globalIndex + 1))} disabled={selectedBox.globalIndex === boxes.length - 1}>→</button></div>
               </div>
 
-              <div className="box-grid" aria-label={selectedBox.label}>
+              <div className={`box-theme-stage ${activeBoxTheme.kind === "default" ? "is-default" : "is-themed"}`} style={boxThemeStyle(activeBoxTheme)}>
+                <div className="box-grid" aria-label={selectedBox.label}>
                 {Array.from({ length: 30 }, (_, index) => {
                   const entry = selectedBox.entries[index];
                   if (!entry) return <div className="pokemon-slot vacant" key={index}><span className="slot-number">{String(index + 1).padStart(2, "0")}</span><span>{t("empty")}</span></div>;
@@ -752,6 +974,7 @@ export default function App() {
                     </button>
                   );
                 })}
+                </div>
               </div>
 
               <footer className="box-footer">
@@ -762,7 +985,6 @@ export default function App() {
           )}
 
           <section className="data-note">
-            <div><span>{t("data")}</span><p><b>Base LITE · {dataset.meta.entryCount.toLocaleString(locale)} + {specialDataset.meta.entryCount.toLocaleString(locale)}.</b> {t("data_note")}</p></div>
             <div className="source-links"><a href="https://bulbapedia.bulbagarden.net/wiki/N%27s_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("n_source")}</a><a href="https://www.serebii.net/blackwhite/dreamworldpokemon.shtml" target="_blank" rel="noreferrer">{t("dream_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Dream_Radar#Pok%C3%A9mon_encounters" target="_blank" rel="noreferrer">{t("radar_source")}</a><a href="https://www.serebii.net/events/shiny.shtml" target="_blank" rel="noreferrer">{t("event_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Shadow_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("shadow_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/In-game_trade" target="_blank" rel="noreferrer">{t("trade_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_with_gender_differences" target="_blank" rel="noreferrer">{t("gender_source")}</a><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noreferrer">{t("art_source")}</a></div>
           </section>
         </section>
