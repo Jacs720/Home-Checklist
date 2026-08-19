@@ -61,7 +61,7 @@ h1 { font-size: 20px; margin-bottom: 0; letter-spacing: -.035em; }
 .preset-grid { display: grid; gap: 7px; }
 .preset { display: grid; grid-template-columns: 25px 1fr; padding: 10px 11px; border: 1px solid var(--line); border-radius: 11px; background: rgba(14, 44, 40, .65); text-align: left; transition: border-color .16s, background .16s; }
 .preset:hover { border-color: var(--line-strong); }
-.preset > span { grid-row: span 2; color: var(--muted); font-size: 15px; }
+.preset > span { color: var(--muted); font-size: 15px; }
 .preset b { font-size: 12px; font-weight: 700; }
 .preset small { margin-top: 2px; color: var(--muted); font-size: 9px; }
 .preset.active { border-color: rgba(85, 224, 192, .5); background: rgba(35, 114, 99, .24); }

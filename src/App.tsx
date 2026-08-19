@@ -47,6 +47,7 @@ type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
 type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
+type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
 type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
 type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
 
@@ -70,7 +71,8 @@ const GROUP_COLORS: Record<string, string> = {
   go: "#57a6e6",
 };
 const STORAGE_KEY = "origin-marks-home-checklist-v1";
-const CATALOG_VERSION = 5;
+const CATALOG_VERSION = 6;
+const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
 const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   n: "trade",
   trades: "trade",
@@ -131,10 +133,65 @@ const VIVILLON_FORM_ART_IDS: Record<string, number> = {
   Modern: 10092, Marine: 10093, Archipelago: 10094, "High Plains": 10095, Sandstorm: 10096, River: 10097,
   Monsoon: 10098, Savanna: 10099, Sun: 10100, Ocean: 10101, Jungle: 10102, Fancy: 10161, "Poké Ball": 10162,
 };
+const VIVILLON_FORM_ORDER = [
+  "Icy Snow", "Polar", "Tundra", "Continental", "Garden", "Elegant", "Meadow", "Modern", "Marine", "Archipelago",
+  "High Plains", "Sandstorm", "River", "Monsoon", "Savanna", "Sun", "Ocean", "Jungle", "Fancy", "Poké Ball",
+] as const;
+const VIVILLON_FORM_INDEX = new Map<string, number>(VIVILLON_FORM_ORDER.map((form, index) => [form, index]));
 const FURFROU_TRIM_ART_IDS = [
   ["Heart", 10067], ["Star", 10068], ["Diamond", 10069], ["Debutante", 10070], ["Matron", 10071],
   ["Dandy", 10072], ["La Reine", 10073], ["Kabuki", 10074], ["Pharaoh", 10075],
 ] as const;
+const FURFROU_FORM_INDEX = new Map<string, number>([["", 0], ...FURFROU_TRIM_ART_IDS.map(([form], index) => [form, index + 1] as [string, number])]);
+const ALCREMIE_CREAMS = ["Vanilla Cream", "Ruby Cream", "Matcha Cream", "Mint Cream", "Lemon Cream", "Salted Cream", "Ruby Swirl", "Caramel Swirl", "Rainbow Swirl"] as const;
+const ALCREMIE_SWEETS = ["Strawberry", "Berry", "Love", "Star", "Clover", "Flower", "Ribbon"] as const;
+const MINIOR_CORES = ["Red Core", "Orange Core", "Yellow Core", "Green Core", "Blue Core", "Indigo Core", "Violet Core"] as const;
+
+function expandCollectibleForms(entries: PokemonEntry[]) {
+  const expanded: PokemonEntry[] = [];
+  const processed = new Set<string>();
+  for (const entry of entries) {
+    if (entry.dex !== 869 && entry.dex !== 774) {
+      expanded.push(entry);
+      continue;
+    }
+    const speciesKey = `${entry.mark ?? entry.collection ?? "catalog"}:${entry.dex}`;
+    if (processed.has(speciesKey)) continue;
+    processed.add(speciesKey);
+    const templates = entries.filter((candidate) => candidate.dex === entry.dex && candidate.mark === entry.mark && candidate.collection === entry.collection);
+    if (entry.dex === 869) {
+      ALCREMIE_CREAMS.forEach((cream, creamIndex) => ALCREMIE_SWEETS.forEach((sweet, sweetIndex) => {
+        const existing = sweetIndex === 0 ? templates.find((candidate) => candidate.form === `${cream}, Strawberry`) : undefined;
+        const template = existing ?? templates[0] ?? entry;
+        const legacySuffix = creamIndex === 0 ? "" : `-${creamIndex}`;
+        const idSuffix = sweetIndex === 0 ? legacySuffix : `-${creamIndex}-${sweetIndex}`;
+        expanded.push({
+          ...template,
+          id: `${entry.mark ?? entry.collection ?? "catalog"}:alcremie${idSuffix}`,
+          sourceNumber: existing?.sourceNumber,
+          form: `${cream}, ${sweet}`,
+          artId: 869,
+          keyword: `alcremie-${creamIndex}-${sweetIndex}`,
+          note: `${template.note} · combinación de crema y dulce conservada en HOME`,
+        });
+      }));
+      continue;
+    }
+    MINIOR_CORES.forEach((form, index) => {
+      const template = templates.find((candidate) => candidate.form === form) ?? templates[0] ?? entry;
+      expanded.push({
+        ...template,
+        id: index === 0 ? entry.id : `${entry.mark ?? entry.collection ?? "catalog"}:minior-${index}`,
+        sourceNumber: index === 0 ? template.sourceNumber : undefined,
+        form,
+        artId: 10136 + index,
+        keyword: `minior-${index}`,
+        note: `${template.note} · color de núcleo conservado en HOME`,
+      });
+    });
+  }
+  return expanded;
+}
 
 function insertCatalogEntry(entries: PokemonEntry[], addition: PokemonEntry) {
   if (entries.some((entry) => entry.id === addition.id)) return entries;
@@ -147,7 +204,7 @@ function insertCatalogEntry(entries: PokemonEntry[], addition: PokemonEntry) {
 }
 
 function applyCatalogCorrections(entries: PokemonEntry[]) {
-  let correctedEntries = entries;
+  let correctedEntries = expandCollectibleForms(entries);
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {
@@ -242,6 +299,7 @@ function buildBoxes(
   acquisitions: Record<Acquisition, boolean>,
   includeNonShinySpecials: boolean,
   genderMode: GenderMode,
+  formOptions: FormOptions,
   language: UiLanguage,
 ) {
   const boxes: PlannedBox[] = [];
@@ -257,9 +315,18 @@ function buildBoxes(
 
   for (const group of groups) {
     const planned: PlannedEntry[] = [];
+    const seenSpecies = new Set<string>();
     for (const entry of group.entries) {
       if (entry.availability === "excluded") continue;
       if (entry.genderVariant === "extra" && entry.genderDifferenceTier === "all" && genderMode !== "all") continue;
+      const speciesKey = `${entry.mark ?? entry.collection ?? group.key}:${entry.dex}:${entry.genderVariant ?? "species"}`;
+      const firstSpeciesEntry = !seenSpecies.has(speciesKey);
+      seenSpecies.add(speciesKey);
+      if (!entry.collection && !firstSpeciesEntry) {
+        if (entry.dex === 869 && !formOptions.alcremie) continue;
+        if (entry.dex === 774 && !formOptions.minior) continue;
+        if (entry.dex !== 869 && entry.dex !== 774 && !formOptions.alternate) continue;
+      }
       const includeAsNormal = entry.normalEligible !== false && (variants.normal || (group.special && variants.shiny && includeNonShinySpecials && !entry.shinyEligible));
       if (includeAsNormal) {
         const ownOt = entry.ownOtNormal;
@@ -291,6 +358,16 @@ function unownSpriteKey(form: string | null) {
 
 function pokemonArtworkUrl(entry: PlannedEntry) {
   if (!entry.artId) return null;
+  const vivillonIndex = entry.dex === 666 && entry.form ? VIVILLON_FORM_INDEX.get(entry.form) : undefined;
+  const furfrouIndex = entry.dex === 676 ? FURFROU_FORM_INDEX.get(entry.form ?? "") : undefined;
+  const alcremieCream = entry.dex === 869 && entry.form ? ALCREMIE_CREAMS.findIndex((cream) => entry.form?.startsWith(`${cream}, `)) : -1;
+  const alcremieSweet = entry.dex === 869 && entry.form ? ALCREMIE_SWEETS.findIndex((sweet) => entry.form?.endsWith(`, ${sweet}`)) : -1;
+  let customKey: string | null = null;
+  if (vivillonIndex !== undefined) customKey = `0666-${String(vivillonIndex).padStart(2, "0")}`;
+  if (furfrouIndex !== undefined) customKey = `0676-${String(furfrouIndex).padStart(2, "0")}`;
+  if (alcremieCream >= 0 && alcremieSweet >= 0) customKey = entry.variant === "shiny" ? `0869-shiny-${alcremieSweet}` : `0869-${alcremieCream}-${alcremieSweet}`;
+  if (entry.dex === 774 && entry.variant === "shiny") customKey = "10136";
+  if (customKey) return assetUrl(`assets/pokemon/${entry.variant}/${customKey}.webp`);
   const unownForm = entry.dex === 201 ? unownSpriteKey(entry.form) : null;
   const suffix = unownForm ? `-${unownForm}` : entry.genderVariant === "extra" ? "-female" : "";
   const filename = `${String(entry.artId).padStart(4, "0")}${suffix}.webp`;
@@ -316,6 +393,7 @@ export default function App() {
   const [acquisitions, setAcquisitions] = useState<Record<Acquisition, boolean>>({ own: true, trade: true, event: true, external: true });
   const [includeNonShinySpecials, setIncludeNonShinySpecials] = useState(true);
   const [genderMode, setGenderMode] = useState<GenderMode>("notable");
+  const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
@@ -370,6 +448,11 @@ export default function App() {
         });
         if (typeof value.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(value.includeNonShinySpecials);
         if (value.genderMode === "notable" || value.genderMode === "all") setGenderMode(value.genderMode);
+        if (value.formOptions) setFormOptions({
+          alternate: typeof value.formOptions.alternate === "boolean" ? value.formOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
+          alcremie: typeof value.formOptions.alcremie === "boolean" ? value.formOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
+          minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
+        });
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       }
@@ -379,16 +462,16 @@ export default function App() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, language, capacity }));
-  }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, language, capacity, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity }));
+  }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity, hydrated]);
 
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale ?? "es-MX";
   }, [language]);
 
   const boxes = useMemo(
-    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, language),
-    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, language],
+    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language),
+    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language],
   );
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const capacityBoxes = Math.ceil(capacity / 30);
@@ -397,7 +480,7 @@ export default function App() {
   const progress = plannedEntries.length ? Math.round((ownedCount / plannedEntries.length) * 100) : 0;
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}`;
 
   useEffect(() => {
     setPageIndex(0);
@@ -435,13 +518,13 @@ export default function App() {
   });
 
   const applyPreset = (preset: "shiny" | "special" | "normal") => {
-    if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections(DEFAULT_COLLECTIONS); }
+    if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
     if (preset === "special") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks([]); setSelectedCollections(DEFAULT_COLLECTIONS); }
     if (preset === "normal") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
   };
 
   const exportBackup = () => {
-    const payload = { version: 5, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, language, capacity };
+    const payload = { version: 6, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity };
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     link.download = "origin-marks-checklist-backup.json";
@@ -471,6 +554,11 @@ export default function App() {
         });
         if (typeof value.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(value.includeNonShinySpecials);
         if (value.genderMode === "notable" || value.genderMode === "all") setGenderMode(value.genderMode);
+        if (value.formOptions) setFormOptions({
+          alternate: typeof value.formOptions.alternate === "boolean" ? value.formOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
+          alcremie: typeof value.formOptions.alcremie === "boolean" ? value.formOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
+          minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
+        });
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       } catch { window.alert(t("invalid_backup")); }
@@ -482,11 +570,11 @@ export default function App() {
   if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
 
   const markCounts = Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   }));
   const collectionCounts = Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   }));
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
@@ -519,29 +607,32 @@ export default function App() {
           <div className="filter-title-row"><button className="close-drawer" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)}>×</button></div>
 
           <div className="preset-grid">
-            <button className={`preset shiny-preset ${variants.shiny && !variants.normal && acquisitions.own && acquisitions.trade && acquisitions.event && acquisitions.external && selectedMarks.length > 1 ? "active" : ""}`} onClick={() => applyPreset("shiny")}><span><img className="shiny-symbol" src={assetUrl("assets/shiny.png")} alt="" /></span><b>{t("preset_shiny")}</b><small>{t("preset_shiny_desc")}</small></button>
-            <button className={selectedMarks.length === 0 && selectedCollections.length === COLLECTIONS.length ? "preset active" : "preset"} onClick={() => applyPreset("special")}><span>◎</span><b>{t("preset_special")}</b><small>{t("preset_special_desc")}</small></button>
-            <button className={!variants.shiny && variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external ? "preset active" : "preset"} onClick={() => applyPreset("normal")}><span>◌</span><b>{t("preset_normal")}</b><small>{t("preset_normal_desc")}</small></button>
+            <button className={`preset shiny-preset ${variants.shiny && !variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedMarks.length > 1 && selectedCollections.length === 0 ? "active" : ""}`} onClick={() => applyPreset("shiny")}><span><img className="shiny-symbol" src={assetUrl("assets/shiny.png")} alt="" /></span><b>{t("preset_shiny")}</b></button>
+            <button className={!variants.shiny && variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedCollections.length === 0 ? "preset active" : "preset"} onClick={() => applyPreset("normal")}><span>◌</span><b>{t("preset_normal")}</b></button>
+            <button className={selectedMarks.length === 0 && selectedCollections.length === COLLECTIONS.length ? "preset active" : "preset"} onClick={() => applyPreset("special")}><span>◎</span><b>{t("preset_special")}</b></button>
           </div>
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>
-            <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b><small>{t("catalog_review")}</small></span><GooeyCheckbox id="variant-shiny" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
-            <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b><small>{t("normal_specimen")}</small></span><GooeyCheckbox id="variant-normal" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
-            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b><small>{t("special_non_shiny_desc")}</small></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => setIncludeNonShinySpecials(event.target.checked)} /></label>
+            <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b></span><GooeyCheckbox id="variant-shiny" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
+            <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b></span><GooeyCheckbox id="variant-normal" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
+            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => setIncludeNonShinySpecials(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
-            <p className="panel-label">{t("gender_differences")}</p>
-            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b><small>{genderMode === "all" ? t("all_gender_differences_desc") : t("notable_gender_differences_desc")}</small></span><GooeyCheckbox id="all-gender-differences" checked={genderMode === "all"} onChange={(event) => setGenderMode(event.target.checked ? "all" : "notable")} /></label>
+            <p className="panel-label">{t("form_differences")}</p>
+            <label className="switch-row" htmlFor="alternate-forms" aria-label={t("alternate_forms")}><span><b>{t("alternate_forms")}</b></span><GooeyCheckbox id="alternate-forms" checked={formOptions.alternate} onChange={(event) => setFormOptions((current) => ({ ...current, alternate: event.target.checked }))} /></label>
+            <label className="switch-row" htmlFor="all-alcremie-forms" aria-label={t("all_alcremie_forms")}><span><b>{t("all_alcremie_forms")}</b></span><GooeyCheckbox id="all-alcremie-forms" checked={formOptions.alcremie} onChange={(event) => setFormOptions((current) => ({ ...current, alcremie: event.target.checked }))} /></label>
+            <label className="switch-row" htmlFor="all-minior-forms" aria-label={t("all_minior_forms")}><span><b>{t("all_minior_forms")}</b></span><GooeyCheckbox id="all-minior-forms" checked={formOptions.minior} onChange={(event) => setFormOptions((current) => ({ ...current, minior: event.target.checked }))} /></label>
+            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b></span><GooeyCheckbox id="all-gender-differences" checked={genderMode === "all"} onChange={(event) => setGenderMode(event.target.checked ? "all" : "notable")} /></label>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("acquisition")}</p>
-            <label className="switch-row" htmlFor="acquisition-own" aria-label={t("own_ot")}><span><b>{t("own_ot")}</b><small>{t("own_ot_desc")}</small></span><GooeyCheckbox id="acquisition-own" checked={acquisitions.own} onChange={() => setAcquisition("own")} /></label>
-            <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b><small>{t("in_game_trades_desc")}</small></span><GooeyCheckbox id="acquisition-trade" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
-            <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b><small>{t("events_desc")}</small></span><GooeyCheckbox id="acquisition-event" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
-            <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b><small>{t("other_games_apps_desc")}</small></span><GooeyCheckbox id="acquisition-external" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
+            <label className="switch-row" htmlFor="acquisition-own" aria-label={t("own_ot")}><span><b>{t("own_ot")}</b></span><GooeyCheckbox id="acquisition-own" checked={acquisitions.own} onChange={() => setAcquisition("own")} /></label>
+            <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b></span><GooeyCheckbox id="acquisition-trade" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
+            <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b></span><GooeyCheckbox id="acquisition-event" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
+            <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b></span><GooeyCheckbox id="acquisition-external" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
           </section>
 
           <section className="filter-section">

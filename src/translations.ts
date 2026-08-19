@@ -217,6 +217,19 @@ const VIVILLON_FORMS: Record<string, Record<UiLanguage, string>> = {
   "Poké Ball": { "ES-LA": "Motivo Pokébola", "ES-ES": "Motivo Poké Ball", ENG: "Poké Ball Pattern", DEU: "Pokéball-Muster", FRA: "Motif Poké Ball", ITA: "Motivo Poké Ball", JPN: "ボールのもよう", KOR: "볼의 모양", CHS: "球球花纹", CHT: "球球花紋" },
 };
 
+const FORM_FILTER_COPY: Record<UiLanguage, Record<string, string>> = {
+  "ES-LA": { form_differences: "FORMAS Y DIFERENCIAS", alternate_forms: "Formas alternas", all_alcremie_forms: "63 formas de Alcremie", all_minior_forms: "7 núcleos de Minior" },
+  "ES-ES": { form_differences: "FORMAS Y DIFERENCIAS", alternate_forms: "Formas alternativas", all_alcremie_forms: "63 formas de Alcremie", all_minior_forms: "7 núcleos de Minior" },
+  ENG: { form_differences: "FORMS & DIFFERENCES", alternate_forms: "Alternate forms", all_alcremie_forms: "All 63 Alcremie forms", all_minior_forms: "All 7 Minior cores" },
+  DEU: { form_differences: "FORMEN & UNTERSCHIEDE", alternate_forms: "Alternative Formen", all_alcremie_forms: "Alle 63 Alcremie-Formen", all_minior_forms: "Alle 7 Minior-Kerne" },
+  FRA: { form_differences: "FORMES ET DIFFÉRENCES", alternate_forms: "Formes alternatives", all_alcremie_forms: "Les 63 formes de Charmilly", all_minior_forms: "Les 7 noyaux de Météno" },
+  ITA: { form_differences: "FORME E DIFFERENZE", alternate_forms: "Forme alternative", all_alcremie_forms: "Tutte le 63 forme di Alcremie", all_minior_forms: "Tutti i 7 nuclei di Minior" },
+  JPN: { form_differences: "フォルムと違い", alternate_forms: "別フォルム", all_alcremie_forms: "マホイップ全63フォルム", all_minior_forms: "メテノ全7色のコア" },
+  KOR: { form_differences: "폼과 차이", alternate_forms: "다른 폼", all_alcremie_forms: "마휘핑 63개 폼", all_minior_forms: "메테노 코어 7종" },
+  CHS: { form_differences: "形态与差异", alternate_forms: "其他形态", all_alcremie_forms: "霜奶仙全部63种形态", all_minior_forms: "小陨星全部7种核心" },
+  CHT: { form_differences: "形態與差異", alternate_forms: "其他形態", all_alcremie_forms: "霜奶仙全部63種形態", all_minior_forms: "小隕星全部7種核心" },
+};
+
 export function formName(language: UiLanguage, dex: number, form: string | null) {
   if (!form) return null;
   return dex === 666 ? VIVILLON_FORMS[form]?.[language] ?? form : form;
@@ -224,6 +237,7 @@ export function formName(language: UiLanguage, dex: number, form: string | null)
 
 export function copy(language: UiLanguage, key: string) {
   if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
+  if (FORM_FILTER_COPY[language][key]) return FORM_FILTER_COPY[language][key];
   return UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
