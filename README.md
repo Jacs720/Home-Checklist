@@ -4,6 +4,10 @@ Home Checklist is a visual tool for planning and tracking a Pokémon HOME collec
 
 It allows you to organize Pokémon by origin marks, boxes, variants, source, and special collections. It also displays the exact order of each box and saves your collection progress in the browser.
 
+##
+
+GO reserves numbers 1–1025 even when transfer is currently unavailable.
+
 ## IMPORTANT NOTICE
 
 It is highly recommended to use the backup option at the bottom left, as the application is fully static and does not use a server, accounts, or a database. Progress is stored in the browser's `localStorage`; the **Export** and **Import** buttons create and restore JSON backups.
