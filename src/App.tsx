@@ -16,6 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
+import { addSwShHisuianEvolutionEntries, insertCatalogEntry } from "./catalog-corrections";
 
 type PokemonEntry = {
   id: string;
@@ -242,18 +243,8 @@ function expandCollectibleForms(entries: PokemonEntry[]) {
   return expanded;
 }
 
-function insertCatalogEntry(entries: PokemonEntry[], addition: PokemonEntry) {
-  if (entries.some((entry) => entry.id === addition.id)) return entries;
-  const insertionIndex = entries.findIndex((entry) => entry.mark === addition.mark && entry.dex > addition.dex);
-  if (insertionIndex >= 0) return [...entries.slice(0, insertionIndex), addition, ...entries.slice(insertionIndex)];
-  const lastMarkIndex = entries.map((entry) => entry.mark).lastIndexOf(addition.mark);
-  return lastMarkIndex >= 0
-    ? [...entries.slice(0, lastMarkIndex + 1), addition, ...entries.slice(lastMarkIndex + 1)]
-    : [...entries, addition];
-}
-
 function applyCatalogCorrections(entries: PokemonEntry[]) {
-  let correctedEntries = expandCollectibleForms(entries);
+  let correctedEntries = addSwShHisuianEvolutionEntries(expandCollectibleForms(entries));
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {
