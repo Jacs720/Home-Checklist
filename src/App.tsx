@@ -16,7 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
-import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit } from "./catalog-corrections";
+import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
 
 type PokemonEntry = {
   id: string;
@@ -342,9 +342,11 @@ function buildBoxes(
   includeNonShinySpecials: boolean,
   genderMode: GenderMode,
   formOptions: FormOptions,
+  normalLivingDex: boolean,
   language: UiLanguage,
 ) {
   const boxes: PlannedBox[] = [];
+  const livingDexCandidates: PlannedEntry[] = [];
   const groups = [
     ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
       key,
@@ -385,8 +387,15 @@ function buildBoxes(
         }
       }
     }
-    chunk(planned, 30).forEach((boxEntries, index) => {
+    if (normalLivingDex) livingDexCandidates.push(...planned);
+    else chunk(planned, 30).forEach((boxEntries, index) => {
       boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+    });
+  }
+  if (normalLivingDex) {
+    const livingDexEntries = selectNormalLivingDexEntries(livingDexCandidates);
+    chunk(livingDexEntries, 30).forEach((boxEntries, index) => {
+      boxes.push({ globalIndex: boxes.length, groupKey: "living-dex", number: index + 1, label: `${copy(language, "normal_living_dex")} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
     });
   }
   return boxes;
@@ -439,6 +448,7 @@ export default function App() {
   const [includeNonShinySpecials, setIncludeNonShinySpecials] = useState(true);
   const [genderMode, setGenderMode] = useState<GenderMode>("notable");
   const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
+  const [normalLivingDex, setNormalLivingDex] = useState(false);
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
@@ -510,6 +520,7 @@ export default function App() {
           alcremie: typeof value.formOptions.alcremie === "boolean" ? value.formOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
           minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
         });
+        if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       }
@@ -524,8 +535,8 @@ export default function App() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity }));
-  }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity }));
+  }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -545,8 +556,8 @@ export default function App() {
   }, [language]);
 
   const boxes = useMemo(
-    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language),
-    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language],
+    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language),
+    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language],
   );
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const capacityBoxes = Math.ceil(capacity / 30);
@@ -556,7 +567,7 @@ export default function App() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}`;
 
   useEffect(() => {
     setPageIndex(0);
@@ -594,6 +605,7 @@ export default function App() {
   });
 
   const applyPreset = (preset: "shiny" | "special" | "normal") => {
+    setNormalLivingDex(false);
     if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
     if (preset === "special") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks([]); setSelectedCollections(DEFAULT_COLLECTIONS); }
     if (preset === "normal") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
@@ -694,7 +706,7 @@ export default function App() {
   };
 
   const exportBackup = () => {
-    const payload = { version: 6, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language, capacity };
+    const payload = { version: 6, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity };
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     link.download = "origin-marks-checklist-backup.json";
@@ -753,6 +765,7 @@ export default function App() {
           alcremie: typeof value.formOptions.alcremie === "boolean" ? value.formOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
           minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
         });
+        if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       } catch { window.alert(t("invalid_backup")); }
@@ -764,11 +777,11 @@ export default function App() {
   if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
 
   const markCounts = Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   }));
   const collectionCounts = Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   }));
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
@@ -863,6 +876,7 @@ export default function App() {
             <button className={!variants.shiny && variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedCollections.length === 0 ? "preset active" : "preset"} onClick={() => applyPreset("normal")}><span>◌</span><b>{t("preset_normal")}</b></button>
             <button className={selectedMarks.length === 0 && selectedCollections.length === COLLECTIONS.length ? "preset active" : "preset"} onClick={() => applyPreset("special")}><span>◎</span><b>{t("preset_special")}</b></button>
           </div>
+          <button className={`preset living-dex-preset ${normalLivingDex ? "active" : ""}`} aria-pressed={normalLivingDex} onClick={() => setNormalLivingDex((value) => !value)}><span>▦</span><b>{t("normal_living_dex")}</b><small>{t("normal_living_dex_desc")}</small></button>
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>

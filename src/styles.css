@@ -66,6 +66,8 @@ h1 { font-size: 20px; margin-bottom: 0; letter-spacing: -.035em; }
 .preset small { margin-top: 2px; color: var(--muted); font-size: 9px; }
 .preset.active { border-color: rgba(85, 224, 192, .5); background: rgba(35, 114, 99, .24); }
 .preset.active > span, .preset.active b { color: var(--teal); }
+.living-dex-preset { margin-top: 10px; border-style: dashed; }
+.living-dex-preset.active { border-style: solid; }
 .preset.shiny-preset { border-color: rgba(255, 90, 31, .2); }
 .preset.shiny-preset:hover { border-color: rgba(255, 90, 31, .48); }
 .preset.shiny-preset.active { border-color: rgba(255, 90, 31, .72); background: linear-gradient(110deg, rgba(242, 47, 24, .2), rgba(255, 121, 29, .08)); box-shadow: inset 0 0 22px rgba(255, 90, 31, .06); }

@@ -84,3 +84,14 @@ export function markLgpeAlolanFormsAsInGameTrades<T extends CatalogEntry>(entrie
     shinyReview: "verified-correction",
   } : entry);
 }
+
+export function selectNormalLivingDexEntries<T extends { dex: number; variant: string }>(entries: T[]) {
+  const selectedBySpecies = new Map<number, T>();
+  for (const entry of entries) {
+    const selected = selectedBySpecies.get(entry.dex);
+    if (!selected || (selected.variant !== "normal" && entry.variant === "normal")) {
+      selectedBySpecies.set(entry.dex, entry);
+    }
+  }
+  return [...selectedBySpecies.values()].sort((left, right) => left.dex - right.dex);
+}
