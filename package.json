@@ -10,7 +10,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "sprites:sync": "node scripts/sync-pokemon-sprites.mjs"
+    "sprites:sync": "node scripts/sync-pokemon-sprites.mjs",
+    "species:sync": "node scripts/sync-species-rules.mjs",
+    "events:sync": "node scripts/sync-serebii-events.mjs",
+    "home-challenges:sync": "node scripts/sync-home-challenges.mjs"
   },
   "dependencies": {
     "fflate": "0.7.4",

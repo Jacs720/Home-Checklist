@@ -1,9 +1,201 @@
 export type AvailabilityStatus = "current" | "legacy" | "historical" | "hypothetical";
-export type CollectionPreset = "basic" | "forms" | "shiny" | "origin" | "completionist" | "custom";
+export type CollectionPreset =
+  | "basic"
+  | "final"
+  | "regional"
+  | "forms_lite"
+  | "forms"
+  | "shiny"
+  | "origin"
+  | "noah"
+  | "original_generation"
+  | "completionist"
+  | "custom";
 export type GamePlanId = "sv" | "lza" | "swsh" | "pla" | "bdsp" | "lgpe" | "usum" | "kalos_hoenn" | "bw2" | "gb" | "gba" | "colosseum" | "xd" | "go";
 
+export type SpecimenRequirements = {
+  gender?: "male" | "female" | "any";
+  originGame?: string;
+  originGeneration?: number;
+  originRegion?: string;
+  ball?: string;
+  nature?: string;
+  pokemonLanguage?: string;
+  encounterMark?: string;
+  ribbons?: string[];
+  ability?: string;
+  teraType?: string;
+  heldItem?: string;
+  moves?: string[];
+  alpha?: boolean;
+  gmaxFactor?: boolean;
+};
+
+export type SpeciesRule = {
+  dex: number;
+  generation: number;
+  evolvesFrom: number | null;
+  genderRate: number;
+};
+
+export type SpeciesRulesDataset = {
+  meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number };
+  species: SpeciesRule[];
+};
+
+type SlotCandidate = {
+  dex: number;
+  form: string | null;
+  variant: string;
+  planId: string;
+  mark?: string;
+  gender?: "male" | "female";
+  genderVariant?: "base" | "extra";
+  requirements?: SpecimenRequirements;
+};
+
 export const AVAILABILITY_STATUSES: AvailabilityStatus[] = ["current", "legacy", "historical", "hypothetical"];
-export const COLLECTION_PRESETS: CollectionPreset[] = ["basic", "forms", "shiny", "origin", "completionist", "custom"];
+export const COLLECTION_PRESETS: CollectionPreset[] = [
+  "basic",
+  "final",
+  "regional",
+  "forms_lite",
+  "forms",
+  "shiny",
+  "origin",
+  "noah",
+  "original_generation",
+  "completionist",
+  "custom",
+];
+export const UNIFIED_COLLECTION_PRESETS = new Set<CollectionPreset>(["basic", "final", "regional", "forms_lite", "noah", "original_generation"]);
+
+const REGIONAL_FORM = /^(?:Alolan|Galarian|Hisuian|Paldean(?:\s|$))/i;
+const REGION_KEYS = ["kanto", "johto", "hoenn", "sinnoh", "unova", "kalos", "alola", "galar", "paldea"] as const;
+const ORIGINAL_MARK_PREFERENCE: Record<number, string[]> = {
+  1: ["GB", "LGPE", "Sin marca", "GBA"],
+  2: ["GB", "Sin marca", "GBA"],
+  3: ["Sin marca", "GBA", "P"],
+  4: ["Sin marca", "BDSP"],
+  5: ["Sin marca"],
+  6: ["P"],
+  7: ["USUM", "LGPE"],
+  8: ["SwSh", "LA", "BDSP"],
+  9: ["SV", "LZA"],
+};
+
+export function isRegionalForm(form: string | null | undefined) {
+  return Boolean(form && REGIONAL_FORM.test(form));
+}
+
+export function regionKeyForGeneration(generation: number) {
+  return `region-${REGION_KEYS[generation - 1] ?? `gen-${generation}`}`;
+}
+
+function preferredCandidate<T extends SlotCandidate>(entries: T[], marks?: string[]) {
+  return [...entries].sort((left, right) => {
+    const leftMark = marks ? marks.indexOf(left.mark ?? "") : -1;
+    const rightMark = marks ? marks.indexOf(right.mark ?? "") : -1;
+    const leftRank = left.variant === "normal" ? 0 : 4;
+    const rightRank = right.variant === "normal" ? 0 : 4;
+    const leftGender = left.genderVariant === "extra" ? 2 : 0;
+    const rightGender = right.genderVariant === "extra" ? 2 : 0;
+    const leftOrigin = leftMark >= 0 ? leftMark : 99;
+    const rightOrigin = rightMark >= 0 ? rightMark : 99;
+    return leftRank + leftGender + leftOrigin - (rightRank + rightGender + rightOrigin);
+  })[0];
+}
+
+function groupedByDex<T extends SlotCandidate>(entries: T[]) {
+  const groups = new Map<number, T[]>();
+  for (const entry of entries) {
+    const group = groups.get(entry.dex) ?? [];
+    group.push(entry);
+    groups.set(entry.dex, group);
+  }
+  return groups;
+}
+
+export function selectLivingDexWithRegionalForms<T extends SlotCandidate>(entries: T[]) {
+  const selected: T[] = [];
+  for (const candidates of groupedByDex(entries).values()) {
+    const base = preferredCandidate(candidates.filter((entry) => !isRegionalForm(entry.form)));
+    if (base) selected.push(base);
+    const regionalForms = new Map<string, T[]>();
+    for (const entry of candidates.filter((candidate) => isRegionalForm(candidate.form))) {
+      const formCandidates = regionalForms.get(entry.form ?? "") ?? [];
+      formCandidates.push(entry);
+      regionalForms.set(entry.form ?? "", formCandidates);
+    }
+    for (const formCandidates of regionalForms.values()) {
+      const regional = preferredCandidate(formCandidates);
+      if (regional) selected.push(regional);
+    }
+  }
+  return selected.sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? ""));
+}
+
+export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[]) {
+  const forms = new Map<string, T[]>();
+  for (const entry of entries) {
+    if (entry.genderVariant === "extra") continue;
+    const key = `${entry.dex}:${entry.form ?? ""}`;
+    const candidates = forms.get(key) ?? [];
+    candidates.push(entry);
+    forms.set(key, candidates);
+  }
+  return [...forms.values()]
+    .map((candidates) => preferredCandidate(candidates))
+    .filter((entry): entry is T => Boolean(entry))
+    .sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? ""));
+}
+
+export function selectFinalFormDexEntries<T extends SlotCandidate>(entries: T[], rules: Map<number, SpeciesRule>) {
+  const evolvesFurther = new Set([...rules.values()].map((rule) => rule.evolvesFrom).filter((dex): dex is number => dex !== null));
+  // These species only gain an evolution from a particular regional/form branch;
+  // their original/base form remains a final form in its own evolutionary path.
+  const baseFormRemainsFinal = new Set([83, 122, 211, 222, 264, 550]);
+  return selectLivingDexWithRegionalForms(entries).filter((entry) => (
+    !evolvesFurther.has(entry.dex)
+    || (baseFormRemainsFinal.has(entry.dex) && !isRegionalForm(entry.form))
+  ));
+}
+
+export function selectNoahsArkEntries<T extends SlotCandidate>(entries: T[], rules: Map<number, SpeciesRule>) {
+  const selected: T[] = [];
+  for (const [dex, candidates] of groupedByDex(entries).entries()) {
+    const baseCandidates = candidates.filter((entry) => !isRegionalForm(entry.form));
+    const base = preferredCandidate(baseCandidates);
+    if (!base) continue;
+    const genderRate = rules.get(dex)?.genderRate ?? -1;
+    const genders: SpecimenRequirements["gender"][] = genderRate === 0 ? ["male"] : genderRate === 8 ? ["female"] : genderRate < 0 ? ["any"] : ["male", "female"];
+    for (const gender of genders) {
+      const genderCandidate = gender === "any" ? base : preferredCandidate(baseCandidates.filter((entry) => entry.gender === gender)) ?? base;
+      selected.push({
+        ...genderCandidate,
+        gender: gender === "any" ? genderCandidate.gender : gender,
+        planId: `${genderCandidate.planId}:gender:${gender}`,
+        requirements: { ...genderCandidate.requirements, gender },
+      });
+    }
+  }
+  return selected.sort((left, right) => left.dex - right.dex || (left.requirements?.gender ?? "").localeCompare(right.requirements?.gender ?? ""));
+}
+
+export function selectOriginalGenerationEntries<T extends SlotCandidate>(entries: T[], rules: Map<number, SpeciesRule>) {
+  const selected: Array<T & { requirements: SpecimenRequirements }> = [];
+  for (const [dex, candidates] of groupedByDex(entries).entries()) {
+    const generation = rules.get(dex)?.generation ?? generationForDex(dex);
+    const base = preferredCandidate(candidates.filter((entry) => !isRegionalForm(entry.form)), ORIGINAL_MARK_PREFERENCE[generation]);
+    if (!base) continue;
+    selected.push({
+      ...base,
+      planId: `${base.planId}:original-generation:${generation}`,
+      requirements: { ...base.requirements, originGeneration: generation, originRegion: regionKeyForGeneration(generation) },
+    });
+  }
+  return selected.sort((left, right) => left.dex - right.dex);
+}
 export const GAME_PLANS: Array<{ id: GamePlanId; marks?: string[]; collections?: string[]; gamePattern?: RegExp }> = [
   { id: "sv", marks: ["SV"], gamePattern: /Scarlet|Violet|Escarlata|P[uú]rpura/i },
   { id: "lza", marks: ["LZA"], gamePattern: /Legends.*Z-A|Leyendas.*Z-A/i },
@@ -25,7 +217,7 @@ type AccessEntry = {
   mark?: string;
   collection?: string;
   dex: number;
-  availability?: "standard" | "hypothetical" | "excluded";
+  availability?: "standard" | "historical" | "hypothetical" | "excluded";
   game?: string;
   acquisitionCategory?: "own" | "trade" | "event" | "external";
 };
@@ -81,6 +273,7 @@ export function requiresPokemonBank(entry: AccessEntry) {
 
 export function availabilityForEntry(entry: AccessEntry): AvailabilityStatus {
   if (entry.availability === "hypothetical") return "hypothetical";
+  if (entry.availability === "historical") return "historical";
   if (entry.collection === "dream") return "historical";
   return requiresPokemonBank(entry) ? "legacy" : "current";
 }
@@ -99,7 +292,7 @@ export function methodKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "n") return "method_n_pokemon";
   if (entry.collection === "go") return "method_go";
   if (entry.collection === "trades") return "method_trade";
-  if (entry.collection === "cherish") return "method_event";
+  if (entry.collection === "cherish" || entry.collection === "event-dex") return "method_event";
   if (entry.availability === "hypothetical") return "method_hypothetical";
   return "method_source_game";
 }
@@ -112,6 +305,7 @@ export function reasonKeyForEntry(entry: AccessEntry) {
 }
 
 export function transferKeyForEntry(entry: AccessEntry) {
+  if (entry.availability === "historical") return "transfer_unavailable_historical";
   if (entry.collection === "dream") return "transfer_existing_bank_home";
   if (requiresPokemonBank(entry)) return "transfer_bank_home";
   if (entry.collection === "go") return "transfer_go_home";

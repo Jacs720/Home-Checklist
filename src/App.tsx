@@ -22,15 +22,25 @@ import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
   GAME_PLANS,
+  UNIFIED_COLLECTION_PRESETS,
   AvailabilityStatus,
   CollectionPreset,
   GamePlanId,
+  SpeciesRule,
+  SpeciesRulesDataset,
+  SpecimenRequirements,
   availabilityForEntry,
   generationForDex,
   matchesGamePlan,
   methodKeyForEntry,
   reasonKeyForEntry,
+  regionKeyForGeneration,
   requiresPokemonBank,
+  selectFinalFormDexEntries,
+  selectLivingDexWithRegionalForms,
+  selectLivingFormLiteEntries,
+  selectNoahsArkEntries,
+  selectOriginalGenerationEntries,
   transferKeyForEntry,
 } from "./collection-features";
 import { buildOwnedProgressCsv, decodeOcrTransferHash, matchCollectionRecords, parseCollectionCsv, parseCompactTransfer, type CollectionRecord, type ImportCatalogEntry, type ImportMatchSummary } from "./import-export";
@@ -50,7 +60,7 @@ type PokemonEntry = {
   shinyArtStyle?: "home";
   shinyEligible: boolean;
   shinyReview: "verified-correction" | "pending";
-  availability: "standard" | "hypothetical" | "excluded";
+  availability: "standard" | "historical" | "hypothetical" | "excluded";
   normalEligible?: boolean;
   ownOtNormal: boolean;
   ownOtShiny: boolean;
@@ -66,6 +76,20 @@ type PokemonEntry = {
   gender?: "male" | "female";
   genderDifferenceTier?: "notable" | "all";
   genderVariant?: "base" | "extra";
+  requirements?: SpecimenRequirements;
+  level?: number;
+  trainerId?: string;
+  ball?: string;
+  nature?: string;
+  ability?: string;
+  heldItem?: string;
+  moves?: string[];
+  ribbons?: string[];
+  eventYear?: number;
+  eventLocation?: string;
+  eventType?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 type Dataset = {
@@ -78,6 +102,7 @@ type SpecialDataset = {
   entries: PokemonEntry[];
 };
 type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
+type HomeChallengesDataset = { meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; caveat: string }; dexes: number[] };
 
 type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
@@ -99,8 +124,8 @@ type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
-const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "trades", "go"];
-const DEFAULT_COLLECTIONS = [...COLLECTIONS];
+const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "trades", "go"];
+const DEFAULT_COLLECTIONS = COLLECTIONS.filter((collection) => collection !== "event-dex");
 const DEFAULT_AVAILABILITY_FILTERS: AvailabilityFilters = { current: true, legacy: true, historical: true, hypothetical: true };
 const MARK_COLORS: Record<string, string> = {
   "Sin marca": "#9eb4b1", GB: "#e8cc67", P: "#74b7ea", USUM: "#b18bea", LGPE: "#efaa6f",
@@ -114,8 +139,22 @@ const GROUP_COLORS: Record<string, string> = {
   "shadow-colosseum": "#8a76a6",
   "shadow-xd": "#6679a9",
   cherish: "#e76d83",
+  "event-dex": "#ef718d",
   trades: "#e7a65f",
   go: "#57a6e6",
+  "profile-final": "#d6b466",
+  "profile-regional": "#8fc9f0",
+  "profile-forms_lite": "#9a8fe6",
+  "profile-noah": "#67c99b",
+  "region-kanto": "#e86e64",
+  "region-johto": "#dfb95a",
+  "region-hoenn": "#7faedc",
+  "region-sinnoh": "#9a91d2",
+  "region-unova": "#a9b3b6",
+  "region-kalos": "#67b8df",
+  "region-alola": "#f19d64",
+  "region-galar": "#db789d",
+  "region-paldea": "#9b7dd1",
 };
 const ORIGIN_MARK_ICONS: Record<string, string> = {
   GB: "GB_icon_HOME.png",
@@ -140,6 +179,7 @@ const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   trades: "trade",
   cherish: "event",
   events: "event",
+  "event-dex": "event",
   dream: "external",
   radar: "external",
   "shadow-colosseum": "external",
@@ -437,10 +477,13 @@ function buildBoxes(
   formOptions: FormOptions,
   normalLivingDex: boolean,
   originMarkDex: boolean,
+  collectionPreset: CollectionPreset,
+  speciesRules: Map<number, SpeciesRule>,
   language: UiLanguage,
 ) {
   const boxes: PlannedBox[] = [];
-  const livingDexCandidates: PlannedEntry[] = [];
+  const unifiedCandidates: PlannedEntry[] = [];
+  const unifiedProfile = normalLivingDex || UNIFIED_COLLECTION_PRESETS.has(collectionPreset);
   const groups = [
     ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
       key,
@@ -481,16 +524,40 @@ function buildBoxes(
         }
       }
     }
-    if (normalLivingDex) livingDexCandidates.push(...planned);
+    if (unifiedProfile) unifiedCandidates.push(...planned);
     else chunk(originMarkDex ? selectNormalLivingDexEntries(planned) : planned, 30).forEach((boxEntries, index) => {
       boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
     });
   }
-  if (normalLivingDex) {
-    const livingDexEntries = selectNormalLivingDexEntries(livingDexCandidates);
-    chunk(livingDexEntries, 30).forEach((boxEntries, index) => {
-      boxes.push({ globalIndex: boxes.length, groupKey: "living-dex", number: index + 1, label: `${copy(language, "normal_living_dex")} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
-    });
+  if (unifiedProfile) {
+    if (collectionPreset === "original_generation") {
+      const originalEntries = selectOriginalGenerationEntries(unifiedCandidates, speciesRules);
+      for (let generation = 1; generation <= 9; generation += 1) {
+        const groupKey = regionKeyForGeneration(generation);
+        const groupLabel = groupName(language, groupKey);
+        const regionEntries = originalEntries
+          .filter((entry) => entry.requirements.originGeneration === generation)
+          .map((entry) => ({ ...entry, groupKey, groupLabel }));
+        chunk(regionEntries, 30).forEach((boxEntries, index) => {
+          boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+        });
+      }
+    } else {
+      const selected = collectionPreset === "final"
+        ? selectFinalFormDexEntries(unifiedCandidates, speciesRules)
+        : collectionPreset === "regional"
+          ? selectLivingDexWithRegionalForms(unifiedCandidates)
+          : collectionPreset === "forms_lite"
+            ? selectLivingFormLiteEntries(unifiedCandidates)
+            : collectionPreset === "noah"
+              ? selectNoahsArkEntries(unifiedCandidates, speciesRules)
+              : selectNormalLivingDexEntries(unifiedCandidates);
+      const groupKey = normalLivingDex ? "living-dex" : `profile-${collectionPreset}`;
+      const groupLabel = normalLivingDex ? copy(language, "normal_living_dex") : copy(language, `profile_${collectionPreset}`);
+      chunk(selected, 30).forEach((boxEntries, index) => {
+        boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+      });
+    }
   }
   return boxes;
 }
@@ -534,6 +601,8 @@ export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [specialDataset, setSpecialDataset] = useState<SpecialDataset | null>(null);
   const [pokemonNames, setPokemonNames] = useState<PokemonNames | null>(null);
+  const [speciesRules, setSpeciesRules] = useState<Map<number, SpeciesRule>>(new Map());
+  const [homeChallengeDexes, setHomeChallengeDexes] = useState<Set<number>>(new Set());
   const [loadError, setLoadError] = useState(false);
   const [selectedMarks, setSelectedMarks] = useState<string[]>(DEFAULT_MARKS);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(DEFAULT_COLLECTIONS);
@@ -570,6 +639,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [missingOnly, setMissingOnly] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [homeChallengesOnly, setHomeChallengesOnly] = useState(false);
   const [detailEntry, setDetailEntry] = useState<LocatedEntry | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [themeConfig, setThemeConfig] = useState<BoxThemeConfig>(EMPTY_THEME_CONFIG);
@@ -608,17 +678,19 @@ export default function App() {
   const displayNote = (entry: PokemonEntry) => localizeCatalogText(language, entry.note);
 
   useEffect(() => {
-    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json"))])
-      .then(async ([baseResponse, specialResponse, namesResponse]) => {
-        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok) throw new Error("data");
-        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json()]);
+    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json")), fetch(assetUrl("data/species-rules.json")), fetch(assetUrl("data/home-challenges.json"))])
+      .then(async ([baseResponse, specialResponse, namesResponse, rulesResponse, challengesResponse]) => {
+        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok || !rulesResponse.ok || !challengesResponse.ok) throw new Error("data");
+        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json(), rulesResponse.json(), challengesResponse.json()]);
       })
-      .then(([baseValue, specialValue, namesValue]: [Dataset, SpecialDataset, PokemonNames]) => {
+      .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset]) => {
         const correctedEntries = applyCatalogCorrections(baseValue.entries);
         const correctedSpecialEntries = addGoStorableForms(specialValue.entries, correctedEntries);
         setDataset({ ...baseValue, entries: correctedEntries });
         setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length } }, entries: correctedSpecialEntries });
         setPokemonNames(namesValue);
+        setSpeciesRules(new Map(rulesValue.species.map((rule) => [rule.dex, rule])));
+        setHomeChallengeDexes(new Set(challengesValue.dexes));
       })
       .catch(() => setLoadError(true));
   }, []);
@@ -656,6 +728,7 @@ export default function App() {
         if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
         if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
         if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
+        if (typeof value.homeChallengesOnly === "boolean") setHomeChallengesOnly(value.homeChallengesOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
         if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
@@ -680,10 +753,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
+  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -707,10 +780,10 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).map((box) => ({
+  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).map((box) => ({
     ...box,
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language, boxNameOverrides]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language, boxNameOverrides]);
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -774,7 +847,7 @@ export default function App() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}`;
 
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
@@ -855,10 +928,11 @@ export default function App() {
   }, [viewMode]);
 
   const matchesSearch = (entry: PlannedEntry) => {
-    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${String(entry.dex).padStart(3, "0")} ${String(entry.dex).padStart(4, "0")} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
+    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.displayDetail ?? ""} ${entry.note ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${String(entry.dex).padStart(3, "0")} ${String(entry.dex).padStart(4, "0")} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.trainerId ?? ""} ${entry.nickname ?? ""} ${entry.ball ?? ""} ${entry.nature ?? ""} ${entry.ability ?? ""} ${entry.heldItem ?? ""} ${entry.eventYear ?? ""} ${entry.eventLocation ?? ""} ${entry.eventType ?? ""} ${(entry.moves ?? []).join(" ")} ${(entry.ribbons ?? []).join(" ")} ${JSON.stringify(entry.requirements ?? {})} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
     return matchesQuery
       && (!missingOnly || !entryIsOwned(entry))
       && (!favoritesOnly || favorites.has(entry.planId))
+      && (!homeChallengesOnly || homeChallengeDexes.has(entry.dex))
       && availabilityFilters[availabilityForEntry(entry)];
   };
 
@@ -993,12 +1067,18 @@ export default function App() {
     if (preset === "custom") return;
     setAvailabilityFilters(DEFAULT_AVAILABILITY_FILTERS);
     setFavoritesOnly(false);
+    setHomeChallengesOnly(false);
     setNormalLivingDex(preset === "basic");
     setOriginMarkDex(preset === "origin");
     if (preset === "basic") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "final") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
+    if (preset === "regional") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
+    if (preset === "forms_lite") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "forms") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "origin") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "noah") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "original_generation") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
     if (preset === "completionist") { setVariants({ shiny: true, normal: true }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks(MARKS); setSelectedCollections(COLLECTIONS); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
   };
 
@@ -1156,7 +1236,7 @@ export default function App() {
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
       genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
-      availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly,
+      availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
     themes: themeConfig,
@@ -1220,6 +1300,7 @@ export default function App() {
     const savedAvailabilityFilters = configuration.availabilityFilters as Record<string, unknown> | undefined;
     if (savedAvailabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, savedAvailabilityFilters[status] !== false])) as AvailabilityFilters);
     if (typeof configuration.favoritesOnly === "boolean") setFavoritesOnly(configuration.favoritesOnly);
+    if (typeof configuration.homeChallengesOnly === "boolean") setHomeChallengesOnly(configuration.homeChallengesOnly);
     if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
     if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
     if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
@@ -1307,11 +1388,11 @@ export default function App() {
   if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
 
   const markCounts = Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   }));
   const collectionCounts = Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   }));
   const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
@@ -1462,6 +1543,8 @@ export default function App() {
 
       {detailEntry && (() => {
         const { entry, box, slotIndex } = detailEntry;
+        const requirements = entry.requirements ?? {};
+        const requiredGender = requirements.gender ? t(requirements.gender === "any" ? "any_gender" : requirements.gender) : null;
         const localizedName = displayName(entry);
         const localizedForm = displayForm(entry);
         const artworkUrl = pokemonArtworkUrl(entry);
@@ -1490,10 +1573,28 @@ export default function App() {
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
               <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
+              {requiredGender && <div><dt>{t("required_gender")}</dt><dd>{requiredGender}</dd></div>}
+              {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{requirements.originGame}</dd></div>}
+              {requirements.originGeneration && <div><dt>{t("origin_generation")}</dt><dd>{t("generation")} {requirements.originGeneration}</dd></div>}
+              {requirements.originRegion && <div><dt>{t("origin_region")}</dt><dd>{groupName(language, requirements.originRegion)}</dd></div>}
+              {requirements.pokemonLanguage && <div><dt>{t("pokemon_language")}</dt><dd>{requirements.pokemonLanguage}</dd></div>}
+              {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{requirements.encounterMark}</dd></div>}
+              {entry.level && <div><dt>{t("level")}</dt><dd>{entry.level}</dd></div>}
+              {entry.trainerId && <div><dt>{t("trainer_id")}</dt><dd>{entry.trainerId}</dd></div>}
+              {(requirements.ball || entry.ball) && <div><dt>{t("ball")}</dt><dd>{requirements.ball ?? entry.ball}</dd></div>}
+              {(requirements.nature || entry.nature) && <div><dt>{t("nature")}</dt><dd>{requirements.nature ?? entry.nature}</dd></div>}
+              {(requirements.ability || entry.ability) && <div><dt>{t("ability")}</dt><dd>{requirements.ability ?? entry.ability}</dd></div>}
+              {requirements.teraType && <div><dt>{t("tera_type")}</dt><dd>{requirements.teraType}</dd></div>}
+              {(requirements.heldItem || entry.heldItem) && <div><dt>{t("held_item")}</dt><dd>{requirements.heldItem ?? entry.heldItem}</dd></div>}
+              {requirements.alpha !== undefined && <div><dt>{t("alpha")}</dt><dd>{t(requirements.alpha ? "yes" : "no")}</dd></div>}
+              {requirements.gmaxFactor !== undefined && <div><dt>{t("gmax_factor")}</dt><dd>{t(requirements.gmaxFactor ? "yes" : "no")}</dd></div>}
+              {(requirements.moves?.length || entry.moves?.length) && <div><dt>{t("moves")}</dt><dd>{(requirements.moves ?? entry.moves)?.join(" · ")}</dd></div>}
+              {(requirements.ribbons?.length || entry.ribbons?.length) && <div><dt>{t("ribbons")}</dt><dd>{(requirements.ribbons ?? entry.ribbons)?.join(" · ")}</dd></div>}
+              {(entry.startDate || entry.endDate) && <div><dt>{t("event_period")}</dt><dd>{[entry.startDate, entry.endDate].filter(Boolean).join(" — ")}</dd></div>}
               <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>
             </dl>
             <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
-            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && <small>{localizeCatalogText(language, entry.sourceLabel)}</small>}</section>
+            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && (entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{localizeCatalogText(language, entry.sourceLabel)} ↗</a> : <small>{localizeCatalogText(language, entry.sourceLabel)}</small>)}</section>
           </section>
         </div>;
       })()}
@@ -1579,6 +1680,7 @@ export default function App() {
               </label>;
             })}
             {selectedMarks.includes("GBA") && <div className="sub-rule static-rule"><span aria-hidden="true">↗</span><span><b>{t("gba_ports")}</b><small>{t("gba_ports_desc")}</small></span></div>}
+            <label className="switch-row" htmlFor="home-challenges-only" aria-label={t("home_challenges_only")}><span><b>{t("home_challenges_only")}</b><small>{t("home_challenges_only_desc").replace("{count}", homeChallengeDexes.size.toLocaleString(locale))}</small></span><GooeyCheckbox id="home-challenges-only" checked={homeChallengesOnly} onChange={(event) => setHomeChallengesOnly(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
@@ -1804,7 +1906,7 @@ export default function App() {
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
@@ -1839,7 +1941,8 @@ export default function App() {
                   const visible = matchesSearch(entry);
                   const localizedName = displayName(entry);
                   const localizedForm = displayForm(entry);
-                  const genderDetail = entry.gender ? t(entry.gender) : null;
+                  const requiredGender = entry.requirements?.gender;
+                  const genderDetail = requiredGender ? t(requiredGender === "any" ? "any_gender" : requiredGender) : entry.gender ? t(entry.gender) : null;
                   const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
                   const originMarkKey = entry.mark ?? entry.groupKey;
                   const favorite = favorites.has(entry.planId);
@@ -1879,7 +1982,7 @@ export default function App() {
           )}
 
           <section className="data-note">
-            <div className="source-links"><a href="https://bulbapedia.bulbagarden.net/wiki/N%27s_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("n_source")}</a><a href="https://www.serebii.net/blackwhite/dreamworldpokemon.shtml" target="_blank" rel="noreferrer">{t("dream_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Dream_Radar#Pok%C3%A9mon_encounters" target="_blank" rel="noreferrer">{t("radar_source")}</a><a href="https://www.serebii.net/events/shiny.shtml" target="_blank" rel="noreferrer">{t("event_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Shadow_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("shadow_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/In-game_trade" target="_blank" rel="noreferrer">{t("trade_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_with_gender_differences" target="_blank" rel="noreferrer">{t("gender_source")}</a><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noreferrer">{t("art_source")}</a></div>
+            <div className="source-links"><a href="https://bulbapedia.bulbagarden.net/wiki/N%27s_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("n_source")}</a><a href="https://www.serebii.net/blackwhite/dreamworldpokemon.shtml" target="_blank" rel="noreferrer">{t("dream_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Dream_Radar#Pok%C3%A9mon_encounters" target="_blank" rel="noreferrer">{t("radar_source")}</a><a href="https://www.serebii.net/events/" target="_blank" rel="noreferrer">{t("event_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Challenge_(HOME)" target="_blank" rel="noreferrer">{t("home_challenges_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Shadow_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("shadow_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/In-game_trade" target="_blank" rel="noreferrer">{t("trade_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_with_gender_differences" target="_blank" rel="noreferrer">{t("gender_source")}</a><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noreferrer">{t("art_source")}</a></div>
           </section>
         </section>
       </div>

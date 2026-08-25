@@ -24,7 +24,7 @@ export type ImportCatalogEntry = {
   trainerName?: string;
   shinyEligible: boolean;
   normalEligible?: boolean;
-  availability: "standard" | "hypothetical" | "excluded";
+  availability: "standard" | "historical" | "hypothetical" | "excluded";
   gender?: "male" | "female";
   genderVariant?: "base" | "extra";
 };
