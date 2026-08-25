@@ -147,7 +147,6 @@ h1 { font-size: 20px; margin-bottom: 0; letter-spacing: -.035em; }
 .backup-actions > span { grid-column: 1 / -1; margin-top: 5px; color: var(--dim); font-size: 7px; font-weight: 800; letter-spacing: .12em; }
 .backup-actions button { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 9px; }
 .backup-actions .wide { grid-column: 1 / -1; }
-.backup-actions .austin-import-button { border-color: rgba(85, 224, 192, .36); background: rgba(35, 114, 99, .12); color: var(--teal); }
 .auto-save-status { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--dim); font-size: 8px; }
 .auto-save-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(85, 224, 192, .5); }
 .drawer-scrim { display: none; }

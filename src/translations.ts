@@ -501,10 +501,115 @@ const AUSTIN_IMPORT_ES: Copy = {
   austin_shiny_not_supported: "Ese es el organizer shiny de Austin John. Esta opción por ahora solo importa el archivo normal, sin shiny.", austin_file_too_large: "Ese spreadsheet es demasiado grande para importarlo de forma segura.",
 };
 
+const SIDEBAR_COPY: Partial<Record<UiLanguage, Copy>> = {
+  DEU: {
+    personal_planning: "PERSÖNLICHE PLANUNG", collection_goal: "Sammlungsziel", goal_placeholder: "Z. B. 2000", collection_notes: "Notizen", notes_placeholder: "Ziele, fehlende Einträge oder Erinnerungen…",
+    collection_and_backup: "IMPORT & SICHERUNG", import_collection: "CSV oder Sicherung importieren", export_json: "JSON exportieren", export_csv: "CSV exportieren", export_project: "Projektdatei exportieren", invalid_collection: "Diese Sammlung oder Sicherung konnte nicht gelesen werden.", backup_imported: "Sicherung erfolgreich importiert.", last_saved: "Zuletzt gespeichert:", saved_now: "gerade eben", not_saved_yet: "noch nicht gespeichert",
+    theme_backup: "THEMENEINSTELLUNGEN", export_themes: "Themen exportieren", import_themes: "Themen importieren", invalid_theme_backup: "Diese Datei enthält keine gültigen Themeneinstellungen.",
+  },
+  FRA: {
+    personal_planning: "PLANIFICATION PERSONNELLE", collection_goal: "Objectif de collection", goal_placeholder: "P. ex. 2000", collection_notes: "Notes", notes_placeholder: "Objectifs, entrées manquantes ou rappels…",
+    collection_and_backup: "IMPORTATION ET SAUVEGARDE", import_collection: "Importer un CSV ou une sauvegarde", export_json: "Exporter en JSON", export_csv: "Exporter en CSV", export_project: "Exporter le fichier du projet", invalid_collection: "Impossible de lire cette collection ou sauvegarde.", backup_imported: "Sauvegarde importée.", last_saved: "Dernière sauvegarde :", saved_now: "à l’instant", not_saved_yet: "pas encore sauvegardé",
+    theme_backup: "PARAMÈTRES DES THÈMES", export_themes: "Exporter les thèmes", import_themes: "Importer les thèmes", invalid_theme_backup: "Ce fichier ne contient pas de paramètres de thème valides.",
+  },
+  ITA: {
+    personal_planning: "PIANIFICAZIONE PERSONALE", collection_goal: "Obiettivo della collezione", goal_placeholder: "Es. 2000", collection_notes: "Note", notes_placeholder: "Obiettivi, voci mancanti o promemoria…",
+    collection_and_backup: "IMPORTAZIONE E BACKUP", import_collection: "Importa CSV o backup", export_json: "Esporta JSON", export_csv: "Esporta CSV", export_project: "Esporta file del progetto", invalid_collection: "Impossibile leggere questa collezione o questo backup.", backup_imported: "Backup importato correttamente.", last_saved: "Ultimo salvataggio:", saved_now: "ora", not_saved_yet: "non ancora salvato",
+    theme_backup: "IMPOSTAZIONI DEI TEMI", export_themes: "Esporta temi", import_themes: "Importa temi", invalid_theme_backup: "Questo file non contiene impostazioni dei temi valide.",
+  },
+  JPN: {
+    personal_planning: "個人プラン", collection_goal: "コレクション目標", goal_placeholder: "例：2000", collection_notes: "メモ", notes_placeholder: "目標、未登録項目、リマインダーなど…",
+    collection_and_backup: "インポートとバックアップ", import_collection: "CSVまたはバックアップをインポート", export_json: "JSONをエクスポート", export_csv: "CSVをエクスポート", export_project: "プロジェクトファイルをエクスポート", invalid_collection: "このコレクションまたはバックアップを読み込めませんでした。", backup_imported: "バックアップをインポートしました。", last_saved: "最終保存：", saved_now: "たった今", not_saved_yet: "未保存",
+    theme_backup: "テーマ設定", export_themes: "テーマをエクスポート", import_themes: "テーマをインポート", invalid_theme_backup: "このファイルには有効なテーマ設定が含まれていません。",
+  },
+  KOR: {
+    personal_planning: "개인 계획", collection_goal: "컬렉션 목표", goal_placeholder: "예: 2000", collection_notes: "메모", notes_placeholder: "목표, 누락 항목 또는 알림…",
+    collection_and_backup: "가져오기 및 백업", import_collection: "CSV 또는 백업 가져오기", export_json: "JSON 내보내기", export_csv: "CSV 내보내기", export_project: "프로젝트 파일 내보내기", invalid_collection: "이 컬렉션 또는 백업을 읽을 수 없습니다.", backup_imported: "백업을 가져왔습니다.", last_saved: "마지막 저장:", saved_now: "방금", not_saved_yet: "아직 저장되지 않음",
+    theme_backup: "테마 설정", export_themes: "테마 내보내기", import_themes: "테마 가져오기", invalid_theme_backup: "이 파일에 올바른 테마 설정이 없습니다.",
+  },
+  CHS: {
+    personal_planning: "个人规划", collection_goal: "收藏目标", goal_placeholder: "例如 2000", collection_notes: "备注", notes_placeholder: "目标、缺少的项目或提醒…",
+    collection_and_backup: "导入与备份", import_collection: "导入 CSV 或备份", export_json: "导出 JSON", export_csv: "导出 CSV", export_project: "导出项目文件", invalid_collection: "无法读取此收藏或备份。", backup_imported: "备份导入成功。", last_saved: "上次保存：", saved_now: "刚刚", not_saved_yet: "尚未保存",
+    theme_backup: "主题设置", export_themes: "导出主题", import_themes: "导入主题", invalid_theme_backup: "此文件不包含有效的主题设置。",
+  },
+  CHT: {
+    personal_planning: "個人規劃", collection_goal: "收藏目標", goal_placeholder: "例如 2000", collection_notes: "備註", notes_placeholder: "目標、缺少的項目或提醒…",
+    collection_and_backup: "匯入與備份", import_collection: "匯入 CSV 或備份", export_json: "匯出 JSON", export_csv: "匯出 CSV", export_project: "匯出專案檔案", invalid_collection: "無法讀取此收藏或備份。", backup_imported: "備份匯入成功。", last_saved: "上次儲存：", saved_now: "剛剛", not_saved_yet: "尚未儲存",
+    theme_backup: "主題設定", export_themes: "匯出主題", import_themes: "匯入主題", invalid_theme_backup: "此檔案不包含有效的主題設定。",
+  },
+};
+
+const AUSTIN_IMPORT_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
+  DEU: {
+    austin_import_button: "Austin John importieren (.xlsx)", austin_reading: "Organizer wird gelesen…", austin_detected: "AUSTIN-JOHN-ORGANIZER ERKANNT",
+    austin_preview_intro: "Prüfe den erkannten Fortschritt, bevor dein normaler Living Dex geändert wird.", austin_source_sheet: "Quellblatt", austin_version: "Version", austin_import_to: "Importieren nach",
+    austin_matched: "Kompatible Pokémon", austin_owned: "Als erhalten markiert", austin_missing: "Fehlend", austin_origin_unknown: "Herkunft unbekannt",
+    austin_origin_note: "Diese Tabelle enthält keine Herkunftszeichen; Sammlungen nach Herkunftszeichen werden nicht geändert.", austin_replace_removes: "Beim Ersetzen werden {count} vorhandene Markierungen im normalen Living Dex entfernt, die in dieser Tabelle nicht als erhalten markiert sind.",
+    austin_merge: "Mit aktuellem Fortschritt zusammenführen", austin_replace: "Aktuellen Fortschritt ersetzen", austin_cancel: "Abbrechen", austin_import_complete: "Austin-John-Import abgeschlossen",
+    austin_owned_imported: "Erhaltene importiert", austin_origin_unchanged: "Herkunftszeichen unverändert", austin_invalid_workbook: "Diese Datei ist keine unterstützte Austin John HOME Organizer-Arbeitsmappe.",
+    austin_shiny_not_supported: "Dies ist der Shiny Austin John Organizer. Derzeit kann nur die normale, nicht schillernde Arbeitsmappe importiert werden.", austin_file_too_large: "Diese Arbeitsmappe ist zu groß für einen sicheren Import.",
+  },
+  FRA: {
+    austin_import_button: "Importer Austin John (.xlsx)", austin_reading: "Lecture de l’organizer…", austin_detected: "ORGANIZER AUSTIN JOHN DÉTECTÉ",
+    austin_preview_intro: "Vérifiez la progression détectée avant de modifier votre Living Dex normal.", austin_source_sheet: "Feuille source", austin_version: "Version", austin_import_to: "Importer vers",
+    austin_matched: "Pokémon compatibles", austin_owned: "Marqués comme obtenus", austin_missing: "Manquants", austin_origin_unknown: "Origine inconnue",
+    austin_origin_note: "Cette feuille de calcul ne contient pas de marques d’origine ; les collections par marque d’origine ne seront pas modifiées.", austin_replace_removes: "Le remplacement retirera {count} marques du Living Dex normal qui ne sont pas indiquées comme obtenues dans cette feuille.",
+    austin_merge: "Fusionner avec la progression actuelle", austin_replace: "Remplacer la progression actuelle", austin_cancel: "Annuler", austin_import_complete: "Importation Austin John terminée",
+    austin_owned_imported: "Obtenus importés", austin_origin_unchanged: "Marques d’origine inchangées", austin_invalid_workbook: "Ce fichier n’est pas un classeur Austin John HOME Organizer pris en charge.",
+    austin_shiny_not_supported: "Il s’agit de l’organizer chromatique d’Austin John. Seul le classeur normal, non chromatique, peut être importé pour le moment.", austin_file_too_large: "Ce classeur est trop volumineux pour être importé en toute sécurité.",
+  },
+  ITA: {
+    austin_import_button: "Importa Austin John (.xlsx)", austin_reading: "Lettura dell’organizer…", austin_detected: "ORGANIZER DI AUSTIN JOHN RILEVATO",
+    austin_preview_intro: "Controlla i progressi rilevati prima di modificare il tuo Living Dex normale.", austin_source_sheet: "Foglio di origine", austin_version: "Versione", austin_import_to: "Importa in",
+    austin_matched: "Pokémon compatibili", austin_owned: "Contrassegnati come ottenuti", austin_missing: "Mancanti", austin_origin_unknown: "Origine sconosciuta",
+    austin_origin_note: "Questo foglio di calcolo non include i simboli di origine; le relative collezioni non verranno modificate.", austin_replace_removes: "La sostituzione rimuoverà {count} segni esistenti del Living Dex normale non indicati come ottenuti in questo foglio.",
+    austin_merge: "Unisci ai progressi attuali", austin_replace: "Sostituisci i progressi attuali", austin_cancel: "Annulla", austin_import_complete: "Importazione Austin John completata",
+    austin_owned_imported: "Ottenuti importati", austin_origin_unchanged: "Simboli di origine invariati", austin_invalid_workbook: "Questo file non è una cartella di lavoro Austin John HOME Organizer supportata.",
+    austin_shiny_not_supported: "Questo è l’organizer cromatico di Austin John. Al momento è possibile importare solo la cartella normale, non cromatica.", austin_file_too_large: "Questa cartella di lavoro è troppo grande per essere importata in sicurezza.",
+  },
+  JPN: {
+    austin_import_button: "Austin Johnをインポート（.xlsx）", austin_reading: "オーガナイザーを読み込み中…", austin_detected: "AUSTIN JOHNオーガナイザーを検出",
+    austin_preview_intro: "通常のLiving Dexを変更する前に、検出された進捗を確認してください。", austin_source_sheet: "元シート", austin_version: "バージョン", austin_import_to: "インポート先",
+    austin_matched: "対応するポケモン", austin_owned: "入手済み", austin_missing: "未入手", austin_origin_unknown: "出身不明",
+    austin_origin_note: "このスプレッドシートには出身マークが含まれないため、出身マーク別コレクションは変更されません。", austin_replace_removes: "置き換えると、このシートで入手済みになっていない通常Living Dexの既存マーク{count}件が削除されます。",
+    austin_merge: "現在の進捗と統合", austin_replace: "現在の進捗を置き換え", austin_cancel: "キャンセル", austin_import_complete: "Austin Johnのインポート完了",
+    austin_owned_imported: "入手済みをインポート", austin_origin_unchanged: "出身マークは変更なし", austin_invalid_workbook: "このファイルは対応するAustin John HOME Organizerではありません。",
+    austin_shiny_not_supported: "これは色違い版のAustin John Organizerです。現在は通常色版のみインポートできます。", austin_file_too_large: "このブックは安全にインポートするには大きすぎます。",
+  },
+  KOR: {
+    austin_import_button: "Austin John 가져오기 (.xlsx)", austin_reading: "오거나이저 읽는 중…", austin_detected: "AUSTIN JOHN 오거나이저 감지됨",
+    austin_preview_intro: "일반 Living Dex를 변경하기 전에 감지된 진행도를 확인하세요.", austin_source_sheet: "원본 시트", austin_version: "버전", austin_import_to: "가져올 위치",
+    austin_matched: "호환 Pokémon", austin_owned: "보유로 표시됨", austin_missing: "미보유", austin_origin_unknown: "출신 불명",
+    austin_origin_note: "이 스프레드시트에는 출신 마크가 없어 출신 마크 컬렉션은 변경되지 않습니다.", austin_replace_removes: "교체하면 이 시트에서 보유로 표시되지 않은 일반 Living Dex의 기존 마크 {count}개가 제거됩니다.",
+    austin_merge: "현재 진행도와 병합", austin_replace: "현재 진행도 교체", austin_cancel: "취소", austin_import_complete: "Austin John 가져오기 완료",
+    austin_owned_imported: "보유 항목 가져옴", austin_origin_unchanged: "출신 마크 변경 없음", austin_invalid_workbook: "이 파일은 지원되는 Austin John HOME Organizer 통합 문서가 아닙니다.",
+    austin_shiny_not_supported: "이 파일은 이로치 Austin John Organizer입니다. 현재는 일반 색상 통합 문서만 가져올 수 있습니다.", austin_file_too_large: "이 통합 문서는 안전하게 가져오기에는 너무 큽니다.",
+  },
+  CHS: {
+    austin_import_button: "导入 Austin John (.xlsx)", austin_reading: "正在读取整理表…", austin_detected: "已检测到 AUSTIN JOHN 整理表",
+    austin_preview_intro: "更改普通 Living Dex 前，请检查检测到的进度。", austin_source_sheet: "源工作表", austin_version: "版本", austin_import_to: "导入到",
+    austin_matched: "兼容的宝可梦", austin_owned: "已标记为拥有", austin_missing: "缺少", austin_origin_unknown: "来源未知",
+    austin_origin_note: "此电子表格不包含起源标记；按起源标记划分的收藏不会更改。", austin_replace_removes: "替换将移除普通 Living Dex 中未在此表格标记为拥有的 {count} 个现有标记。",
+    austin_merge: "与当前进度合并", austin_replace: "替换当前进度", austin_cancel: "取消", austin_import_complete: "Austin John 导入完成",
+    austin_owned_imported: "已导入拥有项目", austin_origin_unchanged: "起源标记未更改", austin_invalid_workbook: "此文件不是受支持的 Austin John HOME Organizer 工作簿。",
+    austin_shiny_not_supported: "这是异色版 Austin John Organizer。目前只能导入普通、非异色工作簿。", austin_file_too_large: "此工作簿过大，无法安全导入。",
+  },
+  CHT: {
+    austin_import_button: "匯入 Austin John (.xlsx)", austin_reading: "正在讀取整理表…", austin_detected: "已偵測到 AUSTIN JOHN 整理表",
+    austin_preview_intro: "變更一般 Living Dex 前，請檢查偵測到的進度。", austin_source_sheet: "來源工作表", austin_version: "版本", austin_import_to: "匯入到",
+    austin_matched: "相容的寶可夢", austin_owned: "已標記為擁有", austin_missing: "缺少", austin_origin_unknown: "來源未知",
+    austin_origin_note: "此試算表不包含起源標記；依起源標記分類的收藏不會變更。", austin_replace_removes: "取代將移除一般 Living Dex 中未在此表格標記為擁有的 {count} 個現有標記。",
+    austin_merge: "與目前進度合併", austin_replace: "取代目前進度", austin_cancel: "取消", austin_import_complete: "Austin John 匯入完成",
+    austin_owned_imported: "已匯入擁有項目", austin_origin_unchanged: "起源標記未變更", austin_invalid_workbook: "此檔案不是支援的 Austin John HOME Organizer 活頁簿。",
+    austin_shiny_not_supported: "這是異色版 Austin John Organizer。目前只能匯入一般、非異色活頁簿。", austin_file_too_large: "此活頁簿過大，無法安全匯入。",
+  },
+};
+
 const AUSTIN_IMPORT_COPY: Partial<Record<UiLanguage, Copy>> = {
   "ES-LA": AUSTIN_IMPORT_ES,
   "ES-ES": { ...AUSTIN_IMPORT_ES, austin_shiny_not_supported: "Ese es el organizer variocolor de Austin John. Esta opción por ahora solo importa el archivo normal, sin variocolor." },
   ENG: AUSTIN_IMPORT_EN,
+  ...AUSTIN_IMPORT_LOCALIZED,
 };
 
 const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
@@ -600,7 +705,7 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? SIDEBAR_COPY[language]?.[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
 export function groupName(language: UiLanguage, key: string) {
