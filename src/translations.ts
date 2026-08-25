@@ -255,6 +255,17 @@ const GLOBAL_VIEW_COPY: Record<UiLanguage, Copy> = {
 };
 
 const FEATURE_EN: Copy = {
+  summary_view: "Summary", collection_summary: "Collection summary", summary_desc: "A clear overview of the collection defined by your active profile and filters.",
+  pokemon_registered: "Pokémon registered", pokemon_missing: "Missing", completion: "Complete", by_generation: "BY GENERATION", by_origin: "BY ORIGIN",
+  generation: "Generation", summary_entries: "entries", availability_breakdown: "AVAILABILITY BREAKDOWN", summary_filters_note: "Figures follow your active collection profile and filters.",
+  game_planner: "What can I get in this game?", game_planner_desc: "Choose a title to turn your current missing entries into a focused capture and transfer plan.",
+  select_game: "Select a game", obtainable_missing: "missing entries you can work on", game_plan_complete: "You already have every matching entry in this plan.",
+  game_plan_caveat: "Based on origin marks and cataloged in-game sources. Version-exclusive encounters may still require the paired title or a trade.", show_more: "Show more", remaining_results: "more results",
+  game_sv: "Pokémon Scarlet / Violet", game_lza: "Pokémon Legends: Z-A", game_swsh: "Pokémon Sword / Shield", game_pla: "Pokémon Legends: Arceus",
+  game_bdsp: "Brilliant Diamond / Shining Pearl", game_lgpe: "Pokémon: Let's Go", game_usum: "Sun / Moon / Ultra Sun / Ultra Moon", game_kalos_hoenn: "X / Y / Omega Ruby / Alpha Sapphire",
+  game_bw2: "Black 2 / White 2 + Dream Radar", game_gb: "Game Boy Virtual Console", game_gba: "GBA Switch-port scenario", game_colosseum: "Pokémon Colosseum", game_xd: "Pokémon XD: Gale of Darkness", game_go: "Pokémon GO",
+  undo: "Undo", undo_desc: "Undo the last progress change", nothing_to_undo: "Nothing to undo", reset_progress: "Reset all progress", confirm_unmark_many: "Unmark {count} obtained entries?", confirm_reset_progress: "Reset all {count} obtained entries? You can undo this once.",
+  keyboard_shortcuts: "KEYBOARD SHORTCUTS", shortcut_arrows: "Move between slots", shortcut_space: "Obtained / missing", shortcut_favorite: "Favorite", shortcut_search: "Focus search", shortcut_boxes: "Previous / next box", shortcut_undo: "Undo last change",
   collection_profiles: "COLLECTION PROFILE", profile_basic: "Basic Living Dex", profile_basic_desc: "One normal specimen of each species.",
   profile_forms: "Living Form Dex", profile_forms_desc: "Every storable form and visible gender difference.",
   profile_shiny: "Shiny Living Dex", profile_shiny_desc: "Every possible shiny with your OT.",
@@ -290,6 +301,17 @@ const FEATURE_EN: Copy = {
 };
 
 const FEATURE_ES: Copy = {
+  summary_view: "Resumen", collection_summary: "Resumen de colección", summary_desc: "Una vista clara de la colección definida por tu perfil y filtros activos.",
+  pokemon_registered: "Pokémon registrados", pokemon_missing: "Faltantes", completion: "Completado", by_generation: "POR GENERACIÓN", by_origin: "POR ORIGEN",
+  generation: "Generación", summary_entries: "entradas", availability_breakdown: "DISTRIBUCIÓN POR DISPONIBILIDAD", summary_filters_note: "Las cifras respetan el perfil de colección y los filtros activos.",
+  game_planner: "¿Qué puedo conseguir en este juego?", game_planner_desc: "Elige un título para convertir tus faltantes actuales en un plan concreto de captura y transferencia.",
+  select_game: "Selecciona un juego", obtainable_missing: "faltantes que puedes trabajar", game_plan_complete: "Ya tienes todas las entradas que corresponden a este plan.",
+  game_plan_caveat: "Basado en marcas de origen y fuentes internas catalogadas. Los exclusivos de versión todavía pueden requerir el juego complementario o un intercambio.", show_more: "Mostrar más", remaining_results: "resultados adicionales",
+  game_sv: "Pokémon Escarlata / Púrpura", game_lza: "Leyendas Pokémon: Z-A", game_swsh: "Pokémon Espada / Escudo", game_pla: "Leyendas Pokémon: Arceus",
+  game_bdsp: "Diamante Brillante / Perla Reluciente", game_lgpe: "Pokémon: Let's Go", game_usum: "Sol / Luna / Ultrasol / Ultraluna", game_kalos_hoenn: "X / Y / Rubí Omega / Zafiro Alfa",
+  game_bw2: "Negro 2 / Blanco 2 + Dream Radar", game_gb: "Consola Virtual de Game Boy", game_gba: "Escenario de ports GBA en Switch", game_colosseum: "Pokémon Colosseum", game_xd: "Pokémon XD: Tempestad Oscura", game_go: "Pokémon GO",
+  undo: "Deshacer", undo_desc: "Deshacer el último cambio de progreso", nothing_to_undo: "Nada por deshacer", reset_progress: "Restablecer todo el progreso", confirm_unmark_many: "¿Desmarcar {count} entradas obtenidas?", confirm_reset_progress: "¿Restablecer las {count} entradas obtenidas? Podrás deshacerlo una vez.",
+  keyboard_shortcuts: "ATAJOS DE TECLADO", shortcut_arrows: "Moverse entre posiciones", shortcut_space: "Obtenido / faltante", shortcut_favorite: "Favorito", shortcut_search: "Enfocar búsqueda", shortcut_boxes: "Caja anterior / siguiente", shortcut_undo: "Deshacer último cambio",
   collection_profiles: "PERFIL DE COLECCIÓN", profile_basic: "Living Dex básica", profile_basic_desc: "Un ejemplar normal de cada especie.",
   profile_forms: "Living Form Dex", profile_forms_desc: "Todas las formas almacenables y diferencias de sexo visibles.",
   profile_shiny: "Shiny Living Dex", profile_shiny_desc: "Todos los shiny posibles con tu EO.",

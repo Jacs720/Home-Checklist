@@ -1,8 +1,25 @@
 export type AvailabilityStatus = "current" | "legacy" | "historical" | "hypothetical";
 export type CollectionPreset = "basic" | "forms" | "shiny" | "origin" | "completionist" | "custom";
+export type GamePlanId = "sv" | "lza" | "swsh" | "pla" | "bdsp" | "lgpe" | "usum" | "kalos_hoenn" | "bw2" | "gb" | "gba" | "colosseum" | "xd" | "go";
 
 export const AVAILABILITY_STATUSES: AvailabilityStatus[] = ["current", "legacy", "historical", "hypothetical"];
 export const COLLECTION_PRESETS: CollectionPreset[] = ["basic", "forms", "shiny", "origin", "completionist", "custom"];
+export const GAME_PLANS: Array<{ id: GamePlanId; marks?: string[]; collections?: string[]; gamePattern?: RegExp }> = [
+  { id: "sv", marks: ["SV"], gamePattern: /Scarlet|Violet|Escarlata|P[uú]rpura/i },
+  { id: "lza", marks: ["LZA"], gamePattern: /Legends.*Z-A|Leyendas.*Z-A/i },
+  { id: "swsh", marks: ["SwSh"], gamePattern: /Sword|Shield|Espada|Escudo/i },
+  { id: "pla", marks: ["LA"], gamePattern: /Legends.*Arceus|Leyendas.*Arceus/i },
+  { id: "bdsp", marks: ["BDSP"], gamePattern: /Brilliant Diamond|Shining Pearl|Diamante Brillante|Perla Reluciente/i },
+  { id: "lgpe", marks: ["LGPE"], gamePattern: /Let's Go/i },
+  { id: "usum", marks: ["USUM"], gamePattern: /Sun|Moon|Sol|Luna/i },
+  { id: "kalos_hoenn", marks: ["P"], gamePattern: /Pok[eé]mon X|Pok[eé]mon Y|Omega Ruby|Alpha Sapphire|Rub[ií] Omega|Zafiro Alfa/i },
+  { id: "bw2", collections: ["n", "radar"], gamePattern: /Black 2|White 2|Negro 2|Blanco 2/i },
+  { id: "gb", marks: ["GB"] },
+  { id: "gba", marks: ["GBA"] },
+  { id: "colosseum", collections: ["shadow-colosseum"] },
+  { id: "xd", collections: ["shadow-xd"] },
+  { id: "go", collections: ["go"] },
+];
 
 type AccessEntry = {
   mark?: string;
@@ -10,6 +27,7 @@ type AccessEntry = {
   dex: number;
   availability?: "standard" | "hypothetical" | "excluded";
   game?: string;
+  acquisitionCategory?: "own" | "trade" | "event" | "external";
 };
 
 const BANK_MARKS = new Set(["Sin marca", "GB", "P", "USUM"]);
@@ -35,7 +53,7 @@ const ORIGIN_GENERATION: Record<string, number> = {
   "shadow-xd": 3,
 };
 
-function speciesGeneration(dex: number) {
+export function generationForDex(dex: number) {
   if (dex <= 151) return 1;
   if (dex <= 251) return 2;
   if (dex <= 386) return 3;
@@ -45,6 +63,14 @@ function speciesGeneration(dex: number) {
   if (dex <= 809) return 7;
   if (dex <= 905) return 8;
   return 9;
+}
+
+export function matchesGamePlan(entry: AccessEntry, planId: GamePlanId) {
+  const plan = GAME_PLANS.find((candidate) => candidate.id === planId);
+  if (!plan || entry.availability === "hypothetical" || entry.collection === "dream" || entry.collection === "events" || entry.collection === "cherish" || entry.acquisitionCategory === "event") return false;
+  if (entry.mark && plan.marks?.includes(entry.mark)) return true;
+  if (entry.collection && plan.collections?.includes(entry.collection)) return true;
+  return entry.collection === "trades" && Boolean(entry.game && plan.gamePattern?.test(entry.game));
 }
 
 export function requiresPokemonBank(entry: AccessEntry) {
@@ -62,7 +88,7 @@ export function availabilityForEntry(entry: AccessEntry): AvailabilityStatus {
 export function isLaterGenerationEvolution(entry: AccessEntry) {
   const originKey = entry.mark ?? entry.collection ?? "";
   const originGeneration = ORIGIN_GENERATION[originKey];
-  return Boolean(originGeneration && speciesGeneration(entry.dex) > originGeneration);
+  return Boolean(originGeneration && generationForDex(entry.dex) > originGeneration);
 }
 
 export function methodKeyForEntry(entry: AccessEntry) {

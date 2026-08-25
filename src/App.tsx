@@ -1,4 +1,4 @@
-import { ChangeEvent, CSSProperties, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   BoxTheme,
   BoxThemeConfig,
@@ -20,9 +20,13 @@ import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloo
 import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
+  GAME_PLANS,
   AvailabilityStatus,
   CollectionPreset,
+  GamePlanId,
   availabilityForEntry,
+  generationForDex,
+  matchesGamePlan,
   methodKeyForEntry,
   reasonKeyForEntry,
   requiresPokemonBank,
@@ -77,7 +81,7 @@ type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
 type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
-type CollectionViewMode = "boxes" | "global";
+type CollectionViewMode = "boxes" | "global" | "summary";
 type ThemeScope = "all" | "mark" | "box";
 type ThemeTab = ThemeGame | "concept" | "custom";
 type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
@@ -512,6 +516,10 @@ export default function App() {
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<CollectionViewMode>("boxes");
+  const [selectedGamePlan, setSelectedGamePlan] = useState<GamePlanId>("usum");
+  const [gameResultLimit, setGameResultLimit] = useState(24);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const [keyboardSlotIndex, setKeyboardSlotIndex] = useState(0);
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [locationAnnouncement, setLocationAnnouncement] = useState("");
   const [globalTooltip, setGlobalTooltip] = useState<GlobalTooltip | null>(null);
@@ -533,6 +541,8 @@ export default function App() {
   const themeImportRef = useRef<HTMLInputElement>(null);
   const themeImageRef = useRef<HTMLInputElement>(null);
   const highlightedEntryRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const ownedHistoryRef = useRef<Set<string>[]>([]);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
@@ -591,6 +601,8 @@ export default function App() {
         if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
+        if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
+        if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
       }
       const savedThemes = localStorage.getItem(THEME_STORAGE_KEY);
       if (savedThemes) {
@@ -603,8 +615,8 @@ export default function App() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity }));
-  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan }));
+  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -629,6 +641,27 @@ export default function App() {
   );
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
+  const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
+    const generation = index + 1;
+    const entries = plannedEntries.filter((entry) => generationForDex(entry.dex) === generation);
+    const registered = entries.filter((entry) => owned.has(entry.planId)).length;
+    return { generation, total: entries.length, registered, progress: entries.length ? Math.round((registered / entries.length) * 100) : 0 };
+  }).filter((item) => item.total > 0), [plannedEntries, owned]);
+  const originSummary = useMemo(() => {
+    const groups = new Map<string, { key: string; total: number; registered: number }>();
+    plannedEntries.forEach((entry) => {
+      const current = groups.get(entry.groupKey) ?? { key: entry.groupKey, total: 0, registered: 0 };
+      current.total += 1;
+      current.registered += Number(owned.has(entry.planId));
+      groups.set(entry.groupKey, current);
+    });
+    return [...groups.values()].sort((a, b) => b.total - a.total);
+  }, [plannedEntries, owned]);
+  const availabilitySummary = useMemo(() => AVAILABILITY_STATUSES.map((status) => {
+    const entries = plannedEntries.filter((entry) => availabilityForEntry(entry) === status);
+    return { status, total: entries.length, registered: entries.filter((entry) => owned.has(entry.planId)).length };
+  }), [plannedEntries, owned]);
+  const gameMissingEntries = useMemo(() => locatedEntries.filter(({ entry }) => !owned.has(entry.planId) && matchesGamePlan(entry, selectedGamePlan)), [locatedEntries, owned, selectedGamePlan]);
   const capacityBoxes = Math.ceil(capacity / 30);
   const totalPages = Math.max(1, Math.ceil(Math.max(boxes.length, capacityBoxes) / 30));
   const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(owned.has(entry.planId)), 0), [plannedEntries, owned]);
@@ -694,16 +727,30 @@ export default function App() {
     setGlobalTooltip(null);
     setPageIndex(Math.floor(located.box.globalIndex / 30));
     setSelectedBoxIndex(located.box.globalIndex);
+    setKeyboardSlotIndex(located.slotIndex);
     setHighlightedPlanId(located.entry.planId);
     setLocationAnnouncement(`${displayName(located.entry)} · ${t("box")} ${String(located.box.globalIndex + 1).padStart(3, "0")} · ${t("slot")} ${String(located.slotIndex + 1).padStart(2, "0")}`);
     setViewMode("boxes");
   };
 
-  const toggleOwned = (planId: string) => setOwned((current) => {
-    const next = new Set(current);
+  const rememberOwnedChange = useCallback((next: Set<string>) => {
+    ownedHistoryRef.current = [...ownedHistoryRef.current.slice(-29), new Set(owned)];
+    setUndoDepth(ownedHistoryRef.current.length);
+    setOwned(next);
+  }, [owned]);
+
+  const undoOwned = useCallback(() => {
+    const previous = ownedHistoryRef.current.pop();
+    if (!previous) return;
+    setOwned(previous);
+    setUndoDepth(ownedHistoryRef.current.length);
+  }, []);
+
+  const toggleOwned = (planId: string) => {
+    const next = new Set(owned);
     if (next.has(planId)) next.delete(planId); else next.add(planId);
-    return next;
-  });
+    rememberOwnedChange(next);
+  };
 
   const toggleFavorite = (planId: string) => setFavorites((current) => {
     const next = new Set(current);
@@ -711,12 +758,19 @@ export default function App() {
     return next;
   });
 
-  const toggleEntries = (entries: PlannedEntry[]) => setOwned((current) => {
-    const next = new Set(current);
+  const toggleEntries = (entries: PlannedEntry[]) => {
+    const next = new Set(owned);
     const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.planId));
+    const affected = entries.filter((entry) => next.has(entry.planId)).length;
+    if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
     entries.forEach((entry) => allOwned ? next.delete(entry.planId) : next.add(entry.planId));
-    return next;
-  });
+    if (entries.length) rememberOwnedChange(next);
+  };
+
+  const resetProgress = () => {
+    if (!owned.size || !window.confirm(t("confirm_reset_progress").replace("{count}", owned.size.toLocaleString(locale)))) return;
+    rememberOwnedChange(new Set());
+  };
 
   const markProfileCustom = () => setCollectionPreset("custom");
   const toggleMark = (mark: string) => { markProfileCustom(); setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]); };
@@ -758,8 +812,48 @@ export default function App() {
   const jumpToBox = (globalIndex: number) => {
     setPageIndex(Math.floor(globalIndex / 30));
     setSelectedBoxIndex(globalIndex);
+    setKeyboardSlotIndex(0);
     setViewMode("boxes");
   };
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = Boolean(target?.matches("input, textarea, select") || target?.isContentEditable);
+      if (isTyping || themeOpen || detailEntry) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        undoOwned();
+        return;
+      }
+      if (event.key === "/" && viewMode !== "summary") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+      if (viewMode !== "boxes") return;
+      if (event.key === "PageUp" || event.key === "PageDown") {
+        event.preventDefault();
+        const direction = event.key === "PageDown" ? 1 : -1;
+        if (selectedBox) jumpToBox(Math.max(0, Math.min(boxes.length - 1, selectedBox.globalIndex + direction)));
+        else setPageIndex((current) => Math.max(0, Math.min(totalPages - 1, current + direction)));
+        return;
+      }
+      if (!selectedBox) return;
+      const movement: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -6, ArrowDown: 6 };
+      if (event.key in movement) {
+        event.preventDefault();
+        setKeyboardSlotIndex((current) => Math.max(0, Math.min(29, current + movement[event.key])));
+        return;
+      }
+      const entry = selectedBox.entries[keyboardSlotIndex];
+      if (!entry) return;
+      if (event.code === "Space") { event.preventDefault(); toggleOwned(entry.planId); }
+      if (event.key.toLowerCase() === "f") { event.preventDefault(); toggleFavorite(entry.planId); }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [boxes.length, detailEntry, keyboardSlotIndex, selectedBox, themeOpen, totalPages, undoOwned, viewMode, owned, favorites]);
 
   const openThemeDialog = () => {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -856,7 +950,7 @@ export default function App() {
   };
 
   const exportBackup = () => {
-    const payload = { version: 7, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity };
+    const payload = { version: 7, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan };
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     link.download = "origin-marks-checklist-backup.json";
@@ -896,6 +990,8 @@ export default function App() {
         const value = JSON.parse(text);
         if (!Array.isArray(value.owned)) throw new Error("invalid");
         setOwned(new Set(value.owned.filter((id: unknown) => typeof id === "string")));
+        ownedHistoryRef.current = [];
+        setUndoDepth(0);
         if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
         if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
         if (Array.isArray(value.selectedCollections)) {
@@ -923,6 +1019,8 @@ export default function App() {
         if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
+        if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
+        if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
       } catch { window.alert(t("invalid_backup")); }
     });
     event.target.value = "";
@@ -1150,6 +1248,7 @@ export default function App() {
             <button onClick={exportBackup}>{t("export")}</button><button onClick={() => importRef.current?.click()}>{t("import")}</button><input ref={importRef} type="file" accept="application/json" onChange={importBackup} hidden />
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
+            <button className="reset-progress" onClick={resetProgress} disabled={!owned.size}>{t("reset_progress")}</button>
           </div>
         </aside>
 
@@ -1159,6 +1258,7 @@ export default function App() {
               <nav className="view-switcher" aria-label={t("choose_view")}>
                 <button className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
                 <button className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
+                <button className={viewMode === "summary" ? "active" : ""} aria-pressed={viewMode === "summary"} onClick={() => { setViewMode("summary"); setGlobalTooltip(null); }}><span aria-hidden="true">◫</span>{t("summary_view")}</button>
               </nav>
               {viewMode === "boxes" && <nav className="breadcrumbs">
                 <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
@@ -1173,14 +1273,86 @@ export default function App() {
               </label>}
             </div>
             <div className="search-tools">
+              <button className="undo-action" onClick={undoOwned} disabled={!undoDepth} title={undoDepth ? t("undo_desc") : t("nothing_to_undo")}><span aria-hidden="true">↶</span>{t("undo")}</button>
               {viewMode === "boxes" && <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>}
-              <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
+              {viewMode !== "summary" && <><label className="search-box"><span>⌕</span><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
               <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
-              <button className={`favorites-filter ${favoritesOnly ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}><img src={assetUrl("assets/favorite-star.png")} alt="" /><span>{t("favorites_only")}</span><b>{favoriteCount.toLocaleString(locale)}</b></button>
+              <button className={`favorites-filter ${favoritesOnly ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}><img src={assetUrl("assets/favorite-star.png")} alt="" /><span>{t("favorites_only")}</span><b>{favoriteCount.toLocaleString(locale)}</b></button></>}
             </div>
           </div>
 
-          {viewMode === "global" ? (
+          {viewMode === "summary" ? (
+            <section className="summary-view" aria-labelledby="collection-summary-title">
+              <header className="summary-hero">
+                <div>
+                  <p className="eyebrow teal">{t("your_collection")}</p>
+                  <h2 id="collection-summary-title">{t("collection_summary")}</h2>
+                  <p>{t("summary_desc")}</p>
+                  <small>{t("summary_filters_note")}</small>
+                </div>
+                <div className="summary-ring" style={{ background: `conic-gradient(var(--teal) ${progress}%, rgba(85, 224, 192, .12) 0)` }}><span><strong>{progress}%</strong>{t("completion")}</span></div>
+                <div className="summary-metrics">
+                  <article><strong>{ownedCount.toLocaleString(locale)}</strong><span>{t("pokemon_registered")}</span></article>
+                  <article><strong>{Math.max(0, plannedEntries.length - ownedCount).toLocaleString(locale)}</strong><span>{t("pokemon_missing")}</span></article>
+                  <article><strong>{plannedEntries.length.toLocaleString(locale)}</strong><span>{t("summary_entries")}</span></article>
+                </div>
+              </header>
+
+              <div className="summary-grid">
+                <section className="summary-panel">
+                  <div className="summary-panel-heading"><span>{t("by_generation")}</span><b>{t("completion")}</b></div>
+                  <div className="progress-list">{generationSummary.map((item) => <div className="progress-row" key={item.generation}>
+                    <div><strong>{t("generation")} {item.generation}</strong><span>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</span></div>
+                    <div className="progress-bar" aria-label={`${item.progress}%`}><i style={{ width: `${item.progress}%` }} /></div><b>{item.progress}%</b>
+                  </div>)}</div>
+                </section>
+
+                <section className="summary-panel">
+                  <div className="summary-panel-heading"><span>{t("by_origin")}</span><b>{t("completion")}</b></div>
+                  <div className="progress-list origin-progress-list">{originSummary.map((item) => {
+                    const itemProgress = item.total ? Math.round((item.registered / item.total) * 100) : 0;
+                    return <div className="progress-row" key={item.key}>
+                      <div><strong>{originMarkIconUrl(item.key) ? <OriginMarkIcon mark={item.key} label={groupName(language, item.key)} className="summary-origin-icon" /> : groupName(language, item.key)}</strong><span>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</span></div>
+                      <div className="progress-bar" aria-label={`${itemProgress}%`}><i style={{ width: `${itemProgress}%` }} /></div><b>{itemProgress}%</b>
+                    </div>;
+                  })}</div>
+                </section>
+
+                <section className="summary-panel availability-panel">
+                  <div className="summary-panel-heading"><span>{t("availability_breakdown")}</span></div>
+                  <div className="availability-summary">{availabilitySummary.map((item) => <article className={item.status} key={item.status}><span>{t(`availability_${item.status}`)}</span><strong>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</strong></article>)}</div>
+                </section>
+
+                <section className="summary-panel game-planner">
+                  <div className="game-plan-header">
+                    <div><p className="eyebrow teal">{t("game_planner")}</p><h3>{t("obtainable_missing")}</h3><span>{t("game_planner_desc")}</span></div>
+                    <label><span>{t("select_game")}</span><select value={selectedGamePlan} onChange={(event) => { setSelectedGamePlan(event.target.value as GamePlanId); setGameResultLimit(24); }}>{GAME_PLANS.map((game) => <option value={game.id} key={game.id}>{t(`game_${game.id}`)}</option>)}</select></label>
+                  </div>
+                  {gameMissingEntries.length ? <>
+                    <div className="game-results">{gameMissingEntries.slice(0, gameResultLimit).map((located) => {
+                      const { entry, box, slotIndex } = located;
+                      const localizedName = displayName(entry);
+                      const localizedForm = displayForm(entry);
+                      const originMarkKey = entry.mark ?? entry.groupKey;
+                      return <button className="game-result" key={`${selectedGamePlan}:${entry.planId}`} onClick={() => locateEntryInBoxes(located)}>
+                        <span className="game-result-art">{pokemonArtworkUrl(entry) && <img src={pokemonArtworkUrl(entry) ?? ""} alt="" loading="lazy" />}</span>
+                        <span className="game-result-meta"><strong>{localizedName}{localizedForm ? ` — ${localizedForm}` : ""}</strong><small>{entry.variant === "shiny" ? t("shiny") : t("normal")} · {t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</small></span>
+                        {originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="game-result-origin" /> : <em>{entry.groupLabel}</em>}
+                        <span aria-hidden="true">→</span>
+                      </button>;
+                    })}</div>
+                    {gameMissingEntries.length > gameResultLimit && <button className="show-more" onClick={() => setGameResultLimit((value) => value + 24)}>{t("show_more")} · {(gameMissingEntries.length - gameResultLimit).toLocaleString(locale)} {t("remaining_results")}</button>}
+                  </> : <div className="game-plan-empty"><span>✓</span><strong>{t("game_plan_complete")}</strong></div>}
+                  <small className="game-plan-caveat">{t("game_plan_caveat")}</small>
+                </section>
+
+                <section className="summary-panel shortcut-guide">
+                  <div className="summary-panel-heading"><span>{t("keyboard_shortcuts")}</span></div>
+                  <div className="shortcut-grid"><span><kbd>← ↑ → ↓</kbd>{t("shortcut_arrows")}</span><span><kbd>Space</kbd>{t("shortcut_space")}</span><span><kbd>F</kbd>{t("shortcut_favorite")}</span><span><kbd>/</kbd>{t("shortcut_search")}</span><span><kbd>PgUp / PgDn</kbd>{t("shortcut_boxes")}</span><span><kbd>Ctrl / ⌘ + Z</kbd>{t("shortcut_undo")}</span></div>
+                </section>
+              </div>
+            </section>
+          ) : viewMode === "global" ? (
             <>
               <div className="view-heading global-view-heading">
                 <div><p className="eyebrow teal">{t("your_collection")}</p><h2>{t("global_view")}</h2><p>{t("global_view_desc")}</p></div>
@@ -1300,8 +1472,8 @@ export default function App() {
                   const originMarkKey = entry.mark ?? entry.groupKey;
                   const favorite = favorites.has(entry.planId);
                   return (
-                    <div ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""}`} key={entry.planId}>
-                      <button className="pokemon-slot-main" onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
+                    <div ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""} ${keyboardSlotIndex === index ? "keyboard-selected" : ""}`} key={entry.planId}>
+                      <button className="pokemon-slot-main" onClick={() => { setKeyboardSlotIndex(index); toggleOwned(entry.planId); }} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
                         <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                         <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
                         <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
