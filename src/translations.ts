@@ -254,6 +254,89 @@ const GLOBAL_VIEW_COPY: Record<UiLanguage, Copy> = {
   },
 };
 
+const FEATURE_EN: Copy = {
+  collection_profiles: "COLLECTION PROFILE", profile_basic: "Basic Living Dex", profile_basic_desc: "One normal specimen of each species.",
+  profile_forms: "Living Form Dex", profile_forms_desc: "Every storable form and visible gender difference.",
+  profile_shiny: "Shiny Living Dex", profile_shiny_desc: "Every possible shiny with your OT.",
+  profile_origin: "Origin Mark Dex", profile_origin_desc: "One normal specimen per species and origin mark.",
+  profile_completionist: "Completionist", profile_completionist_desc: "Every mark, collection, form and possible variant.",
+  profile_custom: "Custom", profile_custom_desc: "Your current combination of filters.",
+  availability: "AVAILABILITY", availability_current: "Currently available", availability_legacy: "Requires legacy infrastructure",
+  availability_historical: "Historically obtainable", availability_hypothetical: "Hypothetical scenario",
+  bank_required: "Requires Pokémon Bank", bank_missing: "missing require Bank", favorites: "Favorites", favorites_only: "Targets only",
+  add_favorite: "Add to targets", remove_favorite: "Remove from targets", box_navigator: "BOX NAVIGATOR", jump_to_box: "Jump to a box…",
+  entry_details: "Pokémon details", close_details: "Close details", origin_required: "Required origin", method: "Method",
+  transfer: "Transfer", shiny_available: "Shiny", own_ot_possible: "Your own OT", yes: "Yes", no: "No",
+  location: "Location", why_exists: "Why this entry exists", catalog_note: "Catalog note", shiny_locked: "Shiny locked",
+  open_details: "Open details", availability_label: "Availability",
+  method_transfer_evolve: "Obtain a compatible earlier-stage Pokémon with this origin, transfer it, then evolve it in a later compatible game.",
+  method_dream_world: "Use a specimen legitimately obtained from Pokémon Dream World before the service closed.",
+  method_dream_radar: "Catch it in Pokémon Dream Radar and send it to a compatible Generation V game.",
+  method_shadow: "Catch the Shadow Pokémon in Colosseum or XD, purify it, then transfer it forward.",
+  method_n_pokemon: "Receive N's Pokémon in Black 2 or White 2, then transfer it forward.",
+  method_go: "Catch or receive it in Pokémon GO, then send it to Pokémon HOME.",
+  method_trade: "Complete the indicated in-game trade in the source title.",
+  method_event: "Use the corresponding official distribution or event specimen.",
+  method_hypothetical: "Reserved for the future Switch-port scenario represented by this catalog.",
+  method_source_game: "Catch, hatch or receive the Pokémon in a compatible game for this origin.",
+  why_transfer_evolution: "This species or form did not exist in the origin generation. The entry remains valid because an earlier-stage Pokémon can keep its origin data after being transferred and evolved later.",
+  why_dream_world: "Dream World is closed, so no new legitimate specimen can be obtained there. A specimen obtained while the service was active can still be transferred through Bank.",
+  why_hypothetical: "This entry belongs to a clearly marked future scenario and is not currently obtainable.",
+  why_valid_entry: "The species or form can legitimately retain this origin or collection provenance in Pokémon HOME.",
+  transfer_bank_home: "Source game → transfer chain → Pokémon Bank → Pokémon HOME",
+  transfer_existing_bank_home: "Existing legacy specimen → Pokémon Bank → Pokémon HOME",
+  transfer_go_home: "Pokémon GO → Pokémon HOME", transfer_direct_home: "Compatible source game → Pokémon HOME",
+  transfer_hypothetical: "Future Switch port → Pokémon HOME",
+};
+
+const FEATURE_ES: Copy = {
+  collection_profiles: "PERFIL DE COLECCIÓN", profile_basic: "Living Dex básica", profile_basic_desc: "Un ejemplar normal de cada especie.",
+  profile_forms: "Living Form Dex", profile_forms_desc: "Todas las formas almacenables y diferencias de sexo visibles.",
+  profile_shiny: "Shiny Living Dex", profile_shiny_desc: "Todos los shiny posibles con tu EO.",
+  profile_origin: "Origin Mark Dex", profile_origin_desc: "Un ejemplar normal por especie y marca de origen.",
+  profile_completionist: "Completionist", profile_completionist_desc: "Todas las marcas, colecciones, formas y variantes posibles.",
+  profile_custom: "Personalizada", profile_custom_desc: "Tu combinación actual de filtros.",
+  availability: "DISPONIBILIDAD", availability_current: "Disponible actualmente", availability_legacy: "Requiere infraestructura legacy",
+  availability_historical: "Obtenible históricamente", availability_hypothetical: "Escenario hipotético",
+  bank_required: "Requiere Pokémon Bank", bank_missing: "faltantes requieren Bank", favorites: "Favoritos", favorites_only: "Solo objetivos",
+  add_favorite: "Añadir a objetivos", remove_favorite: "Quitar de objetivos", box_navigator: "NAVEGADOR DE CAJAS", jump_to_box: "Saltar a una caja…",
+  entry_details: "Detalles del Pokémon", close_details: "Cerrar detalles", origin_required: "Origen necesario", method: "Método",
+  transfer: "Transferencia", shiny_available: "Shiny", own_ot_possible: "EO propio posible", yes: "Sí", no: "No",
+  location: "Ubicación", why_exists: "Por qué existe esta entrada", catalog_note: "Nota del catálogo", shiny_locked: "Shiny bloqueado",
+  open_details: "Abrir detalles", availability_label: "Disponibilidad",
+  method_transfer_evolve: "Obtén una preevolución compatible con este origen, transfiérela y evolúcionala después en un juego compatible.",
+  method_dream_world: "Usa un ejemplar obtenido legítimamente en Pokémon Dream World antes del cierre del servicio.",
+  method_dream_radar: "Captúralo en Pokémon Dream Radar y envíalo a un juego compatible de quinta generación.",
+  method_shadow: "Captura al Pokémon oscuro en Colosseum o XD, purifícalo y transfiérelo hacia adelante.",
+  method_n_pokemon: "Recibe al Pokémon de N en Negro 2 o Blanco 2 y transfiérelo hacia adelante.",
+  method_go: "Captúralo o recíbelo en Pokémon GO y envíalo a Pokémon HOME.",
+  method_trade: "Completa el intercambio interno indicado en el juego de origen.",
+  method_event: "Usa el ejemplar correspondiente de una distribución o evento oficial.",
+  method_hypothetical: "Reservado para el escenario futuro de ports de Switch representado por este catálogo.",
+  method_source_game: "Captura, cría o recibe al Pokémon en un juego compatible con este origen.",
+  why_transfer_evolution: "Esta especie o forma no existía en la generación de origen. La entrada es válida porque una preevolución puede conservar sus datos de origen después de transferirse y evolucionar más tarde.",
+  why_dream_world: "Dream World está cerrado y ya no permite obtener nuevos ejemplares legítimos. Los obtenidos mientras estuvo activo todavía pueden transferirse mediante Bank.",
+  why_hypothetical: "Esta entrada pertenece a un escenario futuro claramente señalado y no se puede obtener actualmente.",
+  why_valid_entry: "La especie o forma puede conservar legítimamente este origen o procedencia de colección en Pokémon HOME.",
+  transfer_bank_home: "Juego de origen → cadena de transferencia → Pokémon Bank → Pokémon HOME",
+  transfer_existing_bank_home: "Ejemplar legacy existente → Pokémon Bank → Pokémon HOME",
+  transfer_go_home: "Pokémon GO → Pokémon HOME", transfer_direct_home: "Juego de origen compatible → Pokémon HOME",
+  transfer_hypothetical: "Port futuro de Switch → Pokémon HOME",
+};
+
+const FEATURE_COPY: Partial<Record<UiLanguage, Copy>> = {
+  "ES-LA": FEATURE_ES,
+  "ES-ES": FEATURE_ES,
+  ENG: FEATURE_EN,
+  DEU: { ...FEATURE_EN, collection_profiles: "SAMMLUNGSPROFIL", availability: "VERFÜGBARKEIT", favorites: "Favoriten", favorites_only: "Nur Ziele", box_navigator: "BOX-NAVIGATOR", entry_details: "Pokémon-Details", close_details: "Details schließen" },
+  FRA: { ...FEATURE_EN, collection_profiles: "PROFIL DE COLLECTION", availability: "DISPONIBILITÉ", favorites: "Favoris", favorites_only: "Objectifs uniquement", box_navigator: "NAVIGATEUR DE BOÎTES", entry_details: "Détails du Pokémon", close_details: "Fermer les détails" },
+  ITA: { ...FEATURE_EN, collection_profiles: "PROFILO COLLEZIONE", availability: "DISPONIBILITÀ", favorites: "Preferiti", favorites_only: "Solo obiettivi", box_navigator: "NAVIGATORE BOX", entry_details: "Dettagli Pokémon", close_details: "Chiudi dettagli" },
+  JPN: { ...FEATURE_EN, collection_profiles: "コレクションプロフィール", availability: "入手可能性", favorites: "お気に入り", favorites_only: "目標のみ", box_navigator: "ボックスナビゲーター", entry_details: "ポケモン詳細", close_details: "詳細を閉じる" },
+  KOR: { ...FEATURE_EN, collection_profiles: "컬렉션 프로필", availability: "획득 가능성", favorites: "즐겨찾기", favorites_only: "목표만", box_navigator: "박스 탐색", entry_details: "포켓몬 상세", close_details: "상세 닫기" },
+  CHS: { ...FEATURE_EN, collection_profiles: "收藏配置", availability: "可获得性", favorites: "收藏", favorites_only: "仅目标", box_navigator: "盒子导航", entry_details: "宝可梦详情", close_details: "关闭详情" },
+  CHT: { ...FEATURE_EN, collection_profiles: "收藏設定", availability: "可獲得性", favorites: "收藏", favorites_only: "僅目標", box_navigator: "盒子導覽", entry_details: "寶可夢詳情", close_details: "關閉詳情" },
+};
+
 const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   "Sin marca": { ENG: "No mark", DEU: "Ohne Zeichen", FRA: "Sans marque", ITA: "Senza marchio", JPN: "マークなし", KOR: "마크 없음", CHS: "无标记", CHT: "無標記" },
   GB: { ENG: "Game Boy", DEU: "Game Boy", FRA: "Game Boy", ITA: "Game Boy", JPN: "ゲームボーイ", KOR: "게임보이", CHS: "Game Boy", CHT: "Game Boy" },
@@ -325,7 +408,7 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
 export function groupName(language: UiLanguage, key: string) {

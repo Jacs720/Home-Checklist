@@ -17,6 +17,17 @@ import {
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
 import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
+import {
+  AVAILABILITY_STATUSES,
+  COLLECTION_PRESETS,
+  AvailabilityStatus,
+  CollectionPreset,
+  availabilityForEntry,
+  methodKeyForEntry,
+  reasonKeyForEntry,
+  requiresPokemonBank,
+  transferKeyForEntry,
+} from "./collection-features";
 
 type PokemonEntry = {
   id: string;
@@ -45,6 +56,7 @@ type PokemonEntry = {
   nickname?: string;
   partnerRibbon?: boolean;
   acquisitionCategory?: "own" | "trade" | "event" | "external";
+  game?: string;
   gender?: "male" | "female";
   genderDifferenceTier?: "notable" | "all";
   genderVariant?: "base" | "extra";
@@ -72,11 +84,13 @@ type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey:
 type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
 type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
 type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
+type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
 const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "trades", "go"];
 const DEFAULT_COLLECTIONS = [...COLLECTIONS];
+const DEFAULT_AVAILABILITY_FILTERS: AvailabilityFilters = { current: true, legacy: true, historical: true, hypothetical: true };
 const MARK_COLORS: Record<string, string> = {
   "Sin marca": "#9eb4b1", GB: "#e8cc67", P: "#74b7ea", USUM: "#b18bea", LGPE: "#efaa6f",
   SwSh: "#e57b9e", LA: "#72c8c2", BDSP: "#8fb5f2", SV: "#ef715f", LZA: "#68d2a4", GBA: "#c4e56f",
@@ -134,6 +148,16 @@ function OriginMarkIcon({ mark, label, className = "" }: { mark: string; label: 
   const src = originMarkIconUrl(mark);
   if (!src) return <span className={className}>{label}</span>;
   return <span className={`origin-mark-icon ${className}`} title={label}><img src={src} alt="" /><span className="sr-only">{label}</span></span>;
+}
+
+function FavoriteButton({ active, label, onClick, className = "" }: { active: boolean; label: string; onClick: () => void; className?: string }) {
+  return <button type="button" className={`favorite-star ${active ? "active" : ""} ${className}`} aria-pressed={active} aria-label={label} title={label} onClick={onClick}>
+    {active ? <img src={assetUrl("assets/favorite-star.png")} alt="" /> : <span aria-hidden="true">☆</span>}
+  </button>;
+}
+
+function BankBadge({ label, className = "" }: { label: string; className?: string }) {
+  return <span className={`bank-badge ${className}`} title={label}><img src={assetUrl("assets/bank.png")} alt="" /><span>{label}</span></span>;
 }
 
 function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
@@ -370,6 +394,7 @@ function buildBoxes(
   genderMode: GenderMode,
   formOptions: FormOptions,
   normalLivingDex: boolean,
+  originMarkDex: boolean,
   language: UiLanguage,
 ) {
   const boxes: PlannedBox[] = [];
@@ -415,7 +440,7 @@ function buildBoxes(
       }
     }
     if (normalLivingDex) livingDexCandidates.push(...planned);
-    else chunk(planned, 30).forEach((boxEntries, index) => {
+    else chunk(originMarkDex ? selectNormalLivingDexEntries(planned) : planned, 30).forEach((boxEntries, index) => {
       boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
     });
   }
@@ -476,10 +501,14 @@ export default function App() {
   const [genderMode, setGenderMode] = useState<GenderMode>("notable");
   const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
   const [normalLivingDex, setNormalLivingDex] = useState(false);
+  const [originMarkDex, setOriginMarkDex] = useState(false);
+  const [collectionPreset, setCollectionPreset] = useState<CollectionPreset>("custom");
+  const [availabilityFilters, setAvailabilityFilters] = useState<AvailabilityFilters>(DEFAULT_AVAILABILITY_FILTERS);
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
   const [owned, setOwned] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<CollectionViewMode>("boxes");
@@ -488,6 +517,8 @@ export default function App() {
   const [globalTooltip, setGlobalTooltip] = useState<GlobalTooltip | null>(null);
   const [query, setQuery] = useState("");
   const [missingOnly, setMissingOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [detailEntry, setDetailEntry] = useState<LocatedEntry | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [themeConfig, setThemeConfig] = useState<BoxThemeConfig>(EMPTY_THEME_CONFIG);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -501,7 +532,7 @@ export default function App() {
   const importRef = useRef<HTMLInputElement>(null);
   const themeImportRef = useRef<HTMLInputElement>(null);
   const themeImageRef = useRef<HTMLInputElement>(null);
-  const highlightedEntryRef = useRef<HTMLButtonElement>(null);
+  const highlightedEntryRef = useRef<HTMLDivElement>(null);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
@@ -533,6 +564,7 @@ export default function App() {
       if (saved) {
         const value = JSON.parse(saved);
         if (Array.isArray(value.owned)) setOwned(new Set(value.owned));
+        if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
         if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
         if (Array.isArray(value.selectedCollections)) {
           const savedCollections = value.selectedCollections.filter((collection: string) => COLLECTIONS.includes(collection));
@@ -553,6 +585,10 @@ export default function App() {
           minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
         });
         if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
+        if (typeof value.originMarkDex === "boolean") setOriginMarkDex(value.originMarkDex);
+        if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
+        if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
+        if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       }
@@ -567,8 +603,8 @@ export default function App() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity }));
-  }, [owned, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity }));
+  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -577,19 +613,19 @@ export default function App() {
   }, [themeConfig, hydrated, language]);
 
   useEffect(() => {
-    if (!themeOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setThemeOpen(false); };
+    if (!themeOpen && !detailEntry) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { setThemeOpen(false); setDetailEntry(null); } };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [themeOpen]);
+  }, [themeOpen, detailEntry]);
 
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale ?? "es-MX";
   }, [language]);
 
   const boxes = useMemo(
-    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language),
-    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language],
+    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language),
+    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language],
   );
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
@@ -600,12 +636,13 @@ export default function App() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}`;
 
   useEffect(() => {
     setPageIndex(0);
     setSelectedBoxIndex(null);
     setHighlightedPlanId(null);
+    setDetailEntry(null);
   }, [filterKey]);
   useEffect(() => setPageIndex((current) => Math.min(current, totalPages - 1)), [totalPages]);
 
@@ -636,7 +673,10 @@ export default function App() {
 
   const matchesSearch = (entry: PlannedEntry) => {
     const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${String(entry.dex).padStart(3, "0")} ${String(entry.dex).padStart(4, "0")} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
-    return matchesQuery && (!missingOnly || !owned.has(entry.planId));
+    return matchesQuery
+      && (!missingOnly || !owned.has(entry.planId))
+      && (!favoritesOnly || favorites.has(entry.planId))
+      && availabilityFilters[availabilityForEntry(entry)];
   };
 
   const visibleGlobalEntries = locatedEntries.filter(({ entry }) => matchesSearch(entry));
@@ -646,7 +686,7 @@ export default function App() {
     const rect = element.getBoundingClientRect();
     const width = Math.min(236, window.innerWidth - 32);
     const left = Math.max(16, Math.min(window.innerWidth - width - 16, rect.left + (rect.width - width) / 2));
-    const above = rect.bottom + 176 > window.innerHeight && rect.top > 176;
+    const above = rect.bottom + 245 > window.innerHeight && rect.top > 245;
     setGlobalTooltip({ located, left, top: above ? rect.top - 10 : rect.bottom + 10, above });
   };
 
@@ -665,6 +705,12 @@ export default function App() {
     return next;
   });
 
+  const toggleFavorite = (planId: string) => setFavorites((current) => {
+    const next = new Set(current);
+    if (next.has(planId)) next.delete(planId); else next.add(planId);
+    return next;
+  });
+
   const toggleEntries = (entries: PlannedEntry[]) => setOwned((current) => {
     const next = new Set(current);
     const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.planId));
@@ -672,22 +718,47 @@ export default function App() {
     return next;
   });
 
-  const toggleMark = (mark: string) => setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]);
-  const toggleCollection = (collection: string) => setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]);
-  const setVariant = (variant: Variant) => setVariants((current) => {
-    const next = { ...current, [variant]: !current[variant] };
-    return next.shiny || next.normal ? next : current;
-  });
-  const setAcquisition = (acquisition: Acquisition) => setAcquisitions((current) => {
-    const next = { ...current, [acquisition]: !current[acquisition] };
-    return next.own || next.trade || next.event || next.external ? next : current;
+  const markProfileCustom = () => setCollectionPreset("custom");
+  const toggleMark = (mark: string) => { markProfileCustom(); setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]); };
+  const toggleCollection = (collection: string) => { markProfileCustom(); setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]); };
+  const setVariant = (variant: Variant) => {
+    markProfileCustom();
+    setVariants((current) => {
+      const next = { ...current, [variant]: !current[variant] };
+      return next.shiny || next.normal ? next : current;
+    });
+  };
+  const setAcquisition = (acquisition: Acquisition) => {
+    markProfileCustom();
+    setAcquisitions((current) => {
+      const next = { ...current, [acquisition]: !current[acquisition] };
+      return next.own || next.trade || next.event || next.external ? next : current;
+    });
+  };
+
+  const applyCollectionPreset = (preset: CollectionPreset) => {
+    setCollectionPreset(preset);
+    if (preset === "custom") return;
+    setAvailabilityFilters(DEFAULT_AVAILABILITY_FILTERS);
+    setFavoritesOnly(false);
+    setNormalLivingDex(preset === "basic");
+    setOriginMarkDex(preset === "origin");
+    if (preset === "basic") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "forms") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
+    if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
+    if (preset === "origin") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "completionist") { setVariants({ shiny: true, normal: true }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks(MARKS); setSelectedCollections(COLLECTIONS); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
+  };
+
+  const toggleAvailability = (status: AvailabilityStatus) => setAvailabilityFilters((current) => {
+    const next = { ...current, [status]: !current[status] };
+    return AVAILABILITY_STATUSES.some((key) => next[key]) ? next : current;
   });
 
-  const applyPreset = (preset: "shiny" | "special" | "normal") => {
-    setNormalLivingDex(false);
-    if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
-    if (preset === "special") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: true, event: true, external: true }); setIncludeNonShinySpecials(true); setSelectedMarks([]); setSelectedCollections(DEFAULT_COLLECTIONS); }
-    if (preset === "normal") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); }
+  const jumpToBox = (globalIndex: number) => {
+    setPageIndex(Math.floor(globalIndex / 30));
+    setSelectedBoxIndex(globalIndex);
+    setViewMode("boxes");
   };
 
   const openThemeDialog = () => {
@@ -785,7 +856,7 @@ export default function App() {
   };
 
   const exportBackup = () => {
-    const payload = { version: 6, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language, capacity };
+    const payload = { version: 7, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity };
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     link.download = "origin-marks-checklist-backup.json";
@@ -825,6 +896,7 @@ export default function App() {
         const value = JSON.parse(text);
         if (!Array.isArray(value.owned)) throw new Error("invalid");
         setOwned(new Set(value.owned.filter((id: unknown) => typeof id === "string")));
+        if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
         if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
         if (Array.isArray(value.selectedCollections)) {
           const savedCollections = value.selectedCollections.filter((collection: string) => COLLECTIONS.includes(collection));
@@ -845,6 +917,10 @@ export default function App() {
           minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
         });
         if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
+        if (typeof value.originMarkDex === "boolean") setOriginMarkDex(value.originMarkDex);
+        if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
+        if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
+        if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
       } catch { window.alert(t("invalid_backup")); }
@@ -856,13 +932,17 @@ export default function App() {
   if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
 
   const markCounts = Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   }));
   const collectionCounts = Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   }));
+  const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
+  const bankMissingCount = plannedEntries.filter((entry) => requiresPokemonBank(entry) && !owned.has(entry.planId)).length;
+  const favoriteCount = plannedEntries.filter((entry) => favorites.has(entry.planId)).length;
+  const availabilityFiltering = AVAILABILITY_STATUSES.some((status) => !availabilityFilters[status]);
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
   const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every((entry) => owned.has(entry.planId));
   const themeGameOption = themeTab === "custom" ? null : themeTab === "concept" ? CONCEPT_ART_GAMES.find((game) => game.id === conceptGame) ?? CONCEPT_ART_GAMES[0] : BOX_THEME_GAMES.find((game) => game.id === themeTab) ?? BOX_THEME_GAMES[0];
@@ -946,31 +1026,73 @@ export default function App() {
         </div>
       )}
 
+      {detailEntry && (() => {
+        const { entry, box, slotIndex } = detailEntry;
+        const localizedName = displayName(entry);
+        const localizedForm = displayForm(entry);
+        const artworkUrl = pokemonArtworkUrl(entry);
+        const originMarkKey = entry.mark ?? entry.groupKey;
+        const availability = availabilityForEntry(entry);
+        const favorite = favorites.has(entry.planId);
+        return <div className="entry-modal-layer">
+          <button className="entry-modal-scrim" aria-label={t("close_details")} onClick={() => setDetailEntry(null)} />
+          <section className="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-dialog-title">
+            <header className="entry-dialog-header">
+              <div className="entry-dialog-identity">
+                {artworkUrl && <img className="entry-dialog-art" src={artworkUrl} alt="" />}
+                <div><p className="eyebrow teal">#{String(entry.dex).padStart(4, "0")} · {t("entry_details")}</p><h2 id="entry-dialog-title">{localizedName}{localizedForm && <span> — {localizedForm}</span>}</h2></div>
+              </div>
+              <div className="entry-dialog-actions"><FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} /><button className="entry-dialog-close" aria-label={t("close_details")} onClick={() => setDetailEntry(null)}>×</button></div>
+            </header>
+            <div className="entry-badges">
+              {originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="detail-origin-mark" />{entry.groupLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
+              <span className={`availability-badge ${availability}`}>{t(`availability_${availability}`)}</span>
+              {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
+              <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
+            </div>
+            <dl className="entry-facts">
+              <div><dt>{t("origin_required")}</dt><dd>{entry.groupLabel}</dd></div>
+              <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${entry.game}` : ""}</dd></div>
+              <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
+              <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
+              <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
+              <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>
+            </dl>
+            <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
+            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && <small>{entry.sourceLabel}</small>}</section>
+          </section>
+        </div>;
+      })()}
+
       <div className="workspace">
         {filtersOpen && <button className="drawer-scrim" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)} />}
         <aside className={`filter-panel ${filtersOpen ? "open" : ""}`}>
           <div className="filter-title-row"><button className="close-drawer" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)}>×</button></div>
 
-          <div className="preset-grid">
-            <button className={`preset shiny-preset ${variants.shiny && !variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedMarks.length > 1 && selectedCollections.length === 0 ? "active" : ""}`} onClick={() => applyPreset("shiny")}><span><img className="shiny-symbol" src={assetUrl("assets/shiny.png")} alt="" /></span><b>{t("preset_shiny")}</b></button>
-            <button className={!variants.shiny && variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedCollections.length === 0 ? "preset active" : "preset"} onClick={() => applyPreset("normal")}><span>◌</span><b>{t("preset_normal")}</b></button>
-            <button className={selectedMarks.length === 0 && selectedCollections.length === COLLECTIONS.length ? "preset active" : "preset"} onClick={() => applyPreset("special")}><span>◎</span><b>{t("preset_special")}</b></button>
-          </div>
-          <button className={`preset living-dex-preset ${normalLivingDex ? "active" : ""}`} aria-pressed={normalLivingDex} onClick={() => setNormalLivingDex((value) => !value)}><span>▦</span><b>{t("normal_living_dex")}</b></button>
+          <section className="profile-section">
+            <p className="panel-label">{t("collection_profiles")}</p>
+            <label className="profile-selector">
+              <select value={collectionPreset} onChange={(event) => applyCollectionPreset(event.target.value as CollectionPreset)}>
+                {COLLECTION_PRESETS.map((preset) => <option value={preset} key={preset}>{t(`profile_${preset}`)}</option>)}
+              </select>
+              <span aria-hidden="true">⌄</span>
+            </label>
+            <small>{t(`profile_${collectionPreset}_desc`)}</small>
+          </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>
             <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b></span><GooeyCheckbox id="variant-shiny" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
             <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b></span><GooeyCheckbox id="variant-normal" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
-            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => setIncludeNonShinySpecials(event.target.checked)} /></label>
+            <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => { markProfileCustom(); setIncludeNonShinySpecials(event.target.checked); }} /></label>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("form_differences")}</p>
-            <label className="switch-row" htmlFor="alternate-forms" aria-label={t("alternate_forms")}><span><b>{t("alternate_forms")}</b></span><GooeyCheckbox id="alternate-forms" checked={formOptions.alternate} onChange={(event) => setFormOptions((current) => ({ ...current, alternate: event.target.checked }))} /></label>
-            <label className="switch-row" htmlFor="all-alcremie-forms" aria-label={t("all_alcremie_forms")}><span><b>{t("all_alcremie_forms")}</b></span><GooeyCheckbox id="all-alcremie-forms" checked={formOptions.alcremie} onChange={(event) => setFormOptions((current) => ({ ...current, alcremie: event.target.checked }))} /></label>
-            <label className="switch-row" htmlFor="all-minior-forms" aria-label={t("all_minior_forms")}><span><b>{t("all_minior_forms")}</b></span><GooeyCheckbox id="all-minior-forms" checked={formOptions.minior} onChange={(event) => setFormOptions((current) => ({ ...current, minior: event.target.checked }))} /></label>
-            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b></span><GooeyCheckbox id="all-gender-differences" checked={genderMode === "all"} onChange={(event) => setGenderMode(event.target.checked ? "all" : "notable")} /></label>
+            <label className="switch-row" htmlFor="alternate-forms" aria-label={t("alternate_forms")}><span><b>{t("alternate_forms")}</b></span><GooeyCheckbox id="alternate-forms" checked={formOptions.alternate} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, alternate: event.target.checked })); }} /></label>
+            <label className="switch-row" htmlFor="all-alcremie-forms" aria-label={t("all_alcremie_forms")}><span><b>{t("all_alcremie_forms")}</b></span><GooeyCheckbox id="all-alcremie-forms" checked={formOptions.alcremie} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, alcremie: event.target.checked })); }} /></label>
+            <label className="switch-row" htmlFor="all-minior-forms" aria-label={t("all_minior_forms")}><span><b>{t("all_minior_forms")}</b></span><GooeyCheckbox id="all-minior-forms" checked={formOptions.minior} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, minior: event.target.checked })); }} /></label>
+            <label className="switch-row" htmlFor="all-gender-differences" aria-label={t("all_gender_differences")}><span><b>{t("all_gender_differences")}</b></span><GooeyCheckbox id="all-gender-differences" checked={genderMode === "all"} onChange={(event) => { markProfileCustom(); setGenderMode(event.target.checked ? "all" : "notable"); }} /></label>
           </section>
 
           <section className="filter-section">
@@ -979,6 +1101,16 @@ export default function App() {
             <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b></span><GooeyCheckbox id="acquisition-trade" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
             <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b></span><GooeyCheckbox id="acquisition-event" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
             <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b></span><GooeyCheckbox id="acquisition-external" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
+          </section>
+
+          <section className="filter-section availability-section">
+            <p className="panel-label">{t("availability")}</p>
+            {AVAILABILITY_STATUSES.map((status) => <label className={`availability-row ${status}`} key={status}>
+              <CompactCheckbox checked={availabilityFilters[status]} onChange={() => toggleAvailability(status)} accent={status === "current" ? "#55e0c0" : status === "legacy" ? "#f3953d" : status === "historical" ? "#b18bea" : "#9eb4b1"} />
+              {status === "legacy" ? <BankBadge label={t("bank_required")} className="filter-bank-badge" /> : <span>{t(`availability_${status}`)}</span>}
+              <em>{availabilityCounts[status].toLocaleString(locale)}</em>
+            </label>)}
+            <div className="bank-priority"><img src={assetUrl("assets/bank.png")} alt="" /><span><b>{bankMissingCount.toLocaleString(locale)}</b><small>{t("bank_missing")}</small></span></div>
           </section>
 
           <section className="filter-section">
@@ -1032,11 +1164,19 @@ export default function App() {
                 <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
                 {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
               </nav>}
+              {viewMode === "boxes" && <label className="box-navigator" title={t("box_navigator")}>
+                <span aria-hidden="true">▦</span><span className="sr-only">{t("box_navigator")}</span>
+                <select value={selectedBoxIndex ?? ""} onChange={(event) => { if (event.target.value !== "") jumpToBox(Number(event.target.value)); }}>
+                  <option value="">{t("jump_to_box")}</option>
+                  {boxes.map((box) => <option value={box.globalIndex} key={`${box.groupKey}:${box.number}`}>{String(box.globalIndex + 1).padStart(3, "0")} · {box.label}</option>)}
+                </select>
+              </label>}
             </div>
             <div className="search-tools">
               {viewMode === "boxes" && <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>}
               <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
               <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
+              <button className={`favorites-filter ${favoritesOnly ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}><img src={assetUrl("assets/favorite-star.png")} alt="" /><span>{t("favorites_only")}</span><b>{favoriteCount.toLocaleString(locale)}</b></button>
             </div>
           </div>
 
@@ -1057,21 +1197,26 @@ export default function App() {
                   const boxNumber = String(box.globalIndex + 1).padStart(3, "0");
                   const slotNumber = String(slotIndex + 1).padStart(2, "0");
                   const originMarkKey = entry.mark ?? entry.groupKey;
+                  const favorite = favorites.has(entry.planId);
+                  const needsBank = requiresPokemonBank(entry);
                   const status = isOwned ? t("status_obtained") : t("status_missing");
-                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
-                  return <button
-                    className={`global-pokemon ${isOwned ? "owned" : "pending"}`}
-                    key={`${entry.planId}:${box.globalIndex}:${slotIndex}`}
-                    aria-label={accessibleLabel}
-                    onMouseEnter={(event) => showGlobalTooltip(event.currentTarget, located)}
-                    onMouseLeave={() => setGlobalTooltip(null)}
-                    onFocus={(event) => showGlobalTooltip(event.currentTarget, located)}
-                    onBlur={() => setGlobalTooltip(null)}
-                    onClick={() => locateEntryInBoxes(located)}
-                  >
-                    {artworkUrl ? <img src={artworkUrl} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="global-art-placeholder" aria-hidden="true" />}
-                    {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="entry-origin-mark" />}
-                  </button>;
+                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}. ${t("availability_label")}: ${t(`availability_${availabilityForEntry(entry)}`)}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
+                  return <div className="global-pokemon-shell" key={`${entry.planId}:${box.globalIndex}:${slotIndex}`}>
+                    <button
+                      className={`global-pokemon ${isOwned ? "owned" : "pending"}`}
+                      aria-label={accessibleLabel}
+                      onMouseEnter={(event) => showGlobalTooltip(event.currentTarget, located)}
+                      onMouseLeave={() => setGlobalTooltip(null)}
+                      onFocus={(event) => showGlobalTooltip(event.currentTarget, located)}
+                      onBlur={() => setGlobalTooltip(null)}
+                      onClick={() => locateEntryInBoxes(located)}
+                    >
+                      {artworkUrl ? <img src={artworkUrl} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="global-art-placeholder" aria-hidden="true" />}
+                      {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="entry-origin-mark" />}
+                      {needsBank && <BankBadge label={t("bank_required")} className="global-bank-badge" />}
+                    </button>
+                    <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="global-favorite" />
+                  </div>;
                 })}
               </div> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
 
@@ -1081,10 +1226,13 @@ export default function App() {
                 const localizedForm = displayForm(entry);
                 const isOwned = owned.has(entry.planId);
                 const originMarkKey = entry.mark ?? entry.groupKey;
+                const availability = availabilityForEntry(entry);
                 return <div className={`global-tooltip ${globalTooltip.above ? "above" : ""}`} role="tooltip" style={{ left: globalTooltip.left, top: globalTooltip.top }}>
                   <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                   <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
                   <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
+                  <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availability}`}>{t(`availability_${availability}`)}</span></span>
+                  {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
                   <span><em>{t("box")} · {t("slot")}</em>{String(box.globalIndex + 1).padStart(3, "0")} · {String(slotIndex + 1).padStart(2, "0")}</span>
                   <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>
                   <small>{t("locate_in_box")}</small>
@@ -1112,7 +1260,7 @@ export default function App() {
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
@@ -1150,15 +1298,21 @@ export default function App() {
                   const genderDetail = entry.gender ? t(entry.gender) : null;
                   const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
                   const originMarkKey = entry.mark ?? entry.groupKey;
+                  const favorite = favorites.has(entry.planId);
                   return (
-                    <button ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
-                      <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
-                      <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
-                      <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
-                      <strong>{localizedName}</strong><small>{detail} · {entry.ownOt ? t("your_ot") : t("foreign_ot")}</small>
-                      {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="slot-origin-mark" />}
-                      <span className="status-dot">{isOwned ? "✓" : ""}</span>
-                    </button>
+                    <div ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""}`} key={entry.planId}>
+                      <button className="pokemon-slot-main" onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
+                        <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
+                        <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
+                        <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
+                        <strong>{localizedName}</strong><small>{detail} · {entry.ownOt ? t("your_ot") : t("foreign_ot")}</small>
+                        {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="slot-origin-mark" />}
+                        {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="slot-bank-badge" />}
+                        <span className="status-dot">{isOwned ? "✓" : ""}</span>
+                      </button>
+                      <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="slot-favorite" />
+                      <button className="slot-info" aria-label={`${t("open_details")}: ${localizedName}`} title={t("open_details")} onClick={() => setDetailEntry({ entry, box: selectedBox, slotIndex: index })}>i</button>
+                    </div>
                   );
                 })}
                 </div>
