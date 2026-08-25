@@ -128,6 +128,31 @@ type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
 const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "trades", "go"];
+const MYTHICAL_DEX = new Set([
+  151,  // Mew
+  251,  // Celebi
+  385,  // Jirachi
+  386,  // Deoxys
+  489,  // Phione
+  490,  // Manaphy
+  491,  // Darkrai
+  492,  // Shaymin
+  493,  // Arceus
+  494,  // Victini
+  647,  // Keldeo
+  648,  // Meloetta
+  649,  // Genesect
+  719,  // Diancie
+  720,  // Hoopa
+  721,  // Volcanion
+  801,  // Magearna
+  802,  // Marshadow
+  807,  // Zeraora
+  808,  // Meltan
+  809,  // Melmetal
+  893,  // Zarude
+  1025, // Pecharunt
+]);
 const DEFAULT_COLLECTIONS = COLLECTIONS.filter((collection) => collection !== "event-dex");
 const DEFAULT_AVAILABILITY_FILTERS: AvailabilityFilters = { current: true, legacy: true, historical: true, hypothetical: true };
 const MARK_COLORS: Record<string, string> = {
@@ -536,7 +561,51 @@ function asGenericSpecimen(entry: PlannedEntry): PlannedEntry {
     genericEntry: true,
   };
 }
+function eventMythicalsForMark(
+  mark: string,
+  normalEntries: PokemonEntry[],
+  specialEntries: PokemonEntry[],
+) {
+  const existing = new Set(
+    normalEntries
+      .filter((entry) => entry.mark === mark)
+      .map((entry) => `${entry.dex}:${entry.form ?? ""}`)
+  );
 
+  const seen = new Set<string>();
+
+  return specialEntries
+    .filter((entry) =>
+      entry.collection === "event-dex" &&
+      entry.mark === mark &&
+      MYTHICAL_DEX.has(entry.dex)
+    )
+    .filter((entry) => {
+      const key = `${entry.dex}:${entry.form ?? ""}`;
+
+      if (existing.has(key)) return false;
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    })
+    .map((entry) => ({
+      ...entry,
+      id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}`,
+      collection: undefined,
+      acquisitionCategory: "event" as const,
+      availability: "historical" as const,
+      note: "Available through a past event distribution",
+
+      trainerName: undefined,
+      trainerId: undefined,
+      eventYear: undefined,
+      eventLocation: undefined,
+      eventType: undefined,
+      startDate: undefined,
+      endDate: undefined,
+    }));
+}
 function buildBoxes(
   entries: PokemonEntry[],
   specialEntries: PokemonEntry[],
