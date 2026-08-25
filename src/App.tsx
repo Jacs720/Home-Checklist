@@ -92,6 +92,19 @@ const GROUP_COLORS: Record<string, string> = {
   trades: "#e7a65f",
   go: "#57a6e6",
 };
+const ORIGIN_MARK_ICONS: Record<string, string> = {
+  GB: "GB_icon_HOME.png",
+  P: "pentagon_HOME.png",
+  USUM: "Black_clover_HOME.png",
+  LGPE: "Let's_Go_icon_HOME.png",
+  SwSh: "Galar_symbol_HOME.png",
+  LA: "Arceus_mark_HOME.png",
+  BDSP: "BDSP_icon_HOME.png",
+  SV: "Paldea_icon_HOME.png",
+  LZA: "Z-A_icon_HOME.png",
+  GBA: "GBA_icon_HOME.png",
+  go: "GO_icon_HOME.png",
+};
 const STORAGE_KEY = "origin-marks-home-checklist-v1";
 const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
 const CATALOG_VERSION = 6;
@@ -110,6 +123,17 @@ const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
 
 function CompactCheckbox({ checked, onChange, accent }: { checked: boolean; onChange: () => void; accent: string }) {
   return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
+}
+
+function originMarkIconUrl(mark?: string) {
+  const filename = mark ? ORIGIN_MARK_ICONS[mark] : undefined;
+  return filename ? assetUrl(`assets/origin-marks/${filename}`) : null;
+}
+
+function OriginMarkIcon({ mark, label, className = "" }: { mark: string; label: string; className?: string }) {
+  const src = originMarkIconUrl(mark);
+  if (!src) return <span className={className}>{label}</span>;
+  return <span className={`origin-mark-icon ${className}`} title={label}><img src={src} alt="" /><span className="sr-only">{label}</span></span>;
 }
 
 function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
@@ -959,23 +983,25 @@ export default function App() {
 
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>
-            {MARKS.map((mark) => (
-              <label className="mark-row" key={mark}>
+            {MARKS.map((mark) => {
+              const label = groupName(language, mark);
+              return <label className="mark-row" key={mark} aria-label={`${label}: ${markCounts[mark]?.toLocaleString(locale) ?? 0}`}>
                 <CompactCheckbox checked={selectedMarks.includes(mark)} onChange={() => toggleMark(mark)} accent={MARK_COLORS[mark]} />
-                <span>{groupName(language, mark)}</span><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
-              </label>
-            ))}
+                <OriginMarkIcon mark={mark} label={label} className={originMarkIconUrl(mark) ? "filter-mark-icon" : ""} /><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
+              </label>;
+            })}
             {selectedMarks.includes("GBA") && <div className="sub-rule static-rule"><span aria-hidden="true">↗</span><span><b>{t("gba_ports")}</b><small>{t("gba_ports_desc")}</small></span></div>}
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("special_collections")}</p>
-            {COLLECTIONS.map((collection) => (
-              <label className="mark-row" key={collection}>
+            {COLLECTIONS.map((collection) => {
+              const label = groupName(language, collection);
+              return <label className="mark-row" key={collection} aria-label={`${label}: ${collectionCounts[collection]?.toLocaleString(locale) ?? 0}`}>
                 <CompactCheckbox checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} accent={GROUP_COLORS[collection]} />
-                <span>{groupName(language, collection)}</span><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
-              </label>
-            ))}
+                <OriginMarkIcon mark={collection} label={label} className={originMarkIconUrl(collection) ? "filter-mark-icon" : ""} /><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
+              </label>;
+            })}
             <div className="catalog-caveat"><b>{groupName(language, "cherish")}</b><span>{t("cherish_beta")}</span></div>
           </section>
 
@@ -1030,6 +1056,7 @@ export default function App() {
                   const artworkUrl = pokemonArtworkUrl(entry);
                   const boxNumber = String(box.globalIndex + 1).padStart(3, "0");
                   const slotNumber = String(slotIndex + 1).padStart(2, "0");
+                  const originMarkKey = entry.mark ?? entry.groupKey;
                   const status = isOwned ? t("status_obtained") : t("status_missing");
                   const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
                   return <button
@@ -1043,6 +1070,7 @@ export default function App() {
                     onClick={() => locateEntryInBoxes(located)}
                   >
                     {artworkUrl ? <img src={artworkUrl} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="global-art-placeholder" aria-hidden="true" />}
+                    {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="entry-origin-mark" />}
                   </button>;
                 })}
               </div> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
@@ -1052,10 +1080,11 @@ export default function App() {
                 const localizedName = displayName(entry);
                 const localizedForm = displayForm(entry);
                 const isOwned = owned.has(entry.planId);
+                const originMarkKey = entry.mark ?? entry.groupKey;
                 return <div className={`global-tooltip ${globalTooltip.above ? "above" : ""}`} role="tooltip" style={{ left: globalTooltip.left, top: globalTooltip.top }}>
                   <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                   <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
-                  <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.groupLabel}</span>
+                  <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
                   <span><em>{t("box")} · {t("slot")}</em>{String(box.globalIndex + 1).padStart(3, "0")} · {String(slotIndex + 1).padStart(2, "0")}</span>
                   <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>
                   <small>{t("locate_in_box")}</small>
@@ -1085,7 +1114,7 @@ export default function App() {
                   return (
                     <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
-                      <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />
+                      {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
                       <span className="mini-grid">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; return <i className={entry ? owned.has(entry.planId) ? "owned" : "pending" : "vacant"} key={index} />; })}</span>
                       <span className="box-preview" aria-hidden="true">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; const url = entry ? pokemonArtworkUrl(entry) : null; return <span className={entry && owned.has(entry.planId) ? "owned" : ""} key={index}>{url && <img src={url} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />}</span>; })}</span>
@@ -1120,12 +1149,14 @@ export default function App() {
                   const localizedForm = displayForm(entry);
                   const genderDetail = entry.gender ? t(entry.gender) : null;
                   const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
+                  const originMarkKey = entry.mark ?? entry.groupKey;
                   return (
                     <button ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
                       <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                       <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
                       <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
                       <strong>{localizedName}</strong><small>{detail} · {entry.ownOt ? t("your_ot") : t("foreign_ot")}</small>
+                      {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="slot-origin-mark" />}
                       <span className="status-dot">{isOwned ? "✓" : ""}</span>
                     </button>
                   );
