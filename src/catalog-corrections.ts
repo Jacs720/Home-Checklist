@@ -1,7 +1,8 @@
 type CatalogEntry = {
   id: string;
   name?: string;
-  mark?: string | null;
+  mark?: string;
+  collection?: string;
   dex: number;
   form: string | null;
   keyword: string;
@@ -14,7 +15,86 @@ type CatalogEntry = {
   ownOtNormal: boolean;
   ownOtShiny: boolean;
   acquisitionCategory?: string;
+  artId?: number | null;
+  types?: string[];
+  shinyArtStyle?: "home";
+  gender?: "male" | "female";
 };
+
+const GO_SPECIES_WITH_SEPARATE_UNNAMED_BASE = new Set([128, 676, 720, 901]);
+const GO_FORMS_THAT_DO_NOT_REACH_HOME = new Set(["647:Resolute", "718:0.1", "718:0.5"]);
+const GO_ALCREMIE_CREAMS = ["Vanilla Cream", "Ruby Cream", "Matcha Cream", "Mint Cream", "Lemon Cream", "Salted Cream", "Ruby Swirl", "Caramel Swirl", "Rainbow Swirl"] as const;
+const GO_ALCREMIE_SWEETS = ["Strawberry", "Berry", "Love", "Star", "Clover", "Flower", "Ribbon"] as const;
+const GO_MINIOR_CORES = ["Red Core", "Orange Core", "Yellow Core", "Green Core", "Blue Core", "Indigo Core", "Violet Core"] as const;
+
+function goFormSlug(form: string) {
+  return form.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Expands the GO planning collection with every distinct boxable form from the
+ * normalized HOME catalog. Forms that revert or cannot be sent from GO are
+ * intentionally omitted. The existing species entry becomes the first named
+ * form unless the species also has a separate unnamed base form.
+ */
+export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], catalogEntries: T[]) {
+  const formsByDex = new Map<number, T[]>();
+  for (const candidate of catalogEntries) {
+    if (!candidate.form || candidate.availability === "excluded" || candidate.dex <= 0) continue;
+    if (GO_FORMS_THAT_DO_NOT_REACH_HOME.has(`${candidate.dex}:${candidate.form}`)) continue;
+    const forms = formsByDex.get(candidate.dex) ?? [];
+    if (!forms.some((entry) => entry.form === candidate.form)) forms.push(candidate);
+    formsByDex.set(candidate.dex, forms);
+  }
+
+  const alcremieTemplate = catalogEntries.find((entry) => entry.dex === 869);
+  if (alcremieTemplate) {
+    formsByDex.set(869, GO_ALCREMIE_CREAMS.flatMap((cream) => GO_ALCREMIE_SWEETS.map((sweet) => ({
+      ...alcremieTemplate,
+      form: `${cream}, ${sweet}`,
+      artId: 869,
+    } as T))));
+  }
+  const miniorTemplate = catalogEntries.find((entry) => entry.dex === 774);
+  if (miniorTemplate) {
+    formsByDex.set(774, GO_MINIOR_CORES.map((form, index) => ({
+      ...miniorTemplate,
+      form,
+      artId: 10136 + index,
+    } as T)));
+  }
+
+  const expanded: T[] = [];
+  for (const entry of specialEntries) {
+    if (entry.collection !== "go") {
+      expanded.push(entry);
+      continue;
+    }
+    const candidates = formsByDex.get(entry.dex) ?? [];
+    const keepsUnnamedBase = GO_SPECIES_WITH_SEPARATE_UNNAMED_BASE.has(entry.dex);
+    if (!candidates.length) {
+      expanded.push(entry);
+      continue;
+    }
+
+    const createFormEntry = (candidate: T, keepOriginalId: boolean) => {
+      const form = candidate.form as string;
+      return {
+        ...entry,
+        id: keepOriginalId ? entry.id : `go:${String(entry.dex).padStart(4, "0")}:${goFormSlug(form)}`,
+        form,
+        types: candidate.types ?? entry.types,
+        artId: candidate.artId ?? entry.artId,
+        shinyArtStyle: candidate.shinyArtStyle ?? entry.shinyArtStyle,
+        keyword: `${entry.keyword}-${goFormSlug(form)}`,
+      } as T;
+    };
+
+    if (keepsUnnamedBase) expanded.push(entry);
+    candidates.forEach((candidate, index) => expanded.push(createFormEntry(candidate, !keepsUnnamedBase && index === 0)));
+  }
+  return expanded;
+}
 
 // These species evolve from non-regional forms in Legends: Arceus, preserving
 // the Galar origin mark carried by the Pokémon obtained in Sword or Shield.

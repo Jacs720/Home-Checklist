@@ -16,7 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName, localizeCatalogText } from "./translations";
-import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
+import { addGoStorableForms, addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
 import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
@@ -604,8 +604,10 @@ export default function App() {
         return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json()]);
       })
       .then(([baseValue, specialValue, namesValue]: [Dataset, SpecialDataset, PokemonNames]) => {
-        setDataset({ ...baseValue, entries: applyCatalogCorrections(baseValue.entries) });
-        setSpecialDataset(specialValue);
+        const correctedEntries = applyCatalogCorrections(baseValue.entries);
+        const correctedSpecialEntries = addGoStorableForms(specialValue.entries, correctedEntries);
+        setDataset({ ...baseValue, entries: correctedEntries });
+        setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length } }, entries: correctedSpecialEntries });
         setPokemonNames(namesValue);
       })
       .catch(() => setLoadError(true));
