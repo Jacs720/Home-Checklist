@@ -16,7 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
-import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
+import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
 
 type PokemonEntry = {
   id: string;
@@ -244,7 +244,7 @@ function expandCollectibleForms(entries: PokemonEntry[]) {
 }
 
 function applyCatalogCorrections(entries: PokemonEntry[]) {
-  let correctedEntries = addSwShHisuianEvolutionEntries(expandCollectibleForms(entries));
+  let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(entries)));
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {
@@ -876,7 +876,7 @@ export default function App() {
             <button className={!variants.shiny && variants.normal && acquisitions.own && !acquisitions.trade && !acquisitions.event && !acquisitions.external && selectedCollections.length === 0 ? "preset active" : "preset"} onClick={() => applyPreset("normal")}><span>◌</span><b>{t("preset_normal")}</b></button>
             <button className={selectedMarks.length === 0 && selectedCollections.length === COLLECTIONS.length ? "preset active" : "preset"} onClick={() => applyPreset("special")}><span>◎</span><b>{t("preset_special")}</b></button>
           </div>
-          <button className={`preset living-dex-preset ${normalLivingDex ? "active" : ""}`} aria-pressed={normalLivingDex} onClick={() => setNormalLivingDex((value) => !value)}><span>▦</span><b>{t("normal_living_dex")}</b><small>{t("normal_living_dex_desc")}</small></button>
+          <button className={`preset living-dex-preset ${normalLivingDex ? "active" : ""}`} aria-pressed={normalLivingDex} onClick={() => setNormalLivingDex((value) => !value)}><span>▦</span><b>{t("normal_living_dex")}</b></button>
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>

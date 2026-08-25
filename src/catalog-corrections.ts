@@ -1,5 +1,6 @@
 type CatalogEntry = {
   id: string;
+  name?: string;
   mark?: string | null;
   dex: number;
   form: string | null;
@@ -94,4 +95,10 @@ export function selectNormalLivingDexEntries<T extends { dex: number; variant: s
     }
   }
   return [...selectedBySpecies.values()].sort((left, right) => left.dex - right.dex);
+}
+
+export function correctBloodmoonUrsalunaDex<T extends CatalogEntry>(entries: T[]) {
+  return entries.map((entry) => entry.dex === 0 && entry.name === "Ursaluna" && entry.form === "Bloodmoon"
+    ? { ...entry, dex: 901 }
+    : entry);
 }
