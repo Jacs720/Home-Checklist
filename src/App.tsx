@@ -65,10 +65,13 @@ type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
 type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
+type CollectionViewMode = "boxes" | "global";
 type ThemeScope = "all" | "mark" | "box";
 type ThemeTab = ThemeGame | "concept" | "custom";
 type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
 type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
+type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
+type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
@@ -455,6 +458,10 @@ export default function App() {
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<CollectionViewMode>("boxes");
+  const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
+  const [locationAnnouncement, setLocationAnnouncement] = useState("");
+  const [globalTooltip, setGlobalTooltip] = useState<GlobalTooltip | null>(null);
   const [query, setQuery] = useState("");
   const [missingOnly, setMissingOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -470,6 +477,7 @@ export default function App() {
   const importRef = useRef<HTMLInputElement>(null);
   const themeImportRef = useRef<HTMLInputElement>(null);
   const themeImageRef = useRef<HTMLInputElement>(null);
+  const highlightedEntryRef = useRef<HTMLButtonElement>(null);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
@@ -560,6 +568,7 @@ export default function App() {
     [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, language],
   );
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
+  const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
   const capacityBoxes = Math.ceil(capacity / 30);
   const totalPages = Math.max(1, Math.ceil(Math.max(boxes.length, capacityBoxes) / 30));
   const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(owned.has(entry.planId)), 0), [plannedEntries, owned]);
@@ -572,12 +581,58 @@ export default function App() {
   useEffect(() => {
     setPageIndex(0);
     setSelectedBoxIndex(null);
+    setHighlightedPlanId(null);
   }, [filterKey]);
   useEffect(() => setPageIndex((current) => Math.min(current, totalPages - 1)), [totalPages]);
 
+  useEffect(() => {
+    if (viewMode !== "boxes" || selectedBoxIndex === null || !highlightedPlanId) return;
+    const frame = window.requestAnimationFrame(() => highlightedEntryRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+      inline: "center",
+    }));
+    const timer = window.setTimeout(() => setHighlightedPlanId(null), 2800);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [viewMode, selectedBoxIndex, highlightedPlanId]);
+
+  useEffect(() => {
+    if (viewMode !== "global") return;
+    const closeTooltip = () => setGlobalTooltip(null);
+    window.addEventListener("scroll", closeTooltip, true);
+    window.addEventListener("resize", closeTooltip);
+    return () => {
+      window.removeEventListener("scroll", closeTooltip, true);
+      window.removeEventListener("resize", closeTooltip);
+    };
+  }, [viewMode]);
+
   const matchesSearch = (entry: PlannedEntry) => {
-    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
+    const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${String(entry.dex).padStart(3, "0")} ${String(entry.dex).padStart(4, "0")} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
     return matchesQuery && (!missingOnly || !owned.has(entry.planId));
+  };
+
+  const visibleGlobalEntries = locatedEntries.filter(({ entry }) => matchesSearch(entry));
+  const visibleGlobalOwned = visibleGlobalEntries.reduce((sum, { entry }) => sum + Number(owned.has(entry.planId)), 0);
+
+  const showGlobalTooltip = (element: HTMLButtonElement, located: LocatedEntry) => {
+    const rect = element.getBoundingClientRect();
+    const width = Math.min(236, window.innerWidth - 32);
+    const left = Math.max(16, Math.min(window.innerWidth - width - 16, rect.left + (rect.width - width) / 2));
+    const above = rect.bottom + 176 > window.innerHeight && rect.top > 176;
+    setGlobalTooltip({ located, left, top: above ? rect.top - 10 : rect.bottom + 10, above });
+  };
+
+  const locateEntryInBoxes = (located: LocatedEntry) => {
+    setGlobalTooltip(null);
+    setPageIndex(Math.floor(located.box.globalIndex / 30));
+    setSelectedBoxIndex(located.box.globalIndex);
+    setHighlightedPlanId(located.entry.planId);
+    setLocationAnnouncement(`${displayName(located.entry)} · ${t("box")} ${String(located.box.globalIndex + 1).padStart(3, "0")} · ${t("slot")} ${String(located.slotIndex + 1).padStart(2, "0")}`);
+    setViewMode("boxes");
   };
 
   const toggleOwned = (planId: string) => setOwned((current) => {
@@ -809,6 +864,7 @@ export default function App() {
           </div>
         </div>
       </header>
+      <span className="sr-only" role="status" aria-live="polite">{locationAnnouncement}</span>
 
       {themeOpen && (
         <div className="theme-modal-layer">
@@ -941,18 +997,72 @@ export default function App() {
 
         <section className="collection-view">
           <div className="utility-row">
-            <nav className="breadcrumbs">
-              <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
-              {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
-            </nav>
+            <div className="utility-navigation">
+              <nav className="view-switcher" aria-label={t("choose_view")}>
+                <button className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
+                <button className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
+              </nav>
+              {viewMode === "boxes" && <nav className="breadcrumbs">
+                <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
+                {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
+              </nav>}
+            </div>
             <div className="search-tools">
-              <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>
+              {viewMode === "boxes" && <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>}
               <label className="search-box"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
               <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
             </div>
           </div>
 
-          {!selectedBox ? (
+          {viewMode === "global" ? (
+            <>
+              <div className="view-heading global-view-heading">
+                <div><p className="eyebrow teal">{t("your_collection")}</p><h2>{t("global_view")}</h2><p>{t("global_view_desc")}</p></div>
+                <div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div>
+              </div>
+
+              {visibleGlobalEntries.length ? <div className="global-gallery" aria-label={t("global_view")}>
+                {visibleGlobalEntries.map((located) => {
+                  const { entry, box, slotIndex } = located;
+                  const localizedName = displayName(entry);
+                  const localizedForm = displayForm(entry);
+                  const isOwned = owned.has(entry.planId);
+                  const artworkUrl = pokemonArtworkUrl(entry);
+                  const boxNumber = String(box.globalIndex + 1).padStart(3, "0");
+                  const slotNumber = String(slotIndex + 1).padStart(2, "0");
+                  const status = isOwned ? t("status_obtained") : t("status_missing");
+                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
+                  return <button
+                    className={`global-pokemon ${isOwned ? "owned" : "pending"}`}
+                    key={`${entry.planId}:${box.globalIndex}:${slotIndex}`}
+                    aria-label={accessibleLabel}
+                    onMouseEnter={(event) => showGlobalTooltip(event.currentTarget, located)}
+                    onMouseLeave={() => setGlobalTooltip(null)}
+                    onFocus={(event) => showGlobalTooltip(event.currentTarget, located)}
+                    onBlur={() => setGlobalTooltip(null)}
+                    onClick={() => locateEntryInBoxes(located)}
+                  >
+                    {artworkUrl ? <img src={artworkUrl} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="global-art-placeholder" aria-hidden="true" />}
+                  </button>;
+                })}
+              </div> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
+
+              {globalTooltip && (() => {
+                const { entry, box, slotIndex } = globalTooltip.located;
+                const localizedName = displayName(entry);
+                const localizedForm = displayForm(entry);
+                const isOwned = owned.has(entry.planId);
+                return <div className={`global-tooltip ${globalTooltip.above ? "above" : ""}`} role="tooltip" style={{ left: globalTooltip.left, top: globalTooltip.top }}>
+                  <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
+                  <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
+                  <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.groupLabel}</span>
+                  <span><em>{t("box")} · {t("slot")}</em>{String(box.globalIndex + 1).padStart(3, "0")} · {String(slotIndex + 1).padStart(2, "0")}</span>
+                  <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>
+                  <small>{t("locate_in_box")}</small>
+                </div>;
+              })()}
+            </>
+          ) : !selectedBox ? (
             <>
               <div className="view-heading page-heading">
                 <div><p className="eyebrow teal">{t("page_view")}</p><h2>{t("page")} {pageIndex + 1}</h2><p>{t("page_desc")}</p></div>
@@ -1011,7 +1121,7 @@ export default function App() {
                   const genderDetail = entry.gender ? t(entry.gender) : null;
                   const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
                   return (
-                    <button className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
+                    <button ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""}`} key={entry.planId} onClick={() => toggleOwned(entry.planId)} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
                       <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                       <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
                       <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />

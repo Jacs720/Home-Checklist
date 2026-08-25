@@ -191,6 +191,69 @@ export const UI_COPY: Record<UiLanguage, Copy> = {
   CHT: ZHT,
 };
 
+const GLOBAL_VIEW_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": {
+    choose_view: "Elegir vista", boxes_view: "Cajas", global_view: "Vista global",
+    global_view_desc: "Explora todos los Pokémon de los filtros activos. Pasa el cursor para ver su ficha y selecciónalo para abrir su ubicación exacta.",
+    results: "resultados", status_obtained: "Obtenido", status_missing: "Faltante", slot: "POSICIÓN",
+    locate_in_box: "Selecciona para localizarlo en su caja", no_results: "No hay Pokémon para mostrar", no_results_desc: "Prueba otra búsqueda o ajusta los filtros activos.",
+  },
+  "ES-ES": {
+    choose_view: "Elegir vista", boxes_view: "Cajas", global_view: "Vista global",
+    global_view_desc: "Explora todos los Pokémon de los filtros activos. Pasa el cursor para ver su ficha y selecciónalo para abrir su ubicación exacta.",
+    results: "resultados", status_obtained: "Obtenido", status_missing: "Faltante", slot: "POSICIÓN",
+    locate_in_box: "Selecciona para localizarlo en su caja", no_results: "No hay Pokémon para mostrar", no_results_desc: "Prueba otra búsqueda o ajusta los filtros activos.",
+  },
+  ENG: {
+    choose_view: "Choose view", boxes_view: "Boxes", global_view: "Global view",
+    global_view_desc: "Explore every Pokémon in the active filters. Hover for details, then select one to open its exact location.",
+    results: "results", status_obtained: "Obtained", status_missing: "Missing", slot: "SLOT",
+    locate_in_box: "Select to locate it in its box", no_results: "No Pokémon to show", no_results_desc: "Try another search or adjust the active filters.",
+  },
+  DEU: {
+    choose_view: "Ansicht wählen", boxes_view: "Boxen", global_view: "Gesamtansicht",
+    global_view_desc: "Durchsuche alle Pokémon der aktiven Filter. Fahre für Details darüber und wähle eines aus, um seinen genauen Platz zu öffnen.",
+    results: "Ergebnisse", status_obtained: "Erhalten", status_missing: "Fehlend", slot: "PLATZ",
+    locate_in_box: "Auswählen, um es in seiner Box zu finden", no_results: "Keine Pokémon zum Anzeigen", no_results_desc: "Versuche eine andere Suche oder passe die aktiven Filter an.",
+  },
+  FRA: {
+    choose_view: "Choisir la vue", boxes_view: "Boîtes", global_view: "Vue globale",
+    global_view_desc: "Explorez tous les Pokémon correspondant aux filtres actifs. Survolez-les pour voir leur fiche, puis sélectionnez-en un pour ouvrir son emplacement exact.",
+    results: "résultats", status_obtained: "Obtenu", status_missing: "Manquant", slot: "PLACE",
+    locate_in_box: "Sélectionnez-le pour le retrouver dans sa Boîte", no_results: "Aucun Pokémon à afficher", no_results_desc: "Essayez une autre recherche ou modifiez les filtres actifs.",
+  },
+  ITA: {
+    choose_view: "Scegli vista", boxes_view: "Box", global_view: "Vista globale",
+    global_view_desc: "Esplora tutti i Pokémon inclusi nei filtri attivi. Passa il cursore per i dettagli, quindi selezionane uno per aprire la sua posizione esatta.",
+    results: "risultati", status_obtained: "Ottenuto", status_missing: "Mancante", slot: "POSTO",
+    locate_in_box: "Seleziona per trovarlo nel suo Box", no_results: "Nessun Pokémon da mostrare", no_results_desc: "Prova un'altra ricerca o modifica i filtri attivi.",
+  },
+  JPN: {
+    choose_view: "表示を選択", boxes_view: "ボックス", global_view: "全体表示",
+    global_view_desc: "有効なフィルター内のすべてのポケモンを一覧できます。カーソルを合わせて詳細を確認し、選択すると正確な場所を開きます。",
+    results: "件", status_obtained: "入手済み", status_missing: "未入手", slot: "場所",
+    locate_in_box: "選択してボックス内の場所を表示", no_results: "表示するポケモンがいません", no_results_desc: "検索条件または有効なフィルターを変更してください。",
+  },
+  KOR: {
+    choose_view: "보기 선택", boxes_view: "박스", global_view: "전체 보기",
+    global_view_desc: "활성 필터에 포함된 모든 포켓몬을 살펴보세요. 마우스를 올려 정보를 확인하고 선택하면 정확한 위치가 열립니다.",
+    results: "결과", status_obtained: "보유", status_missing: "미보유", slot: "위치",
+    locate_in_box: "선택하여 박스 위치 찾기", no_results: "표시할 포켓몬이 없습니다", no_results_desc: "다른 검색어나 활성 필터를 사용해 보세요.",
+  },
+  CHS: {
+    choose_view: "选择视图", boxes_view: "盒子", global_view: "全局视图",
+    global_view_desc: "浏览当前筛选条件下的所有宝可梦。悬停可查看详情，选择后会打开其准确位置。",
+    results: "个结果", status_obtained: "已获得", status_missing: "未获得", slot: "位置",
+    locate_in_box: "选择以在盒子中定位", no_results: "没有可显示的宝可梦", no_results_desc: "请尝试其他搜索词或调整当前筛选条件。",
+  },
+  CHT: {
+    choose_view: "選擇檢視", boxes_view: "盒子", global_view: "全域檢視",
+    global_view_desc: "瀏覽目前篩選條件下的所有寶可夢。懸停可查看詳情，選取後會開啟其準確位置。",
+    results: "個結果", status_obtained: "已獲得", status_missing: "未獲得", slot: "位置",
+    locate_in_box: "選取以在盒子中定位", no_results: "沒有可顯示的寶可夢", no_results_desc: "請嘗試其他搜尋詞或調整目前篩選條件。",
+  },
+};
+
 const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   "Sin marca": { ENG: "No mark", DEU: "Ohne Zeichen", FRA: "Sans marque", ITA: "Senza marchio", JPN: "マークなし", KOR: "마크 없음", CHS: "无标记", CHT: "無標記" },
   GB: { ENG: "Game Boy", DEU: "Game Boy", FRA: "Game Boy", ITA: "Game Boy", JPN: "ゲームボーイ", KOR: "게임보이", CHS: "Game Boy", CHT: "Game Boy" },
@@ -262,7 +325,7 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
 export function groupName(language: UiLanguage, key: string) {
