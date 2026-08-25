@@ -17,6 +17,7 @@ import {
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName, localizeCatalogText } from "./translations";
 import { addGoStorableForms, addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
+import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "./austin-john-import";
 import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
@@ -93,6 +94,8 @@ type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
 type SelectOption<T extends string | number> = { value: T; label: string; icon?: ReactNode };
 type CustomBox = { id: string; name: string; planIds: string[] };
 type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
+type AustinAppliedNotice = { imported: number; newOwned: number; mode: "merge" | "replace" };
+type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
@@ -547,6 +550,7 @@ export default function App() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
   const [owned, setOwned] = useState<Set<string>>(new Set());
+  const [livingDexOwned, setLivingDexOwned] = useState<Set<number>>(new Set());
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState<number | null>(null);
@@ -581,13 +585,19 @@ export default function App() {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [clock, setClock] = useState(() => Date.now());
   const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
+  const [austinPreview, setAustinPreview] = useState<AustinJohnPreview | null>(null);
+  const [austinImportBusy, setAustinImportBusy] = useState(false);
+  const [austinNotice, setAustinNotice] = useState<AustinAppliedNotice | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const austinImportRef = useRef<HTMLInputElement>(null);
   const themeImportRef = useRef<HTMLInputElement>(null);
   const themeImageRef = useRef<HTMLInputElement>(null);
   const highlightedEntryRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const ownedHistoryRef = useRef<Set<string>[]>([]);
+  const progressHistoryRef = useRef<ProgressSnapshot[]>([]);
+  const livingDexProgressStoredRef = useRef(false);
+  const livingDexMigrationCheckedRef = useRef(false);
   const transferProcessedRef = useRef(false);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
@@ -619,6 +629,8 @@ export default function App() {
       if (saved) {
         const value = JSON.parse(saved);
         if (Array.isArray(value.owned)) setOwned(new Set(value.owned));
+        if (Object.hasOwn(value, "livingDexOwned")) livingDexProgressStoredRef.current = true;
+        if (Array.isArray(value.livingDexOwned)) setLivingDexOwned(new Set(value.livingDexOwned.filter((dex: unknown) => typeof dex === "number" && Number.isInteger(dex) && dex > 0)));
         if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
         if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
         if (Array.isArray(value.selectedCollections)) {
@@ -668,10 +680,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
+  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -680,11 +692,11 @@ export default function App() {
   }, [themeConfig, hydrated, language]);
 
   useEffect(() => {
-    if (!themeOpen && !detailEntry) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { setThemeOpen(false); setDetailEntry(null); } };
+    if (!themeOpen && !detailEntry && !austinPreview) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { setThemeOpen(false); setDetailEntry(null); setAustinPreview(null); } };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [themeOpen, detailEntry]);
+  }, [austinPreview, themeOpen, detailEntry]);
 
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale ?? "es-MX";
@@ -716,32 +728,48 @@ export default function App() {
     return [...choices.values()].sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
   }, [dataset, specialDataset, language]);
   const databaseChoiceByPlanId = useMemo(() => new Map(databaseChoices.map((entry) => [entry.planId, entry])), [databaseChoices]);
+  useEffect(() => {
+    if (!hydrated || !databaseChoiceByPlanId.size || livingDexMigrationCheckedRef.current) return;
+    livingDexMigrationCheckedRef.current = true;
+    if (livingDexProgressStoredRef.current || !normalLivingDex || !owned.size) return;
+    const migrated = new Set<number>();
+    owned.forEach((planId) => {
+      const dex = databaseChoiceByPlanId.get(planId)?.dex;
+      if (dex) migrated.add(dex);
+    });
+    if (migrated.size) setLivingDexOwned(migrated);
+  }, [databaseChoiceByPlanId, hydrated, normalLivingDex, owned]);
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
+  const supportedLivingDexDexes = useMemo(() => new Set(allImportEntries
+    .filter((entry) => !entry.collection && entry.availability !== "excluded" && entry.normalEligible !== false)
+    .map((entry) => entry.dex)), [allImportEntries]);
+  const entryIsOwned = useCallback((entry: PlannedEntry) => normalLivingDex ? livingDexOwned.has(entry.dex) : owned.has(entry.planId), [livingDexOwned, normalLivingDex, owned]);
   const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
     const generation = index + 1;
     const entries = plannedEntries.filter((entry) => generationForDex(entry.dex) === generation);
-    const registered = entries.filter((entry) => owned.has(entry.planId)).length;
+    const registered = entries.filter(entryIsOwned).length;
     return { generation, total: entries.length, registered, progress: entries.length ? Math.round((registered / entries.length) * 100) : 0 };
-  }).filter((item) => item.total > 0), [plannedEntries, owned]);
+  }).filter((item) => item.total > 0), [entryIsOwned, plannedEntries]);
   const originSummary = useMemo(() => {
     const groups = new Map<string, { key: string; total: number; registered: number }>();
     plannedEntries.forEach((entry) => {
-      const current = groups.get(entry.groupKey) ?? { key: entry.groupKey, total: 0, registered: 0 };
+      const key = normalLivingDex ? "living-dex" : entry.groupKey;
+      const current = groups.get(key) ?? { key, total: 0, registered: 0 };
       current.total += 1;
-      current.registered += Number(owned.has(entry.planId));
-      groups.set(entry.groupKey, current);
+      current.registered += Number(entryIsOwned(entry));
+      groups.set(key, current);
     });
     return [...groups.values()].sort((a, b) => b.total - a.total);
-  }, [plannedEntries, owned]);
+  }, [entryIsOwned, normalLivingDex, plannedEntries]);
   const availabilitySummary = useMemo(() => AVAILABILITY_STATUSES.map((status) => {
     const entries = plannedEntries.filter((entry) => availabilityForEntry(entry) === status);
-    return { status, total: entries.length, registered: entries.filter((entry) => owned.has(entry.planId)).length };
-  }), [plannedEntries, owned]);
-  const gameMissingEntries = useMemo(() => locatedEntries.filter(({ entry }) => !owned.has(entry.planId) && matchesGamePlan(entry, selectedGamePlan)), [locatedEntries, owned, selectedGamePlan]);
+    return { status, total: entries.length, registered: entries.filter(entryIsOwned).length };
+  }), [entryIsOwned, plannedEntries]);
+  const gameMissingEntries = useMemo(() => locatedEntries.filter(({ entry }) => !entryIsOwned(entry) && matchesGamePlan(entry, selectedGamePlan)), [entryIsOwned, locatedEntries, selectedGamePlan]);
   const capacityBoxes = Math.ceil(capacity / 30);
   const totalPages = Math.max(1, Math.ceil(Math.max(boxes.length, capacityBoxes) / 30));
-  const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(owned.has(entry.planId)), 0), [plannedEntries, owned]);
+  const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(entryIsOwned(entry)), 0), [entryIsOwned, plannedEntries]);
   const progress = plannedEntries.length ? Math.round((ownedCount / plannedEntries.length) * 100) : 0;
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -754,7 +782,7 @@ export default function App() {
       const importedIds = new Set(summary.newPlanIds);
       const importedEntries = allImportEntries.filter((entry) => importedIds.has(`${entry.id}:normal`) || importedIds.has(`${entry.id}:shiny`));
       setOwned((current) => new Set([...current, ...summary.newPlanIds]));
-      ownedHistoryRef.current = [];
+      progressHistoryRef.current = [];
       setUndoDepth(0);
       setCollectionPreset("custom");
       setSelectedMarks((current) => [...new Set([...current, ...importedEntries.map((entry) => entry.mark).filter((mark): mark is string => Boolean(mark))])]);
@@ -829,13 +857,13 @@ export default function App() {
   const matchesSearch = (entry: PlannedEntry) => {
     const matchesQuery = !query || normalize(`${displayName(entry)} ${entry.name} ${displayForm(entry) ?? ""} ${entry.form ?? ""} ${entry.gender ? t(entry.gender) : ""} ${entry.dex} ${String(entry.dex).padStart(3, "0")} ${String(entry.dex).padStart(4, "0")} ${entry.mark ?? ""} ${entry.groupLabel} ${entry.trainerName ?? ""} ${entry.nickname ?? ""} ${entry.ownOt ? t("your_ot") : t("foreign_ot")}`).includes(normalize(query));
     return matchesQuery
-      && (!missingOnly || !owned.has(entry.planId))
+      && (!missingOnly || !entryIsOwned(entry))
       && (!favoritesOnly || favorites.has(entry.planId))
       && availabilityFilters[availabilityForEntry(entry)];
   };
 
   const visibleGlobalEntries = locatedEntries.filter(({ entry }) => matchesSearch(entry));
-  const visibleGlobalOwned = visibleGlobalEntries.reduce((sum, { entry }) => sum + Number(owned.has(entry.planId)), 0);
+  const visibleGlobalOwned = visibleGlobalEntries.reduce((sum, { entry }) => sum + Number(entryIsOwned(entry)), 0);
 
   const showGlobalTooltip = (element: HTMLButtonElement, located: LocatedEntry) => {
     const rect = element.getBoundingClientRect();
@@ -855,24 +883,32 @@ export default function App() {
     setViewMode("boxes");
   };
 
-  const rememberOwnedChange = useCallback((next: Set<string>) => {
-    ownedHistoryRef.current = [...ownedHistoryRef.current.slice(-29), new Set(owned)];
-    setUndoDepth(ownedHistoryRef.current.length);
-    setOwned(next);
-  }, [owned]);
+  const rememberProgressChange = useCallback((nextOwned: Set<string>, nextLivingDexOwned: Set<number>) => {
+    progressHistoryRef.current = [...progressHistoryRef.current.slice(-29), { owned: new Set(owned), livingDexOwned: new Set(livingDexOwned) }];
+    setUndoDepth(progressHistoryRef.current.length);
+    setOwned(nextOwned);
+    setLivingDexOwned(nextLivingDexOwned);
+  }, [livingDexOwned, owned]);
 
   const undoOwned = useCallback(() => {
-    const previous = ownedHistoryRef.current.pop();
+    const previous = progressHistoryRef.current.pop();
     if (!previous) return;
-    setOwned(previous);
-    setUndoDepth(ownedHistoryRef.current.length);
+    setOwned(previous.owned);
+    setLivingDexOwned(previous.livingDexOwned);
+    setUndoDepth(progressHistoryRef.current.length);
   }, []);
 
-  const toggleOwned = (planId: string) => {
+  const toggleOwned = useCallback((entry: PlannedEntry) => {
+    if (normalLivingDex) {
+      const next = new Set(livingDexOwned);
+      if (next.has(entry.dex)) next.delete(entry.dex); else next.add(entry.dex);
+      rememberProgressChange(new Set(owned), next);
+      return;
+    }
     const next = new Set(owned);
-    if (next.has(planId)) next.delete(planId); else next.add(planId);
-    rememberOwnedChange(next);
-  };
+    if (next.has(entry.planId)) next.delete(entry.planId); else next.add(entry.planId);
+    rememberProgressChange(next, new Set(livingDexOwned));
+  }, [livingDexOwned, normalLivingDex, owned, rememberProgressChange]);
 
   const toggleFavorite = (planId: string) => setFavorites((current) => {
     const next = new Set(current);
@@ -881,17 +917,27 @@ export default function App() {
   });
 
   const toggleEntries = (entries: PlannedEntry[]) => {
+    if (normalLivingDex) {
+      const next = new Set(livingDexOwned);
+      const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.dex));
+      const affected = entries.filter((entry) => next.has(entry.dex)).length;
+      if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
+      entries.forEach((entry) => allOwned ? next.delete(entry.dex) : next.add(entry.dex));
+      if (entries.length) rememberProgressChange(new Set(owned), next);
+      return;
+    }
     const next = new Set(owned);
     const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.planId));
     const affected = entries.filter((entry) => next.has(entry.planId)).length;
     if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
     entries.forEach((entry) => allOwned ? next.delete(entry.planId) : next.add(entry.planId));
-    if (entries.length) rememberOwnedChange(next);
+    if (entries.length) rememberProgressChange(next, new Set(livingDexOwned));
   };
 
   const resetProgress = () => {
-    if (!owned.size || !window.confirm(t("confirm_reset_progress").replace("{count}", owned.size.toLocaleString(locale)))) return;
-    rememberOwnedChange(new Set());
+    const currentSize = normalLivingDex ? livingDexOwned.size : owned.size;
+    if (!currentSize || !window.confirm(t("confirm_reset_progress").replace("{count}", currentSize.toLocaleString(locale)))) return;
+    rememberProgressChange(normalLivingDex ? new Set(owned) : new Set(), normalLivingDex ? new Set() : new Set(livingDexOwned));
   };
 
   const renamePlannedBox = (box: PlannedBox, name: string) => setBoxNameOverrides((current) => {
@@ -1000,12 +1046,12 @@ export default function App() {
       }
       const entry = selectedBox.entries[keyboardSlotIndex];
       if (!entry) return;
-      if (event.code === "Space") { event.preventDefault(); toggleOwned(entry.planId); }
+      if (event.code === "Space") { event.preventDefault(); toggleOwned(entry); }
       if (event.key.toLowerCase() === "f") { event.preventDefault(); toggleFavorite(entry.planId); }
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [boxes.length, detailEntry, keyboardSlotIndex, selectedBox, themeOpen, totalPages, undoOwned, viewMode, owned, favorites]);
+  }, [boxes.length, detailEntry, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
 
   const openThemeDialog = () => {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -1106,7 +1152,7 @@ export default function App() {
     version: BACKUP_VERSION,
     catalogVersion: CATALOG_VERSION,
     exportedAt: new Date().toISOString(),
-    progress: { owned: [...owned], favorites: [...favorites] },
+    progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites] },
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
       genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
@@ -1133,8 +1179,17 @@ export default function App() {
     const progress = (value.progress && typeof value.progress === "object" ? value.progress : value) as Record<string, unknown>;
     const configuration = (value.configuration && typeof value.configuration === "object" ? value.configuration : value) as Record<string, unknown>;
     if (!Array.isArray(progress.owned)) throw new Error("invalid");
-    setOwned(new Set(progress.owned.filter((id): id is string => typeof id === "string")));
-    ownedHistoryRef.current = [];
+    const restoredOwned = new Set(progress.owned.filter((id): id is string => typeof id === "string"));
+    const restoredLivingDexOwned = new Set(Array.isArray(progress.livingDexOwned)
+      ? progress.livingDexOwned.filter((dex): dex is number => typeof dex === "number" && Number.isInteger(dex) && dex > 0)
+      : configuration.normalLivingDex === true
+        ? [...restoredOwned].map((planId) => databaseChoiceByPlanId.get(planId)?.dex).filter((dex): dex is number => Boolean(dex))
+        : []);
+    setOwned(restoredOwned);
+    setLivingDexOwned(restoredLivingDexOwned);
+    livingDexProgressStoredRef.current = true;
+    livingDexMigrationCheckedRef.current = true;
+    progressHistoryRef.current = [];
     setUndoDepth(0);
     if (Array.isArray(progress.favorites)) setFavorites(new Set(progress.favorites.filter((id): id is string => typeof id === "string")));
     if (Array.isArray(configuration.selectedMarks)) setSelectedMarks(configuration.selectedMarks.filter((mark): mark is string => typeof mark === "string" && MARKS.includes(mark)));
@@ -1196,6 +1251,38 @@ export default function App() {
     event.target.value = "";
   };
 
+  const importAustinJohnData = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setAustinImportBusy(true);
+    setAustinNotice(null);
+    setImportNotice(null);
+    try {
+      const workbook = parseAustinJohnWorkbook(await file.arrayBuffer());
+      setAustinPreview(buildAustinJohnPreview(workbook, supportedLivingDexDexes, livingDexOwned));
+    } catch (error) {
+      const key = error instanceof AustinJohnImportError
+        ? error.code === "shiny-workbook" ? "austin_shiny_not_supported" : error.code === "file-too-large" ? "austin_file_too_large" : "austin_invalid_workbook"
+        : "austin_invalid_workbook";
+      window.alert(t(key));
+    } finally {
+      setAustinImportBusy(false);
+      event.target.value = "";
+    }
+  };
+
+  const applyAustinJohnImport = (mode: "merge" | "replace") => {
+    if (!austinPreview) return;
+    const currentPreview = buildAustinJohnPreview(austinPreview, supportedLivingDexDexes, livingDexOwned);
+    const importedOwned = new Set(currentPreview.matchedOwnedDexes);
+    const next = mode === "merge" ? new Set([...livingDexOwned, ...importedOwned]) : importedOwned;
+    rememberProgressChange(new Set(owned), next);
+    applyCollectionPreset("basic");
+    setAustinNotice({ imported: importedOwned.size, newOwned: currentPreview.newOwned, mode });
+    setAustinPreview(null);
+    setLocationAnnouncement(t("austin_import_complete"));
+  };
+
   const exportThemeBackup = () => {
     const payload = { type: "origin-marks-box-themes", version: 1, exportedAt: new Date().toISOString(), themes: themeConfig };
     downloadText("origin-marks-themes-backup.json", JSON.stringify(payload, null, 2), "application/json");
@@ -1231,7 +1318,7 @@ export default function App() {
   const favoriteCount = plannedEntries.filter((entry) => favorites.has(entry.planId)).length;
   const availabilityFiltering = AVAILABILITY_STATUSES.some((status) => !availabilityFilters[status]);
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
-  const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every((entry) => owned.has(entry.planId));
+  const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every(entryIsOwned);
   const themeGameOption = themeTab === "custom" ? null : themeTab === "concept" ? CONCEPT_ART_GAMES.find((game) => game.id === conceptGame) ?? CONCEPT_ART_GAMES[0] : BOX_THEME_GAMES.find((game) => game.id === themeTab) ?? BOX_THEME_GAMES[0];
   const themeCanApply = themeTab !== "custom" || themeDraft.kind === "custom";
   const savedMinutesAgo = lastSavedAt ? Math.max(0, Math.floor((clock - lastSavedAt) / 60_000)) : null;
@@ -1277,6 +1364,45 @@ export default function App() {
         </div>
         <button aria-label={t("close_import_summary")} onClick={() => setImportNotice(null)}>×</button>
       </section>}
+
+      {austinNotice && <section className="import-notice" role="status" aria-live="polite">
+        <span className="import-notice-icon" aria-hidden="true">✓</span>
+        <div>
+          <strong>{t("austin_import_complete")}</strong>
+          <p>{t("austin_owned_imported")}: <b>{austinNotice.imported.toLocaleString(locale)}</b> · {t("new_entries")}: <b>{austinNotice.newOwned.toLocaleString(locale)}</b> · {t(austinNotice.mode === "merge" ? "austin_merge" : "austin_replace")} · {t("austin_origin_unchanged")}</p>
+        </div>
+        <button aria-label={t("close_import_summary")} onClick={() => setAustinNotice(null)}>×</button>
+      </section>}
+
+      {austinPreview && <div className="theme-modal-layer austin-modal-layer">
+        <button className="theme-modal-scrim" aria-label={t("austin_cancel")} onClick={() => setAustinPreview(null)} />
+        <section className="austin-dialog" role="dialog" aria-modal="true" aria-labelledby="austin-dialog-title">
+          <header className="austin-dialog-header">
+            <div><p className="eyebrow teal">{t("austin_detected")}</p><h2 id="austin-dialog-title">Austin John Plays HOME Organizer</h2><p>{t("austin_preview_intro")}</p></div>
+            <button className="theme-close" aria-label={t("austin_cancel")} onClick={() => setAustinPreview(null)}>×</button>
+          </header>
+          <div className="austin-dialog-body">
+            <dl className="austin-source">
+              <div><dt>{t("austin_source_sheet")}</dt><dd>{austinPreview.sheetName}</dd></div>
+              {austinPreview.versionLabel && <div><dt>{t("austin_version")}</dt><dd>{austinPreview.versionLabel}</dd></div>}
+              <div><dt>{t("austin_import_to")}</dt><dd>{t("normal_living_dex")}</dd></div>
+            </dl>
+            <div className="austin-stat-grid">
+              <div><span>{t("austin_matched")}</span><b>{austinPreview.matched.toLocaleString(locale)}</b></div>
+              <div><span>{t("austin_owned")}</span><b>{austinPreview.owned.toLocaleString(locale)}</b></div>
+              <div><span>{t("austin_missing")}</span><b>{austinPreview.missing.toLocaleString(locale)}</b></div>
+              <div className={austinPreview.unmatched ? "warning" : ""}><span>{t("unmatched")}</span><b>{austinPreview.unmatched.toLocaleString(locale)}</b></div>
+            </div>
+            <p className="austin-origin-note"><b>{t("austin_origin_unknown")}:</b> {t("austin_origin_note")}</p>
+            {austinPreview.replaceRemovals > 0 && <p className="austin-replace-note">{t("austin_replace_removes").replace("{count}", austinPreview.replaceRemovals.toLocaleString(locale))}</p>}
+          </div>
+          <footer className="austin-dialog-actions">
+            <button onClick={() => setAustinPreview(null)}>{t("austin_cancel")}</button>
+            <button onClick={() => applyAustinJohnImport("merge")}>{t("austin_merge")}</button>
+            <button className="austin-replace" onClick={() => applyAustinJohnImport("replace")}>{t("austin_replace")}</button>
+          </footer>
+        </section>
+      </div>}
 
       {themeOpen && (
         <div className="theme-modal-layer">
@@ -1484,11 +1610,12 @@ export default function App() {
           <div className="backup-actions">
             <span>{t("collection_and_backup")}</span>
             <button className="wide" onClick={() => importRef.current?.click()}>{t("import_collection")}</button><input ref={importRef} type="file" accept=".csv,.json,.homechecklist,text/csv,application/json,application/vnd.home-checklist+json" onChange={importData} hidden />
+            <button className="wide austin-import-button" disabled={austinImportBusy} onClick={() => austinImportRef.current?.click()}>{austinImportBusy ? t("austin_reading") : t("austin_import_button")}</button><input ref={austinImportRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importAustinJohnData} hidden />
             <button onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button className="wide" onClick={() => exportBackup("project")}>{t("export_project")}</button>
             <small className="auto-save-status"><i aria-hidden="true" />{t("last_saved")} {savedWhen}</small>
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
-            <button className="reset-progress" onClick={resetProgress} disabled={!owned.size}>{t("reset_progress")}</button>
+            <button className="reset-progress" onClick={resetProgress} disabled={normalLivingDex ? !livingDexOwned.size : !owned.size}>{t("reset_progress")}</button>
           </div>
         </aside>
 
@@ -1609,7 +1736,7 @@ export default function App() {
                   const { entry, box, slotIndex } = located;
                   const localizedName = displayName(entry);
                   const localizedForm = displayForm(entry);
-                  const isOwned = owned.has(entry.planId);
+                  const isOwned = entryIsOwned(entry);
                   const artworkUrl = pokemonArtworkUrl(entry);
                   const boxNumber = String(box.globalIndex + 1).padStart(3, "0");
                   const slotNumber = String(slotIndex + 1).padStart(2, "0");
@@ -1641,7 +1768,7 @@ export default function App() {
                 const { entry, box, slotIndex } = globalTooltip.located;
                 const localizedName = displayName(entry);
                 const localizedForm = displayForm(entry);
-                const isOwned = owned.has(entry.planId);
+                const isOwned = entryIsOwned(entry);
                 const originMarkKey = entry.mark ?? entry.groupKey;
                 const availability = availabilityForEntry(entry);
                 return <div className={`global-tooltip ${globalTooltip.above ? "above" : ""}`} role="tooltip" style={{ left: globalTooltip.left, top: globalTooltip.top }}>
@@ -1668,7 +1795,7 @@ export default function App() {
                   const globalIndex = pageIndex * 30 + offset;
                   const beyondCapacity = globalIndex >= capacityBoxes;
                   const matchCount = box?.entries.filter(matchesSearch).length ?? 0;
-                  const boxOwned = box?.entries.filter((entry) => owned.has(entry.planId)).length ?? 0;
+                  const boxOwned = box?.entries.filter(entryIsOwned).length ?? 0;
                   if (!box) return (
                     <div className={`box-tile empty ${beyondCapacity ? "locked" : ""}`} key={globalIndex}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span><strong>{beyondCapacity ? t("no_capacity") : t("free")}</strong><small>{beyondCapacity ? t("outside_home") : t("box_available")}</small>
@@ -1681,8 +1808,8 @@ export default function App() {
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
-                      <span className="mini-grid">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; return <i className={entry ? owned.has(entry.planId) ? "owned" : "pending" : "vacant"} key={index} />; })}</span>
-                      <span className="box-preview" aria-hidden="true">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; const url = entry ? pokemonArtworkUrl(entry) : null; return <span className={entry && owned.has(entry.planId) ? "owned" : ""} key={index}>{url && <img src={url} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />}</span>; })}</span>
+                      <span className="mini-grid">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; return <i className={entry ? entryIsOwned(entry) ? "owned" : "pending" : "vacant"} key={index} />; })}</span>
+                      <span className="box-preview" aria-hidden="true">{Array.from({ length: 30 }, (_, index) => { const entry = box.entries[index]; const url = entry ? pokemonArtworkUrl(entry) : null; return <span className={entry && entryIsOwned(entry) ? "owned" : ""} key={index}>{url && <img src={url} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />}</span>; })}</span>
                       {beyondCapacity && <em>{t("overflow")}</em>}
                     </button>
                   );
@@ -1708,7 +1835,7 @@ export default function App() {
                 {Array.from({ length: 30 }, (_, index) => {
                   const entry = selectedBox.entries[index];
                   if (!entry) return <div className="pokemon-slot vacant" key={index}><span className="slot-number">{String(index + 1).padStart(2, "0")}</span><span>{t("empty")}</span></div>;
-                  const isOwned = owned.has(entry.planId);
+                  const isOwned = entryIsOwned(entry);
                   const visible = matchesSearch(entry);
                   const localizedName = displayName(entry);
                   const localizedForm = displayForm(entry);
@@ -1718,7 +1845,7 @@ export default function App() {
                   const favorite = favorites.has(entry.planId);
                   return (
                     <div ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""} ${keyboardSlotIndex === index ? "keyboard-selected" : ""}`} key={entry.planId}>
-                      <button className="pokemon-slot-main" onClick={() => { setKeyboardSlotIndex(index); toggleOwned(entry.planId); }} aria-pressed={isOwned}>
+                      <button className="pokemon-slot-main" onClick={() => { setKeyboardSlotIndex(index); toggleOwned(entry); }} aria-pressed={isOwned}>
                         <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                         <span className={`variant-badge ${entry.variant}`} aria-label={entry.variant === "shiny" ? t("shiny") : t("normal")} title={entry.variant === "shiny" ? t("shiny") : t("normal")}>{entry.variant === "shiny" ? <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" /> : t("normal")}</span>
                         <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
@@ -1745,8 +1872,8 @@ export default function App() {
               </div>
 
               <footer className="box-footer">
-                <span><b>{selectedBox.entries.filter((entry) => owned.has(entry.planId)).length.toLocaleString(locale)}</b> {t("obtained")}</span><span><b>{selectedBox.entries.filter((entry) => !owned.has(entry.planId)).length.toLocaleString(locale)}</b> {t("pending")}</span>
-                <button className="primary-action" onClick={() => toggleEntries(selectedBox.entries)}>{selectedBox.entries.every((entry) => owned.has(entry.planId)) ? t("unmark_box") : t("mark_box")}</button>
+                <span><b>{selectedBox.entries.filter(entryIsOwned).length.toLocaleString(locale)}</b> {t("obtained")}</span><span><b>{selectedBox.entries.filter((entry) => !entryIsOwned(entry)).length.toLocaleString(locale)}</b> {t("pending")}</span>
+                <button className="primary-action" onClick={() => toggleEntries(selectedBox.entries)}>{selectedBox.entries.every(entryIsOwned) ? t("unmark_box") : t("mark_box")}</button>
               </footer>
             </>
           )}

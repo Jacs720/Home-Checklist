@@ -481,6 +481,32 @@ const FEATURE_COPY: Partial<Record<UiLanguage, Copy>> = {
   CHT: { ...FEATURE_EN, ...FEATURE_LOCALIZED.CHT, collection_profiles: "收藏設定", availability: "可獲得性", favorites: "收藏", favorites_only: "僅目標", box_navigator: "盒子導覽" },
 };
 
+const AUSTIN_IMPORT_EN: Copy = {
+  austin_import_button: "Import Austin John (.xlsx)", austin_reading: "Reading organizer…", austin_detected: "AUSTIN JOHN ORGANIZER DETECTED",
+  austin_preview_intro: "Review the detected progress before changing your Normal Living Dex.", austin_source_sheet: "Source sheet", austin_version: "Version", austin_import_to: "Import to",
+  austin_matched: "Compatible Pokémon", austin_owned: "Marked as owned", austin_missing: "Missing", austin_origin_unknown: "Origin unknown",
+  austin_origin_note: "This spreadsheet does not include origin marks; origin-mark collections will not be changed.", austin_replace_removes: "Replace will remove {count} existing Normal Living Dex marks that are not owned in this spreadsheet.",
+  austin_merge: "Merge with current progress", austin_replace: "Replace current progress", austin_cancel: "Cancel", austin_import_complete: "Austin John import complete",
+  austin_owned_imported: "Owned imported", austin_origin_unchanged: "Origin marks unchanged", austin_invalid_workbook: "That file is not a supported Austin John HOME Organizer workbook.",
+  austin_shiny_not_supported: "That is the Shiny Austin John Organizer. This option currently imports only the normal, non-Shiny workbook.", austin_file_too_large: "That workbook is too large to import safely.",
+};
+
+const AUSTIN_IMPORT_ES: Copy = {
+  austin_import_button: "Importar Austin John (.xlsx)", austin_reading: "Leyendo organizer…", austin_detected: "ORGANIZER DE AUSTIN JOHN DETECTADO",
+  austin_preview_intro: "Revisa el progreso detectado antes de modificar tu Living Dex normal.", austin_source_sheet: "Hoja de origen", austin_version: "Versión", austin_import_to: "Importar a",
+  austin_matched: "Pokémon compatibles", austin_owned: "Marcados como obtenidos", austin_missing: "Faltantes", austin_origin_unknown: "Origen desconocido",
+  austin_origin_note: "Este spreadsheet no incluye marcas de origen; las colecciones por marca no cambiarán.", austin_replace_removes: "Reemplazar quitará {count} marcas actuales de la Living Dex normal que no aparecen como obtenidas en este spreadsheet.",
+  austin_merge: "Combinar con el progreso actual", austin_replace: "Reemplazar el progreso actual", austin_cancel: "Cancelar", austin_import_complete: "Importación de Austin John completada",
+  austin_owned_imported: "Obtenidos importados", austin_origin_unchanged: "Marcas de origen sin cambios", austin_invalid_workbook: "Ese archivo no es un Austin John HOME Organizer compatible.",
+  austin_shiny_not_supported: "Ese es el organizer shiny de Austin John. Esta opción por ahora solo importa el archivo normal, sin shiny.", austin_file_too_large: "Ese spreadsheet es demasiado grande para importarlo de forma segura.",
+};
+
+const AUSTIN_IMPORT_COPY: Partial<Record<UiLanguage, Copy>> = {
+  "ES-LA": AUSTIN_IMPORT_ES,
+  "ES-ES": { ...AUSTIN_IMPORT_ES, austin_shiny_not_supported: "Ese es el organizer variocolor de Austin John. Esta opción por ahora solo importa el archivo normal, sin variocolor." },
+  ENG: AUSTIN_IMPORT_EN,
+};
+
 const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   "Sin marca": { ENG: "No mark", DEU: "Ohne Zeichen", FRA: "Sans marque", ITA: "Senza marchio", JPN: "マークなし", KOR: "마크 없음", CHS: "无标记", CHT: "無標記" },
   GB: { ENG: "Game Boy", DEU: "Game Boy", FRA: "Game Boy", ITA: "Game Boy", JPN: "ゲームボーイ", KOR: "게임보이", CHS: "Game Boy", CHT: "Game Boy" },
@@ -574,7 +600,7 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
 export function groupName(language: UiLanguage, key: string) {
