@@ -1679,8 +1679,6 @@ export default function App() {
                 <OriginMarkIcon mark={mark} label={label} className={originMarkIconUrl(mark) ? "filter-mark-icon" : ""} /><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
               </label>;
             })}
-            {selectedMarks.includes("GBA") && <div className="sub-rule static-rule"><span aria-hidden="true">↗</span><span><b>{t("gba_ports")}</b><small>{t("gba_ports_desc")}</small></span></div>}
-            <label className="switch-row" htmlFor="home-challenges-only" aria-label={t("home_challenges_only")}><span><b>{t("home_challenges_only")}</b><small>{t("home_challenges_only_desc").replace("{count}", homeChallengeDexes.size.toLocaleString(locale))}</small></span><GooeyCheckbox id="home-challenges-only" checked={homeChallengesOnly} onChange={(event) => setHomeChallengesOnly(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
@@ -1693,6 +1691,11 @@ export default function App() {
               </label>;
             })}
             <div className="catalog-caveat"><b>{groupName(language, "cherish")}</b><span>{t("cherish_beta")}</span></div>
+          </section>
+
+          <section className="filter-section">
+            <p className="panel-label">{t("home_challenges")}</p>
+            <label className="switch-row" htmlFor="home-challenges-only" aria-label={t("home_challenges_only")}><span><b>{t("home_challenges_only")}</b></span><GooeyCheckbox id="home-challenges-only" checked={homeChallengesOnly} onChange={(event) => setHomeChallengesOnly(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
