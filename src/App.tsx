@@ -1226,7 +1226,6 @@ export default function App() {
     return [collection, entriesForCollection.length];
   }));
   const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
-  const bankMissingCount = plannedEntries.filter((entry) => requiresPokemonBank(entry) && !owned.has(entry.planId)).length;
   const favoriteCount = plannedEntries.filter((entry) => favorites.has(entry.planId)).length;
   const availabilityFiltering = AVAILABILITY_STATUSES.some((status) => !availabilityFilters[status]);
   const visiblePageEntries = pageBoxes.flatMap((box) => box?.entries ?? []);
@@ -1253,12 +1252,8 @@ export default function App() {
             <div className="progress-track"><span style={{ width: `${progress}%` }} /></div><b>{progress}%</b>
           </div>
           <div className="top-view-control">
-            <StyledSelect value={viewMode} options={[
-              { value: "boxes", label: t("boxes_view"), icon: <span aria-hidden="true">▦</span> },
-              { value: "global", label: t("global_view"), icon: <span aria-hidden="true">◉</span> },
-              { value: "summary", label: t("summary_view"), icon: <span aria-hidden="true">◫</span> },
-            ]} onChange={(mode) => { setViewMode(mode); setGlobalTooltip(null); }} ariaLabel={t("choose_view")} className="top-view-select" />
-            {viewMode !== "boxes" && <button type="button" className="top-view-close" aria-label={t("close_view")} title={t("close_view")} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}>×</button>}
+            <button type="button" className={`summary-header-action ${viewMode === "summary" ? "active" : ""}`} aria-pressed={viewMode === "summary"} onClick={() => { setViewMode("summary"); setGlobalTooltip(null); }}><span aria-hidden="true">◫</span><b>{t("summary_view")}</b></button>
+            {viewMode === "summary" && <button type="button" className="top-view-close" aria-label={t("close_view")} title={t("close_view")} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}>×</button>}
           </div>
           <div className="language-menu">
             <button className="language-trigger" type="button" aria-label={t("language")} aria-expanded={languageOpen} onClick={() => setLanguageOpen((value) => !value)}>
@@ -1444,7 +1439,6 @@ export default function App() {
               {status === "legacy" ? <BankBadge label={t("bank_required")} className="filter-bank-badge" /> : <span>{t(`availability_${status}`)}</span>}
               <em>{availabilityCounts[status].toLocaleString(locale)}</em>
             </label>)}
-            <div className="bank-priority" title={`${bankMissingCount.toLocaleString(locale)} · ${t("bank_missing")}`}><img src={assetUrl("assets/bank.png")} alt={t("bank_required")} /></div>
           </section>
 
           <section className="filter-section">
@@ -1498,12 +1492,16 @@ export default function App() {
 
         <section className="collection-view">
           <div className="utility-row">
-            {viewMode === "boxes" && <div className="utility-navigation">
-              <nav className="breadcrumbs">
+            {viewMode !== "summary" && <div className="utility-navigation">
+              <nav className="view-switcher" aria-label={t("choose_view")}>
+                <button type="button" className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
+                <button type="button" className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
+              </nav>
+              {viewMode === "boxes" && <nav className="breadcrumbs">
                 <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
                 {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
-              </nav>
-              <StyledSelect value={selectedBoxIndex ?? -1} options={[{ value: -1, label: t("jump_to_box"), icon: <span aria-hidden="true">▦</span> }, ...boxes.map((box) => ({ value: box.globalIndex, label: `${String(box.globalIndex + 1).padStart(3, "0")} · ${box.label}` }))]} onChange={(value) => { if (value >= 0) jumpToBox(value); }} ariaLabel={t("box_navigator")} className="box-navigator" />
+              </nav>}
+              {viewMode === "boxes" && <StyledSelect value={selectedBoxIndex ?? -1} options={[{ value: -1, label: t("jump_to_box"), icon: <span aria-hidden="true">▦</span> }, ...boxes.map((box) => ({ value: box.globalIndex, label: `${String(box.globalIndex + 1).padStart(3, "0")} · ${box.label}` }))]} onChange={(value) => { if (value >= 0) jumpToBox(value); }} ariaLabel={t("box_navigator")} className="box-navigator" />}
             </div>}
             <div className="search-tools">
               <button className="undo-action" onClick={undoOwned} disabled={!undoDepth} title={undoDepth ? t("undo_desc") : t("nothing_to_undo")}><span aria-hidden="true">↶</span>{t("undo")}</button>
@@ -1601,7 +1599,7 @@ export default function App() {
             <>
               <div className="view-heading global-view-heading">
                 <div><p className="eyebrow teal">{t("your_collection")}</p><h2>{t("global_view")}</h2><p>{t("global_view_desc")}</p></div>
-                <div className="heading-actions"><div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div><button className="view-close" aria-label={t("close_view")} onClick={() => setViewMode("boxes")}>×</button></div>
+                <div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div>
               </div>
 
               {visibleGlobalEntries.length ? <div className="global-gallery" aria-label={t("global_view")}>
