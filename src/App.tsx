@@ -30,6 +30,7 @@ import {
   SpeciesRulesDataset,
   SpecimenRequirements,
   availabilityForEntry,
+  genericSpecimenKey,
   generationForDex,
   matchesGamePlan,
   methodKeyForEntry,
@@ -38,6 +39,7 @@ import {
   requiresPokemonBank,
   selectFinalFormDexEntries,
   selectLivingDexWithRegionalForms,
+  selectLivingFormEntries,
   selectLivingFormLiteEntries,
   selectNoahsArkEntries,
   selectOriginalGenerationEntries,
@@ -90,6 +92,7 @@ type PokemonEntry = {
   eventType?: string;
   startDate?: string;
   endDate?: string;
+  genericEntry?: boolean;
 };
 
 type Dataset = {
@@ -465,6 +468,54 @@ function applyCatalogCorrections(entries: PokemonEntry[]) {
   });
 }
 
+function asGenericSpecimen(entry: PlannedEntry): PlannedEntry {
+  const requirements: SpecimenRequirements = {
+    gender: entry.requirements?.gender,
+    originGeneration: entry.requirements?.originGeneration,
+    originRegion: entry.requirements?.originRegion,
+    alpha: entry.requirements?.alpha,
+    gmaxFactor: entry.requirements?.gmaxFactor,
+  };
+  const cleanRequirements = Object.fromEntries(Object.entries(requirements).filter(([, value]) => value !== undefined)) as SpecimenRequirements;
+  const genericEntry = { ...entry, requirements: cleanRequirements };
+  const planId = genericSpecimenKey(genericEntry);
+  return {
+    ...genericEntry,
+    id: planId,
+    sourceNumber: undefined,
+    mark: undefined,
+    collection: undefined,
+    note: "",
+    sourceLabel: undefined,
+    sourceUrl: undefined,
+    trainerName: undefined,
+    trainerId: undefined,
+    nickname: undefined,
+    partnerRibbon: undefined,
+    ball: undefined,
+    nature: undefined,
+    ability: undefined,
+    heldItem: undefined,
+    moves: undefined,
+    ribbons: undefined,
+    eventYear: undefined,
+    eventLocation: undefined,
+    eventType: undefined,
+    startDate: undefined,
+    endDate: undefined,
+    acquisitionCategory: "own",
+    game: undefined,
+    gender: cleanRequirements.gender === "male" || cleanRequirements.gender === "female" ? cleanRequirements.gender : undefined,
+    genderVariant: cleanRequirements.gender === "male" || cleanRequirements.gender === "female" ? entry.genderVariant : undefined,
+    availability: "standard",
+    ownOtNormal: true,
+    ownOtShiny: true,
+    ownOt: true,
+    planId,
+    genericEntry: true,
+  };
+}
+
 function buildBoxes(
   entries: PokemonEntry[],
   specialEntries: PokemonEntry[],
@@ -537,7 +588,7 @@ function buildBoxes(
         const groupLabel = groupName(language, groupKey);
         const regionEntries = originalEntries
           .filter((entry) => entry.requirements.originGeneration === generation)
-          .map((entry) => ({ ...entry, groupKey, groupLabel }));
+          .map((entry) => asGenericSpecimen({ ...entry, groupKey, groupLabel }));
         chunk(regionEntries, 30).forEach((boxEntries, index) => {
           boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
         });
@@ -549,12 +600,14 @@ function buildBoxes(
           ? selectLivingDexWithRegionalForms(unifiedCandidates)
           : collectionPreset === "forms_lite"
             ? selectLivingFormLiteEntries(unifiedCandidates)
+            : collectionPreset === "forms" || collectionPreset === "shiny"
+              ? selectLivingFormEntries(unifiedCandidates)
             : collectionPreset === "noah"
               ? selectNoahsArkEntries(unifiedCandidates, speciesRules)
               : selectNormalLivingDexEntries(unifiedCandidates);
       const groupKey = normalLivingDex ? "living-dex" : `profile-${collectionPreset}`;
       const groupLabel = normalLivingDex ? copy(language, "normal_living_dex") : copy(language, `profile_${collectionPreset}`);
-      chunk(selected, 30).forEach((boxEntries, index) => {
+      chunk(selected.map((entry) => asGenericSpecimen({ ...entry, groupKey, groupLabel })), 30).forEach((boxEntries, index) => {
         boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
       });
     }
@@ -801,6 +854,24 @@ export default function App() {
     return [...choices.values()].sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
   }, [dataset, specialDataset, language]);
   const databaseChoiceByPlanId = useMemo(() => new Map(databaseChoices.map((entry) => [entry.planId, entry])), [databaseChoices]);
+  const derivedGenericProgress = useMemo(() => {
+    const keys = new Set<string>();
+    const normalSpecies = new Set<number>();
+    for (const planId of owned) {
+      if (planId.startsWith("generic:")) continue;
+      let entry = databaseChoiceByPlanId.get(planId);
+      const legacyGender = planId.match(/^(.*):gender:(male|female|any)$/);
+      if (!entry && legacyGender) entry = databaseChoiceByPlanId.get(legacyGender[1]);
+      const legacyOriginalGeneration = planId.match(/^(.*):original-generation:\d+$/);
+      if (!entry && legacyOriginalGeneration) entry = databaseChoiceByPlanId.get(legacyOriginalGeneration[1]);
+      if (!entry) continue;
+      keys.add(genericSpecimenKey({ ...entry, requirements: {} }));
+      const knownGender = legacyGender?.[2] as SpecimenRequirements["gender"] | undefined ?? entry.gender;
+      if (knownGender) keys.add(genericSpecimenKey({ ...entry, requirements: { gender: knownGender } }));
+      if (entry.variant === "normal") normalSpecies.add(entry.dex);
+    }
+    return { keys, normalSpecies };
+  }, [databaseChoiceByPlanId, owned]);
   useEffect(() => {
     if (!hydrated || !databaseChoiceByPlanId.size || livingDexMigrationCheckedRef.current) return;
     livingDexMigrationCheckedRef.current = true;
@@ -817,7 +888,13 @@ export default function App() {
   const supportedLivingDexDexes = useMemo(() => new Set(allImportEntries
     .filter((entry) => !entry.collection && entry.availability !== "excluded" && entry.normalEligible !== false)
     .map((entry) => entry.dex)), [allImportEntries]);
-  const entryIsOwned = useCallback((entry: PlannedEntry) => normalLivingDex ? livingDexOwned.has(entry.dex) : owned.has(entry.planId), [livingDexOwned, normalLivingDex, owned]);
+  const entryIsOwned = useCallback((entry: PlannedEntry) => {
+    if (normalLivingDex) return livingDexOwned.has(entry.dex) || derivedGenericProgress.normalSpecies.has(entry.dex);
+    if (!entry.genericEntry) return owned.has(entry.planId);
+    if (owned.has(entry.planId) || derivedGenericProgress.keys.has(entry.planId)) return true;
+    const genderSpecific = entry.requirements?.gender === "male" || entry.requirements?.gender === "female";
+    return entry.variant === "normal" && !entry.form && !genderSpecific && livingDexOwned.has(entry.dex);
+  }, [derivedGenericProgress, livingDexOwned, normalLivingDex, owned]);
   const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
     const generation = index + 1;
     const entries = plannedEntries.filter((entry) => generationForDex(entry.dex) === generation);
@@ -973,16 +1050,19 @@ export default function App() {
   }, []);
 
   const toggleOwned = useCallback((entry: PlannedEntry) => {
+    const nextOwned = new Set(owned);
+    const nextLivingDexOwned = new Set(livingDexOwned);
+    const currentlyOwned = entryIsOwned(entry);
     if (normalLivingDex) {
-      const next = new Set(livingDexOwned);
-      if (next.has(entry.dex)) next.delete(entry.dex); else next.add(entry.dex);
-      rememberProgressChange(new Set(owned), next);
-      return;
+      if (currentlyOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
+    } else {
+      if (currentlyOwned) nextOwned.delete(entry.planId); else nextOwned.add(entry.planId);
+      if (entry.genericEntry && entry.variant === "normal") {
+        if (currentlyOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
+      }
     }
-    const next = new Set(owned);
-    if (next.has(entry.planId)) next.delete(entry.planId); else next.add(entry.planId);
-    rememberProgressChange(next, new Set(livingDexOwned));
-  }, [livingDexOwned, normalLivingDex, owned, rememberProgressChange]);
+    rememberProgressChange(nextOwned, nextLivingDexOwned);
+  }, [entryIsOwned, livingDexOwned, normalLivingDex, owned, rememberProgressChange]);
 
   const toggleFavorite = (planId: string) => setFavorites((current) => {
     const next = new Set(current);
@@ -991,27 +1071,28 @@ export default function App() {
   });
 
   const toggleEntries = (entries: PlannedEntry[]) => {
-    if (normalLivingDex) {
-      const next = new Set(livingDexOwned);
-      const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.dex));
-      const affected = entries.filter((entry) => next.has(entry.dex)).length;
-      if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
-      entries.forEach((entry) => allOwned ? next.delete(entry.dex) : next.add(entry.dex));
-      if (entries.length) rememberProgressChange(new Set(owned), next);
-      return;
-    }
-    const next = new Set(owned);
-    const allOwned = entries.length > 0 && entries.every((entry) => next.has(entry.planId));
-    const affected = entries.filter((entry) => next.has(entry.planId)).length;
+    const allOwned = entries.length > 0 && entries.every(entryIsOwned);
+    const affected = entries.filter(entryIsOwned).length;
     if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
-    entries.forEach((entry) => allOwned ? next.delete(entry.planId) : next.add(entry.planId));
-    if (entries.length) rememberProgressChange(next, new Set(livingDexOwned));
+    const nextOwned = new Set(owned);
+    const nextLivingDexOwned = new Set(livingDexOwned);
+    entries.forEach((entry) => {
+      if (normalLivingDex) {
+        if (allOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
+        return;
+      }
+      if (allOwned) nextOwned.delete(entry.planId); else nextOwned.add(entry.planId);
+      if (entry.genericEntry && entry.variant === "normal") {
+        if (allOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
+      }
+    });
+    if (entries.length) rememberProgressChange(nextOwned, nextLivingDexOwned);
   };
 
   const resetProgress = () => {
-    const currentSize = normalLivingDex ? livingDexOwned.size : owned.size;
+    const currentSize = owned.size + livingDexOwned.size;
     if (!currentSize || !window.confirm(t("confirm_reset_progress").replace("{count}", currentSize.toLocaleString(locale)))) return;
-    rememberProgressChange(normalLivingDex ? new Set(owned) : new Set(), normalLivingDex ? new Set() : new Set(livingDexOwned));
+    rememberProgressChange(new Set(), new Set());
   };
 
   const renamePlannedBox = (box: PlannedBox, name: string) => setBoxNameOverrides((current) => {
@@ -1562,13 +1643,13 @@ export default function App() {
               <div className="entry-dialog-actions"><FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} /><button className="entry-dialog-close" aria-label={t("close_details")} onClick={() => setDetailEntry(null)}>×</button></div>
             </header>
             <div className="entry-badges">
-              {originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="detail-origin-mark" />{entry.groupLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
+              {entry.genericEntry ? <span className="entry-origin-chip">{t("generic_specimen")}</span> : originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="detail-origin-mark" />{entry.groupLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
               <span className={`availability-badge ${availability}`}>{t(`availability_${availability}`)}</span>
               {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
               <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
             </div>
             <dl className="entry-facts">
-              <div><dt>{t("origin_required")}</dt><dd>{entry.groupLabel}</dd></div>
+              <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : entry.groupLabel}</dd></div>
               <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
               <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
@@ -1720,7 +1801,7 @@ export default function App() {
             <small className="auto-save-status"><i aria-hidden="true" />{t("last_saved")} {savedWhen}</small>
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
-            <button className="reset-progress" onClick={resetProgress} disabled={normalLivingDex ? !livingDexOwned.size : !owned.size}>{t("reset_progress")}</button>
+            <button className="reset-progress" onClick={resetProgress} disabled={!livingDexOwned.size && !owned.size}>{t("reset_progress")}</button>
           </div>
         </aside>
 
@@ -1849,7 +1930,8 @@ export default function App() {
                   const favorite = favorites.has(entry.planId);
                   const needsBank = requiresPokemonBank(entry);
                   const status = isOwned ? t("status_obtained") : t("status_missing");
-                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}. ${t("availability_label")}: ${t(`availability_${availabilityForEntry(entry)}`)}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
+                  const collectionContext = entry.genericEntry ? t("generic_specimen") : `${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}`;
+                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${collectionContext}. ${t("availability_label")}: ${t(`availability_${availabilityForEntry(entry)}`)}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
                   return <div className="global-pokemon-shell" key={`${entry.planId}:${box.globalIndex}:${slotIndex}`}>
                     <button
                       className={`global-pokemon ${isOwned ? "owned" : "pending"}`}
@@ -1879,7 +1961,7 @@ export default function App() {
                 return <div className={`global-tooltip ${globalTooltip.above ? "above" : ""}`} role="tooltip" style={{ left: globalTooltip.left, top: globalTooltip.top }}>
                   <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                   <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
-                  <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
+                  <span><em>{entry.genericEntry ? t("generic_specimen") : entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.genericEntry ? <span>{t("no_origin_required")}</span> : originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
                   <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availability}`}>{t(`availability_${availability}`)}</span></span>
                   {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
                   <span><em>{t("box")} · {t("slot")}</em>{String(box.globalIndex + 1).padStart(3, "0")} · {String(slotIndex + 1).padStart(2, "0")}</span>
@@ -1965,7 +2047,7 @@ export default function App() {
                       <div className="slot-tooltip" role="tooltip">
                         <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                         <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
-                        <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
+                        <span><em>{entry.genericEntry ? t("generic_specimen") : entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.genericEntry ? <span>{t("no_origin_required")}</span> : originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
                         <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availabilityForEntry(entry)}`}>{t(`availability_${availabilityForEntry(entry)}`)}</span></span>
                         {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
                         <span><em>{t("box")} · {t("slot")}</em>{String(selectedBox.globalIndex + 1).padStart(3, "0")} · {String(index + 1).padStart(2, "0")}</span>

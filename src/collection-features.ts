@@ -68,7 +68,7 @@ export const COLLECTION_PRESETS: CollectionPreset[] = [
   "completionist",
   "custom",
 ];
-export const UNIFIED_COLLECTION_PRESETS = new Set<CollectionPreset>(["basic", "final", "regional", "forms_lite", "noah", "original_generation"]);
+export const UNIFIED_COLLECTION_PRESETS = new Set<CollectionPreset>(["basic", "final", "regional", "forms_lite", "forms", "shiny", "noah", "original_generation"]);
 
 const REGIONAL_FORM = /^(?:Alolan|Galarian|Hisuian|Paldean(?:\s|$))/i;
 const REGION_KEYS = ["kanto", "johto", "hoenn", "sinnoh", "unova", "kalos", "alola", "galar", "paldea"] as const;
@@ -148,6 +148,31 @@ export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[
     .map((candidates) => preferredCandidate(candidates))
     .filter((entry): entry is T => Boolean(entry))
     .sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? ""));
+}
+
+export function selectLivingFormEntries<T extends SlotCandidate>(entries: T[]) {
+  const forms = new Map<string, T[]>();
+  for (const entry of entries) {
+    const key = `${entry.dex}:${entry.form ?? ""}:${entry.genderVariant ?? "base"}`;
+    const candidates = forms.get(key) ?? [];
+    candidates.push(entry);
+    forms.set(key, candidates);
+  }
+  const selected = [...forms.values()]
+    .map((candidates) => preferredCandidate(candidates))
+    .filter((entry): entry is T => Boolean(entry));
+  const genderedForms = new Set(selected.filter((entry) => entry.genderVariant === "extra").map((entry) => `${entry.dex}:${entry.form ?? ""}`));
+  return selected
+    .map((entry) => genderedForms.has(`${entry.dex}:${entry.form ?? ""}`) && entry.gender
+      ? { ...entry, requirements: { ...entry.requirements, gender: entry.gender } }
+      : entry)
+    .sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? "") || (left.requirements?.gender ?? "").localeCompare(right.requirements?.gender ?? ""));
+}
+
+export function genericSpecimenKey(entry: Pick<SlotCandidate, "dex" | "form" | "variant" | "requirements">) {
+  const form = encodeURIComponent(entry.form ?? "base");
+  const gender = entry.requirements?.gender ?? "any";
+  return `generic:${entry.variant}:${entry.dex}:${form}:${gender}`;
 }
 
 export function selectFinalFormDexEntries<T extends SlotCandidate>(entries: T[], rules: Map<number, SpeciesRule>) {
