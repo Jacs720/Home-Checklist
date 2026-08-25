@@ -16,7 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
-import { addSwShHisuianEvolutionEntries, insertCatalogEntry } from "./catalog-corrections";
+import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit } from "./catalog-corrections";
 
 type PokemonEntry = {
   id: string;
@@ -281,6 +281,8 @@ function applyCatalogCorrections(entries: PokemonEntry[]) {
     });
   }
 
+  correctedEntries = addStorableShayminSkyForms(correctedEntries);
+
   for (const mark of ["P", "USUM"]) {
     const base = correctedEntries.find((entry) => entry.id === `${mark}:furfrou`);
     if (!base) continue;
@@ -292,7 +294,7 @@ function applyCatalogCorrections(entries: PokemonEntry[]) {
     });
   }
 
-  return correctedEntries.map((entry) => {
+  return markLgpeAlolanFormsAsInGameTrades(removeInvalidGbaKingambit(correctedEntries)).map((entry) => {
     let correctedEntry = entry;
     if (correctedEntry.dex === 678 && correctedEntry.gender === "female") {
       correctedEntry = { ...correctedEntry, artId: 10025, shinyArtStyle: "home" as const };
@@ -464,9 +466,10 @@ export default function App() {
   const displayThemeName = (theme: BoxTheme) => theme.kind === "default" ? t("original_theme") : theme.kind === "custom" ? t("custom") : presetThemeName(theme.game, theme.wallpaper);
   const displayName = (entry: PokemonEntry) => pokemonNames?.[String(entry.dex)]?.[language] ?? entry.name;
   const displayForm = (entry: PokemonEntry) => formName(language, entry.dex, entry.form);
-  const displayNote = (entry: PokemonEntry) => language === "ES-ES"
+  const displayNote = (entry: PokemonEntry) => (language === "ES-ES"
     ? entry.note.replace(/shiny/gi, "variocolor")
-    : language === "ES-LA" ? entry.note.replace(/shiny/gi, "brillante") : entry.note;
+    : language === "ES-LA" ? entry.note.replace(/shiny/gi, "brillante") : entry.note)
+      .replace(/\bOT\b/g, t("original_trainer"));
 
   useEffect(() => {
     Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json"))])

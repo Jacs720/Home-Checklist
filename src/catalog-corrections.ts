@@ -12,6 +12,7 @@ type CatalogEntry = {
   normalEligible?: boolean;
   ownOtNormal: boolean;
   ownOtShiny: boolean;
+  acquisitionCategory?: string;
 };
 
 // These species evolve from non-regional forms in Legends: Arceus, preserving
@@ -48,4 +49,38 @@ export function addSwShHisuianEvolutionEntries<T extends CatalogEntry>(entries: 
     });
   }
   return correctedEntries;
+}
+
+export function addStorableShayminSkyForms<T extends CatalogEntry>(entries: T[]) {
+  let correctedEntries = entries;
+  const landForms = entries.filter((entry) => entry.dex === 492 && entry.form !== "Sky");
+  for (const template of landForms) {
+    const origin = template.mark ?? "catalog";
+    correctedEntries = insertCatalogEntry(correctedEntries, {
+      ...template,
+      id: `${origin}:shaymin-sky`,
+      sourceNumber: undefined,
+      form: "Sky",
+      keyword: "shaymin-sky",
+      artId: 10006,
+      note: `${template.note} · Forma Cielo almacenable mediante Legends: Arceus y Pokémon HOME`,
+      shinyReview: "verified-correction",
+    });
+  }
+  return correctedEntries;
+}
+
+export function removeInvalidGbaKingambit<T extends CatalogEntry>(entries: T[]) {
+  return entries.filter((entry) => !(entry.mark === "GBA" && entry.dex === 983));
+}
+
+export function markLgpeAlolanFormsAsInGameTrades<T extends CatalogEntry>(entries: T[]) {
+  return entries.map((entry) => entry.mark === "LGPE" && entry.form === "Alolan" ? {
+    ...entry,
+    note: `${entry.note} · Forma de Alola obtenida mediante intercambio interno`,
+    ownOtNormal: false,
+    ownOtShiny: false,
+    acquisitionCategory: "trade",
+    shinyReview: "verified-correction",
+  } : entry);
 }

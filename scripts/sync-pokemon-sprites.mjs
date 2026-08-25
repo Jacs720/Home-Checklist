@@ -10,6 +10,7 @@ const CONCURRENCY = 10;
 const force = process.argv.includes("--force");
 
 const runtimeArtIds = [
+  10006,
   10025,
   10067, 10068, 10069, 10070, 10071, 10072, 10073, 10074, 10075,
   10086, 10087, 10088, 10089, 10090, 10091, 10092, 10093, 10094,
