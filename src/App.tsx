@@ -1,4 +1,4 @@
-import { ChangeEvent, CSSProperties, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   BoxTheme,
   BoxThemeConfig,
@@ -15,7 +15,7 @@ import {
   presetThemeName,
   resolveBoxTheme,
 } from "./box-themes";
-import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName } from "./translations";
+import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName, localizeCatalogText } from "./translations";
 import { addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
 import {
   AVAILABILITY_STATUSES,
@@ -90,6 +90,8 @@ type PlannedBox = { globalIndex: number; groupKey: string; number: number; label
 type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
 type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
 type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
+type SelectOption<T extends string | number> = { value: T; label: string; icon?: ReactNode };
+type CustomBox = { id: string; name: string; planIds: string[] };
 type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
@@ -159,12 +161,34 @@ function OriginMarkIcon({ mark, label, className = "" }: { mark: string; label: 
 
 function FavoriteButton({ active, label, onClick, className = "" }: { active: boolean; label: string; onClick: () => void; className?: string }) {
   return <button type="button" className={`favorite-star ${active ? "active" : ""} ${className}`} aria-pressed={active} aria-label={label} title={label} onClick={onClick}>
-    {active ? <img src={assetUrl("assets/favorite-star.png")} alt="" /> : <span aria-hidden="true">☆</span>}
+    <img src={assetUrl("assets/favorite-star.png")} alt="" />
   </button>;
 }
 
 function BankBadge({ label, className = "" }: { label: string; className?: string }) {
   return <span className={`bank-badge ${className}`} title={label}><img src={assetUrl("assets/bank.png")} alt="" /><span>{label}</span></span>;
+}
+
+function StyledSelect<T extends string | number>({ value, options, onChange, ariaLabel, className = "", placeholder }: { value: T; options: SelectOption<T>[]; onChange: (value: T) => void; ariaLabel: string; className?: string; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: PointerEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", closeOutside); window.removeEventListener("keydown", closeOnEscape); };
+  }, [open]);
+
+  return <div className={`styled-select ${open ? "open" : ""} ${className}`} ref={rootRef}>
+    <button type="button" className="styled-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+      <span>{selected?.icon}{selected?.label ?? placeholder ?? ariaLabel}</span><b aria-hidden="true">⌄</b>
+    </button>
+    {open && <div className="styled-select-options" role="listbox" aria-label={ariaLabel}>{options.map((option) => <button type="button" role="option" aria-selected={option.value === value} className={option.value === value ? "active" : ""} key={String(option.value)} onClick={() => { onChange(option.value); setOpen(false); }}>{option.icon}<span>{option.label}</span></button>)}</div>}
+  </div>;
 }
 
 function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
@@ -531,6 +555,11 @@ export default function App() {
   const [gameResultLimit, setGameResultLimit] = useState(24);
   const [undoDepth, setUndoDepth] = useState(0);
   const [keyboardSlotIndex, setKeyboardSlotIndex] = useState(0);
+  const [boxNameOverrides, setBoxNameOverrides] = useState<Record<string, string>>({});
+  const [customBoxes, setCustomBoxes] = useState<CustomBox[]>([]);
+  const [customBoxEditorId, setCustomBoxEditorId] = useState<string | null>(null);
+  const [customBoxQuery, setCustomBoxQuery] = useState("");
+  const [renameBoxIndex, setRenameBoxIndex] = useState(0);
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [locationAnnouncement, setLocationAnnouncement] = useState("");
   const [globalTooltip, setGlobalTooltip] = useState<GlobalTooltip | null>(null);
@@ -566,10 +595,7 @@ export default function App() {
   const displayThemeName = (theme: BoxTheme) => theme.kind === "default" ? t("original_theme") : theme.kind === "custom" ? t("custom") : presetThemeName(theme.game, theme.wallpaper);
   const displayName = (entry: PokemonEntry) => pokemonNames?.[String(entry.dex)]?.[language] ?? entry.name;
   const displayForm = (entry: PokemonEntry) => formName(language, entry.dex, entry.form);
-  const displayNote = (entry: PokemonEntry) => (language === "ES-ES"
-    ? entry.note.replace(/shiny/gi, "variocolor")
-    : language === "ES-LA" ? entry.note.replace(/shiny/gi, "brillante") : entry.note)
-      .replace(/\bOT\b/g, t("original_trainer"));
+  const displayNote = (entry: PokemonEntry) => localizeCatalogText(language, entry.note);
 
   useEffect(() => {
     Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json"))])
@@ -621,6 +647,8 @@ export default function App() {
         if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
         if (typeof value.missingOnly === "boolean") setMissingOnly(value.missingOnly);
         if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
+        if (value.boxNameOverrides && typeof value.boxNameOverrides === "object") setBoxNameOverrides(Object.fromEntries(Object.entries(value.boxNameOverrides).filter(([, name]) => typeof name === "string").map(([key, name]) => [key, (name as string).slice(0, 48)])));
+        if (Array.isArray(value.customBoxes)) setCustomBoxes(value.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: box.planIds.filter((id) => typeof id === "string").slice(0, 30) })));
         if (typeof value.collectionGoal === "string") setCollectionGoal(value.collectionGoal.slice(0, 8));
         if (typeof value.collectionNotes === "string") setCollectionNotes(value.collectionNotes.slice(0, 2_000));
         if (typeof value.savedAt === "number") setLastSavedAt(value.savedAt);
@@ -638,10 +666,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, hydrated]);
+  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -665,14 +693,27 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const boxes = useMemo(
-    () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language),
-    [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language],
-  );
+  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language).map((box) => ({
+    ...box,
+    label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language, boxNameOverrides]);
+  useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
     ...(specialDataset?.entries ?? []),
   ], [dataset, specialDataset]);
+  const databaseChoices = useMemo<PlannedEntry[]>(() => {
+    const choices = new Map<string, PlannedEntry>();
+    [...(dataset?.entries ?? []), ...(specialDataset?.entries ?? [])].forEach((entry) => {
+      if (entry.availability === "excluded") return;
+      const groupKey = entry.mark ?? entry.collection ?? "Sin marca";
+      const groupLabel = groupName(language, groupKey);
+      if (entry.normalEligible !== false) choices.set(`${entry.id}:normal`, { ...entry, variant: "normal", ownOt: entry.ownOtNormal, groupKey, groupLabel, planId: `${entry.id}:normal` });
+      if (entry.shinyEligible) choices.set(`${entry.id}:shiny`, { ...entry, variant: "shiny", ownOt: entry.ownOtShiny, groupKey, groupLabel, planId: `${entry.id}:shiny` });
+    });
+    return [...choices.values()].sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
+  }, [dataset, specialDataset, language]);
+  const databaseChoiceByPlanId = useMemo(() => new Map(databaseChoices.map((entry) => [entry.planId, entry])), [databaseChoices]);
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
   const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
@@ -851,7 +892,37 @@ export default function App() {
     rememberOwnedChange(new Set());
   };
 
-  const markProfileCustom = () => setCollectionPreset("custom");
+  const renamePlannedBox = (box: PlannedBox, name: string) => setBoxNameOverrides((current) => {
+    const key = `${box.groupKey}:${box.number}`;
+    const next = { ...current };
+    const trimmed = name.slice(0, 48);
+    if (trimmed) next[key] = trimmed; else delete next[key];
+    return next;
+  });
+
+  const createCustomBox = () => {
+    const id = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `custom-${Date.now()}`;
+    const next: CustomBox = { id, name: `${t("custom_box")} ${customBoxes.length + 1}`, planIds: [] };
+    setCustomBoxes((current) => [...current, next]);
+    setCustomBoxQuery("");
+    setCustomBoxEditorId(id);
+  };
+
+  const deleteCustomBox = (box: CustomBox) => {
+    if (!window.confirm(t("confirm_delete_custom_box").replace("{name}", box.name))) return;
+    setCustomBoxes((current) => current.filter((item) => item.id !== box.id));
+    if (customBoxEditorId === box.id) setCustomBoxEditorId(null);
+  };
+
+  const updateCustomBox = (id: string, update: (box: CustomBox) => CustomBox) => setCustomBoxes((current) => current.map((box) => box.id === id ? update(box) : box));
+
+  const toggleCustomBoxEntry = (boxId: string, planId: string) => updateCustomBox(boxId, (box) => {
+    if (box.planIds.includes(planId)) return { ...box, planIds: box.planIds.filter((id) => id !== planId) };
+    if (box.planIds.length >= 30) { window.alert(t("custom_box_full")); return box; }
+    return { ...box, planIds: [...box.planIds, planId] };
+  });
+
+  const markProfileCustom = () => { setCollectionPreset("custom"); setNormalLivingDex(false); setOriginMarkDex(false); };
   const toggleMark = (mark: string) => { markProfileCustom(); setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]); };
   const toggleCollection = (collection: string) => { markProfileCustom(); setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]); };
   const setVariant = (variant: Variant) => {
@@ -1038,7 +1109,7 @@ export default function App() {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
       genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
       availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly,
-      selectedGamePlan, collectionGoal, collectionNotes,
+      selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
     themes: themeConfig,
   });
@@ -1099,6 +1170,8 @@ export default function App() {
     if (typeof configuration.selectedGamePlan === "string" && GAME_PLANS.some((game) => game.id === configuration.selectedGamePlan)) setSelectedGamePlan(configuration.selectedGamePlan as GamePlanId);
     if (typeof configuration.collectionGoal === "string") setCollectionGoal(configuration.collectionGoal.slice(0, 8));
     if (typeof configuration.collectionNotes === "string") setCollectionNotes(configuration.collectionNotes.slice(0, 2_000));
+    if (configuration.boxNameOverrides && typeof configuration.boxNameOverrides === "object") setBoxNameOverrides(Object.fromEntries(Object.entries(configuration.boxNameOverrides).filter(([, name]) => typeof name === "string").map(([key, name]) => [key, (name as string).slice(0, 48)])));
+    if (Array.isArray(configuration.customBoxes)) setCustomBoxes(configuration.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: box.planIds.filter((id) => typeof id === "string").slice(0, 30) })));
     const parsedThemes = parseThemeConfig(value.themes);
     if (parsedThemes) setThemeConfig(parsedThemes);
     setLocationAnnouncement(t("backup_imported"));
@@ -1164,6 +1237,10 @@ export default function App() {
   const savedWhen = savedMinutesAgo === null
     ? t("not_saved_yet")
     : savedMinutesAgo < 1 ? t("saved_now") : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-savedMinutesAgo, "minute");
+  const boxBeingRenamed = boxes[renameBoxIndex] ?? null;
+  const customBoxEditor = customBoxes.find((box) => box.id === customBoxEditorId) ?? null;
+  const normalizedCustomBoxQuery = normalize(customBoxQuery);
+  const customBoxSearchResults = databaseChoices.filter((entry) => !normalizedCustomBoxQuery || normalize(`${displayName(entry)} ${displayForm(entry) ?? ""} ${entry.dex} ${entry.groupLabel}`).includes(normalizedCustomBoxQuery)).slice(0, 120);
 
   return (
     <main className="app-shell">
@@ -1171,6 +1248,18 @@ export default function App() {
         <button className="mobile-filter" onClick={() => setFiltersOpen(true)} aria-label={t("open_filters")}>☰</button>
         <div className="brand-lockup"><a className="brand-link" href="https://github.com/Jacs720/Home-Checklist" target="_blank" rel="noreferrer" aria-label={t("github_repo")}><img className="brand-ball" src={assetUrl("assets/strange-ball.png")} alt="" /></a><h1>Home checklist</h1></div>
         <div className="top-actions">
+          <div className="progress-summary" aria-label={`${progress}%`}>
+            <div><strong>{ownedCount.toLocaleString(locale)}</strong><span>{t("of")} {plannedEntries.length.toLocaleString(locale)}</span></div>
+            <div className="progress-track"><span style={{ width: `${progress}%` }} /></div><b>{progress}%</b>
+          </div>
+          <div className="top-view-control">
+            <StyledSelect value={viewMode} options={[
+              { value: "boxes", label: t("boxes_view"), icon: <span aria-hidden="true">▦</span> },
+              { value: "global", label: t("global_view"), icon: <span aria-hidden="true">◉</span> },
+              { value: "summary", label: t("summary_view"), icon: <span aria-hidden="true">◫</span> },
+            ]} onChange={(mode) => { setViewMode(mode); setGlobalTooltip(null); }} ariaLabel={t("choose_view")} className="top-view-select" />
+            {viewMode !== "boxes" && <button type="button" className="top-view-close" aria-label={t("close_view")} title={t("close_view")} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}>×</button>}
+          </div>
           <div className="language-menu">
             <button className="language-trigger" type="button" aria-label={t("language")} aria-expanded={languageOpen} onClick={() => setLanguageOpen((value) => !value)}>
               <img src={assetUrl(`languages/${language}.png`)} alt="" /><span>{languageOption.label}</span><b>⌄</b>
@@ -1178,10 +1267,6 @@ export default function App() {
             {languageOpen && <div className="language-options" role="listbox" aria-label={t("language")}>
               {LANGUAGE_OPTIONS.map((option) => <button type="button" role="option" aria-selected={language === option.code} className={language === option.code ? "active" : ""} key={option.code} onClick={() => { setLanguage(option.code); setLanguageOpen(false); }}><img src={assetUrl(`languages/${option.code}.png`)} alt="" /><span>{option.label}</span></button>)}
             </div>}
-          </div>
-          <div className="progress-summary" aria-label={`${progress}%`}>
-            <div><strong>{ownedCount.toLocaleString(locale)}</strong><span>{t("of")} {plannedEntries.length.toLocaleString(locale)}</span></div>
-            <div className="progress-track"><span style={{ width: `${progress}%` }} /></div><b>{progress}%</b>
           </div>
         </div>
       </header>
@@ -1278,14 +1363,43 @@ export default function App() {
             </div>
             <dl className="entry-facts">
               <div><dt>{t("origin_required")}</dt><dd>{entry.groupLabel}</dd></div>
-              <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${entry.game}` : ""}</dd></div>
+              <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
               <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
               <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>
             </dl>
             <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
-            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && <small>{entry.sourceLabel}</small>}</section>
+            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && <small>{localizeCatalogText(language, entry.sourceLabel)}</small>}</section>
+          </section>
+        </div>;
+      })()}
+
+      {customBoxEditor && (() => {
+        const selectedIds = new Set(customBoxEditor.planIds);
+        return <div className="entry-modal-layer custom-box-modal-layer">
+          <button className="entry-modal-scrim" aria-label={t("close_editor")} onClick={() => setCustomBoxEditorId(null)} />
+          <section className="custom-box-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-box-dialog-title">
+            <header className="custom-box-dialog-header">
+              <div><p className="eyebrow teal">{t("custom_boxes")}</p><h2 id="custom-box-dialog-title">{t("edit_custom_box")}</h2></div>
+              <button className="entry-dialog-close" aria-label={t("close_editor")} onClick={() => setCustomBoxEditorId(null)}>×</button>
+            </header>
+            <label className="custom-box-name"><span>{t("box_name")}</span><input value={customBoxEditor.name} maxLength={48} onChange={(event) => updateCustomBox(customBoxEditor.id, (box) => ({ ...box, name: event.target.value }))} /></label>
+            <div className="custom-box-editor-toolbar">
+              <label className="search-box"><span>⌕</span><input value={customBoxQuery} onChange={(event) => setCustomBoxQuery(event.target.value)} placeholder={t("search_database")} /></label>
+              <strong>{t("selected_count")}: {customBoxEditor.planIds.length.toLocaleString(locale)} / 30</strong>
+            </div>
+            <div className="database-choice-grid" aria-label={t("choose_pokemon")}>{customBoxSearchResults.map((entry) => {
+              const selected = selectedIds.has(entry.planId);
+              const artworkUrl = pokemonArtworkUrl(entry);
+              const originMarkKey = entry.mark ?? entry.groupKey;
+              return <button type="button" className={selected ? "selected" : ""} aria-pressed={selected} key={entry.planId} onClick={() => toggleCustomBoxEntry(customBoxEditor.id, entry.planId)}>
+                <span>{artworkUrl && <img src={artworkUrl} alt="" loading="lazy" />}{entry.variant === "shiny" && <img className="database-shiny" src={assetUrl("assets/shiny.png")} alt="" />}</span>
+                <b>{displayName(entry)}</b><small>{displayForm(entry) ?? `#${String(entry.dex).padStart(4, "0")}`}</small>
+                {originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="database-origin-mark" /> : <em>{entry.groupLabel}</em>}
+              </button>;
+            })}</div>
+            <footer className="custom-box-dialog-footer"><span>{customBoxSearchResults.length.toLocaleString(locale)} {t("database_results")}</span><button className="primary-action" onClick={() => setCustomBoxEditorId(null)}>{t("close_editor")}</button></footer>
           </section>
         </div>;
       })()}
@@ -1297,13 +1411,7 @@ export default function App() {
 
           <section className="profile-section">
             <p className="panel-label">{t("collection_profiles")}</p>
-            <label className="profile-selector">
-              <select value={collectionPreset} onChange={(event) => applyCollectionPreset(event.target.value as CollectionPreset)}>
-                {COLLECTION_PRESETS.map((preset) => <option value={preset} key={preset}>{t(`profile_${preset}`)}</option>)}
-              </select>
-              <span aria-hidden="true">⌄</span>
-            </label>
-            <small>{t(`profile_${collectionPreset}_desc`)}</small>
+            <StyledSelect value={collectionPreset} options={COLLECTION_PRESETS.map((preset) => ({ value: preset, label: t(`profile_${preset}`) }))} onChange={applyCollectionPreset} ariaLabel={t("collection_profiles")} className="profile-selector" />
           </section>
 
           <section className="filter-section">
@@ -1336,7 +1444,7 @@ export default function App() {
               {status === "legacy" ? <BankBadge label={t("bank_required")} className="filter-bank-badge" /> : <span>{t(`availability_${status}`)}</span>}
               <em>{availabilityCounts[status].toLocaleString(locale)}</em>
             </label>)}
-            <div className="bank-priority"><img src={assetUrl("assets/bank.png")} alt="" /><span><b>{bankMissingCount.toLocaleString(locale)}</b><small>{t("bank_missing")}</small></span></div>
+            <div className="bank-priority" title={`${bankMissingCount.toLocaleString(locale)} · ${t("bank_missing")}`}><img src={assetUrl("assets/bank.png")} alt={t("bank_required")} /></div>
           </section>
 
           <section className="filter-section">
@@ -1390,30 +1498,19 @@ export default function App() {
 
         <section className="collection-view">
           <div className="utility-row">
-            <div className="utility-navigation">
-              <nav className="view-switcher" aria-label={t("choose_view")}>
-                <button className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
-                <button className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
-                <button className={viewMode === "summary" ? "active" : ""} aria-pressed={viewMode === "summary"} onClick={() => { setViewMode("summary"); setGlobalTooltip(null); }}><span aria-hidden="true">◫</span>{t("summary_view")}</button>
-              </nav>
-              {viewMode === "boxes" && <nav className="breadcrumbs">
+            {viewMode === "boxes" && <div className="utility-navigation">
+              <nav className="breadcrumbs">
                 <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
                 {selectedBox && <><span>/</span><strong>{selectedBox.label}</strong></>}
-              </nav>}
-              {viewMode === "boxes" && <label className="box-navigator" title={t("box_navigator")}>
-                <span aria-hidden="true">▦</span><span className="sr-only">{t("box_navigator")}</span>
-                <select value={selectedBoxIndex ?? ""} onChange={(event) => { if (event.target.value !== "") jumpToBox(Number(event.target.value)); }}>
-                  <option value="">{t("jump_to_box")}</option>
-                  {boxes.map((box) => <option value={box.globalIndex} key={`${box.groupKey}:${box.number}`}>{String(box.globalIndex + 1).padStart(3, "0")} · {box.label}</option>)}
-                </select>
-              </label>}
-            </div>
+              </nav>
+              <StyledSelect value={selectedBoxIndex ?? -1} options={[{ value: -1, label: t("jump_to_box"), icon: <span aria-hidden="true">▦</span> }, ...boxes.map((box) => ({ value: box.globalIndex, label: `${String(box.globalIndex + 1).padStart(3, "0")} · ${box.label}` }))]} onChange={(value) => { if (value >= 0) jumpToBox(value); }} ariaLabel={t("box_navigator")} className="box-navigator" />
+            </div>}
             <div className="search-tools">
               <button className="undo-action" onClick={undoOwned} disabled={!undoDepth} title={undoDepth ? t("undo_desc") : t("nothing_to_undo")}><span aria-hidden="true">↶</span>{t("undo")}</button>
               {viewMode === "boxes" && <button className="theme-trigger" onClick={openThemeDialog}><span>◈</span><b>{t("theme")}</b><small>{displayThemeName(activeBoxTheme)}</small></button>}
               {viewMode !== "summary" && <><label className="search-box"><span>⌕</span><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} /></label>
               <label className="missing-filter"><GooeyCheckbox id="missing-only" checked={missingOnly} onChange={(event) => setMissingOnly(event.target.checked)} /><span>{t("missing_only")}</span></label>
-              <button className={`favorites-filter ${favoritesOnly ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}><img src={assetUrl("assets/favorite-star.png")} alt="" /><span>{t("favorites_only")}</span><b>{favoriteCount.toLocaleString(locale)}</b></button></>}
+              <button className={`favorites-filter ${favoritesOnly ? "active" : ""}`} aria-label={`${t("favorites_only")}: ${favoriteCount.toLocaleString(locale)}`} title={`${t("favorites_only")}: ${favoriteCount.toLocaleString(locale)}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}><img src={assetUrl("assets/favorite-star.png")} alt="" /></button></>}
             </div>
           </div>
 
@@ -1423,8 +1520,6 @@ export default function App() {
                 <div>
                   <p className="eyebrow teal">{t("your_collection")}</p>
                   <h2 id="collection-summary-title">{t("collection_summary")}</h2>
-                  <p>{t("summary_desc")}</p>
-                  <small>{t("summary_filters_note")}</small>
                 </div>
                 <div className="summary-ring" style={{ background: `conic-gradient(var(--teal) ${progress}%, rgba(85, 224, 192, .12) 0)` }}><span><strong>{progress}%</strong>{t("completion")}</span></div>
                 <div className="summary-metrics">
@@ -1461,8 +1556,8 @@ export default function App() {
 
                 <section className="summary-panel game-planner">
                   <div className="game-plan-header">
-                    <div><p className="eyebrow teal">{t("game_planner")}</p><h3>{t("obtainable_missing")}</h3><span>{t("game_planner_desc")}</span></div>
-                    <label><span>{t("select_game")}</span><select value={selectedGamePlan} onChange={(event) => { setSelectedGamePlan(event.target.value as GamePlanId); setGameResultLimit(24); }}>{GAME_PLANS.map((game) => <option value={game.id} key={game.id}>{t(`game_${game.id}`)}</option>)}</select></label>
+                    <div><p className="eyebrow teal">{t("game_planner")}</p><h3>{t("obtainable_missing")}</h3></div>
+                    <div><span className="sr-only">{t("select_game")}</span><StyledSelect value={selectedGamePlan} options={GAME_PLANS.map((game) => ({ value: game.id, label: t(`game_${game.id}`) }))} onChange={(game) => { setSelectedGamePlan(game); setGameResultLimit(24); }} ariaLabel={t("select_game")} className="game-selector" /></div>
                   </div>
                   {gameMissingEntries.length ? <>
                     <div className="game-results">{gameMissingEntries.slice(0, gameResultLimit).map((located) => {
@@ -1479,7 +1574,21 @@ export default function App() {
                     })}</div>
                     {gameMissingEntries.length > gameResultLimit && <button className="show-more" onClick={() => setGameResultLimit((value) => value + 24)}>{t("show_more")} · {(gameMissingEntries.length - gameResultLimit).toLocaleString(locale)} {t("remaining_results")}</button>}
                   </> : <div className="game-plan-empty"><span>✓</span><strong>{t("game_plan_complete")}</strong></div>}
-                  <small className="game-plan-caveat">{t("game_plan_caveat")}</small>
+                </section>
+
+                <section className="summary-panel box-organizer">
+                  <div className="summary-panel-heading"><span>{t("box_organizer")}</span></div>
+                  <div className="box-rename-row">
+                    <StyledSelect value={boxBeingRenamed?.globalIndex ?? -1} options={[{ value: -1, label: t("jump_to_box") }, ...boxes.map((box) => ({ value: box.globalIndex, label: `${String(box.globalIndex + 1).padStart(3, "0")} · ${box.label}` }))]} onChange={(value) => { if (value >= 0) setRenameBoxIndex(value); }} ariaLabel={t("rename_box")} className="rename-box-selector" />
+                    <label><span>{t("box_name")}</span><input value={boxBeingRenamed?.label ?? ""} disabled={!boxBeingRenamed} maxLength={48} onChange={(event) => { if (boxBeingRenamed) renamePlannedBox(boxBeingRenamed, event.target.value); }} /></label>
+                    <button disabled={!boxBeingRenamed} onClick={() => { if (boxBeingRenamed) renamePlannedBox(boxBeingRenamed, ""); }}>{t("restore_default_name")}</button>
+                  </div>
+                  <div className="custom-box-heading"><div><strong>{t("custom_boxes")}</strong><span>{t("choose_pokemon")}</span></div><button className="primary-action" onClick={createCustomBox}>＋ {t("new_custom_box")}</button></div>
+                  {customBoxes.length ? <div className="custom-box-list">{customBoxes.map((box) => <article key={box.id}>
+                    <div><strong>{box.name || t("custom_box")}</strong><span>{box.planIds.length.toLocaleString(locale)} / 30</span></div>
+                    <span className="custom-box-preview">{Array.from({ length: 30 }, (_, index) => { const entry = databaseChoiceByPlanId.get(box.planIds[index]); const artworkUrl = entry ? pokemonArtworkUrl(entry) : null; return <i key={index}>{artworkUrl && <img src={artworkUrl} alt="" loading="lazy" />}</i>; })}</span>
+                    <footer><button onClick={() => { setCustomBoxQuery(""); setCustomBoxEditorId(box.id); }}>{t("edit_custom_box")}</button><button className="danger" onClick={() => deleteCustomBox(box)}>{t("delete_custom_box")}</button></footer>
+                  </article>)}</div> : <p className="custom-box-empty">{t("no_custom_boxes")}</p>}
                 </section>
 
                 <section className="summary-panel shortcut-guide">
@@ -1492,7 +1601,7 @@ export default function App() {
             <>
               <div className="view-heading global-view-heading">
                 <div><p className="eyebrow teal">{t("your_collection")}</p><h2>{t("global_view")}</h2><p>{t("global_view_desc")}</p></div>
-                <div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div>
+                <div className="heading-actions"><div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div><button className="view-close" aria-label={t("close_view")} onClick={() => setViewMode("boxes")}>×</button></div>
               </div>
 
               {visibleGlobalEntries.length ? <div className="global-gallery" aria-label={t("global_view")}>
@@ -1609,9 +1718,9 @@ export default function App() {
                   const favorite = favorites.has(entry.planId);
                   return (
                     <div ref={highlightedPlanId === entry.planId ? highlightedEntryRef : undefined} className={`pokemon-slot ${isOwned ? "owned" : "pending"} ${visible ? "" : "filtered-out"} ${highlightedPlanId === entry.planId ? "locating" : ""} ${keyboardSlotIndex === index ? "keyboard-selected" : ""}`} key={entry.planId}>
-                      <button className="pokemon-slot-main" onClick={() => { setKeyboardSlotIndex(index); toggleOwned(entry.planId); }} title={`${localizedName}${localizedForm ? ` · ${localizedForm}` : ""}${genderDetail ? ` · ${genderDetail}` : ""}\n${displayNote(entry)}`} aria-pressed={isOwned}>
+                      <button className="pokemon-slot-main" onClick={() => { setKeyboardSlotIndex(index); toggleOwned(entry.planId); }} aria-pressed={isOwned}>
                         <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
-                        <span className={`variant-badge ${entry.variant}`}>{entry.variant === "shiny" && <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
+                        <span className={`variant-badge ${entry.variant}`} aria-label={entry.variant === "shiny" ? t("shiny") : t("normal")} title={entry.variant === "shiny" ? t("shiny") : t("normal")}>{entry.variant === "shiny" ? <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" /> : t("normal")}</span>
                         <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
                         <strong>{localizedName}</strong><small>{detail} · {entry.ownOt ? t("your_ot") : t("foreign_ot")}</small>
                         {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="slot-origin-mark" />}
@@ -1620,6 +1729,15 @@ export default function App() {
                       </button>
                       <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="slot-favorite" />
                       <button className="slot-info" aria-label={`${t("open_details")}: ${localizedName}`} title={t("open_details")} onClick={() => setDetailEntry({ entry, box: selectedBox, slotIndex: index })}>i</button>
+                      <div className="slot-tooltip" role="tooltip">
+                        <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
+                        <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
+                        <span><em>{entry.mark ? t("origin_marks") : t("special_collections")}</em>{originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
+                        <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availabilityForEntry(entry)}`}>{t(`availability_${availabilityForEntry(entry)}`)}</span></span>
+                        {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
+                        <span><em>{t("box")} · {t("slot")}</em>{String(selectedBox.globalIndex + 1).padStart(3, "0")} · {String(index + 1).padStart(2, "0")}</span>
+                        <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>
+                      </div>
                     </div>
                   );
                 })}
