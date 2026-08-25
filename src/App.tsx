@@ -1495,7 +1495,7 @@ export default function App() {
         <section className="collection-view">
           <div className="utility-row">
             {viewMode !== "summary" && <div className="utility-navigation">
-              <nav className="view-switcher" aria-label={t("choose_view")}>
+              <nav className={`view-switcher ${viewMode === "global" ? "global-active" : "boxes-active"}`} aria-label={t("choose_view")}>
                 <button type="button" className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
                 <button type="button" className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
               </nav>
