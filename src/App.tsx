@@ -32,6 +32,7 @@ import {
   requiresPokemonBank,
   transferKeyForEntry,
 } from "./collection-features";
+import { buildOwnedProgressCsv, decodeOcrTransferHash, matchCollectionRecords, parseCollectionCsv, parseCompactTransfer, type CollectionRecord, type ImportCatalogEntry, type ImportMatchSummary } from "./import-export";
 
 type PokemonEntry = {
   id: string;
@@ -89,6 +90,7 @@ type PlannedBox = { globalIndex: number; groupKey: string; number: number; label
 type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
 type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
 type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
+type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
 
 const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
@@ -126,6 +128,7 @@ const ORIGIN_MARK_ICONS: Record<string, string> = {
 const STORAGE_KEY = "origin-marks-home-checklist-v1";
 const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
 const CATALOG_VERSION = 6;
+const BACKUP_VERSION = 8;
 const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
 const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   n: "trade",
@@ -180,6 +183,14 @@ function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean
 
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const chunk = <T,>(items: T[], size: number) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
+
+function downloadText(filename: string, text: string, type: string) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([text], { type }));
+  link.download = filename;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1_000);
+}
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
 async function prepareThemeImage(file: File) {
@@ -536,6 +547,11 @@ export default function App() {
   const [themeDraft, setThemeDraft] = useState<BoxTheme>(DEFAULT_BOX_THEME);
   const [customThemeDraft, setCustomThemeDraft] = useState<BoxTheme | null>(null);
   const [customColors, setCustomColors] = useState({ appColor: "#102e2a", primary: "#55e0c0", secondary: "#f3c857" });
+  const [collectionGoal, setCollectionGoal] = useState("");
+  const [collectionNotes, setCollectionNotes] = useState("");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [clock, setClock] = useState(() => Date.now());
+  const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const themeImportRef = useRef<HTMLInputElement>(null);
@@ -543,6 +559,7 @@ export default function App() {
   const highlightedEntryRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const ownedHistoryRef = useRef<Set<string>[]>([]);
+  const transferProcessedRef = useRef(false);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
@@ -602,7 +619,11 @@ export default function App() {
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
         if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
+        if (typeof value.missingOnly === "boolean") setMissingOnly(value.missingOnly);
         if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
+        if (typeof value.collectionGoal === "string") setCollectionGoal(value.collectionGoal.slice(0, 8));
+        if (typeof value.collectionNotes === "string") setCollectionNotes(value.collectionNotes.slice(0, 2_000));
+        if (typeof value.savedAt === "number") setLastSavedAt(value.savedAt);
       }
       const savedThemes = localStorage.getItem(THEME_STORAGE_KEY);
       if (savedThemes) {
@@ -615,8 +636,12 @@ export default function App() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan }));
-  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan, hydrated]);
+    const savedAt = Date.now();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes }));
+      setLastSavedAt(savedAt);
+    } catch { /* Keep the in-memory session usable if browser storage is full. */ }
+  }, [owned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -635,10 +660,19 @@ export default function App() {
     document.documentElement.lang = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale ?? "es-MX";
   }, [language]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const boxes = useMemo(
     () => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language),
     [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, language],
   );
+  const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
+    ...(dataset?.entries ?? []),
+    ...(specialDataset?.entries ?? []),
+  ], [dataset, specialDataset]);
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
   const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
@@ -670,6 +704,51 @@ export default function App() {
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
   const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}`;
+
+  const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
+    const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
+    if (summary.newPlanIds.length) {
+      const importedIds = new Set(summary.newPlanIds);
+      const importedEntries = allImportEntries.filter((entry) => importedIds.has(`${entry.id}:normal`) || importedIds.has(`${entry.id}:shiny`));
+      setOwned((current) => new Set([...current, ...summary.newPlanIds]));
+      ownedHistoryRef.current = [];
+      setUndoDepth(0);
+      setCollectionPreset("custom");
+      setSelectedMarks((current) => [...new Set([...current, ...importedEntries.map((entry) => entry.mark).filter((mark): mark is string => Boolean(mark))])]);
+      setSelectedCollections((current) => [...new Set([...current, ...importedEntries.map((entry) => entry.collection).filter((collection): collection is string => Boolean(collection && COLLECTIONS.includes(collection)))])]);
+      setVariants((current) => ({
+        normal: current.normal || summary.newPlanIds.some((id) => id.endsWith(":normal")),
+        shiny: current.shiny || summary.newPlanIds.some((id) => id.endsWith(":shiny")),
+      }));
+      setAcquisitions({ own: true, trade: true, event: true, external: true });
+      setAvailabilityFilters(DEFAULT_AVAILABILITY_FILTERS);
+      if (importedEntries.some((entry) => entry.genderVariant === "extra")) setGenderMode("all");
+      if (importedEntries.some((entry) => entry.form)) setFormOptions((current) => ({
+        ...current,
+        alternate: true,
+        alcremie: current.alcremie || importedEntries.some((entry) => entry.dex === 869),
+        minior: current.minior || importedEntries.some((entry) => entry.dex === 774),
+      }));
+      if (importedEntries.some((entry) => entry.collection && !entry.shinyEligible)) setIncludeNonShinySpecials(true);
+    }
+    setImportNotice({ ...summary, source });
+  }, [allImportEntries, owned, pokemonNames]);
+
+  useEffect(() => {
+    if (!hydrated || !dataset || !specialDataset || !pokemonNames || transferProcessedRef.current) return;
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (!params.has("ocr")) { transferProcessedRef.current = true; return; }
+    transferProcessedRef.current = true;
+    const clearTransferFragment = () => {
+      params.delete("ocr");
+      const nextHash = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash ? `#${nextHash}` : ""}`);
+    };
+    decodeOcrTransferHash(window.location.hash)
+      .then((records) => { if (records) applyCollectionRecords(records, "ocr"); })
+      .catch(() => window.alert(copy(language, "invalid_collection")))
+      .finally(clearTransferFragment);
+  }, [applyCollectionRecords, dataset, hydrated, language, pokemonNames, specialDataset]);
 
   useEffect(() => {
     setPageIndex(0);
@@ -949,22 +1028,102 @@ export default function App() {
     setThemeOpen(false);
   };
 
-  const exportBackup = () => {
-    const payload = { version: 7, catalogVersion: CATALOG_VERSION, exportedAt: new Date().toISOString(), owned: [...owned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, language, capacity, viewMode, selectedGamePlan };
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
-    link.download = "origin-marks-checklist-backup.json";
-    link.click();
-    URL.revokeObjectURL(link.href);
+  const createBackupPayload = () => ({
+    type: "home-checklist-backup",
+    version: BACKUP_VERSION,
+    catalogVersion: CATALOG_VERSION,
+    exportedAt: new Date().toISOString(),
+    progress: { owned: [...owned], favorites: [...favorites] },
+    configuration: {
+      selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
+      genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
+      availabilityFilters, favoritesOnly, language, capacity, viewMode, missingOnly,
+      selectedGamePlan, collectionGoal, collectionNotes,
+    },
+    themes: themeConfig,
+  });
+
+  const exportBackup = (format: "json" | "project") => {
+    const projectFile = format === "project";
+    downloadText(
+      projectFile ? "home-checklist-backup.homechecklist" : "home-checklist-backup.json",
+      JSON.stringify(createBackupPayload(), null, 2),
+      projectFile ? "application/vnd.home-checklist+json" : "application/json",
+    );
+  };
+
+  const exportProgressCsv = () => downloadText("home-checklist-progress.csv", buildOwnedProgressCsv(owned, allImportEntries), "text/csv;charset=utf-8");
+
+  const restoreBackup = (raw: unknown) => {
+    if (!raw || typeof raw !== "object") throw new Error("invalid");
+    const value = raw as Record<string, unknown>;
+    const progress = (value.progress && typeof value.progress === "object" ? value.progress : value) as Record<string, unknown>;
+    const configuration = (value.configuration && typeof value.configuration === "object" ? value.configuration : value) as Record<string, unknown>;
+    if (!Array.isArray(progress.owned)) throw new Error("invalid");
+    setOwned(new Set(progress.owned.filter((id): id is string => typeof id === "string")));
+    ownedHistoryRef.current = [];
+    setUndoDepth(0);
+    if (Array.isArray(progress.favorites)) setFavorites(new Set(progress.favorites.filter((id): id is string => typeof id === "string")));
+    if (Array.isArray(configuration.selectedMarks)) setSelectedMarks(configuration.selectedMarks.filter((mark): mark is string => typeof mark === "string" && MARKS.includes(mark)));
+    if (Array.isArray(configuration.selectedCollections)) {
+      const savedCollections = configuration.selectedCollections.filter((collection): collection is string => typeof collection === "string" && COLLECTIONS.includes(collection));
+      setSelectedCollections(Number(value.catalogVersion) >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar"])]);
+    }
+    const savedVariants = configuration.variants as Record<string, unknown> | undefined;
+    if (savedVariants) setVariants({ shiny: Boolean(savedVariants.shiny), normal: Boolean(savedVariants.normal) });
+    const savedAcquisitions = configuration.acquisitions as Record<string, unknown> | undefined;
+    if (savedAcquisitions) setAcquisitions({
+      own: Boolean(savedAcquisitions.own),
+      trade: typeof savedAcquisitions.trade === "boolean" ? savedAcquisitions.trade : true,
+      event: Boolean(savedAcquisitions.event),
+      external: typeof savedAcquisitions.external === "boolean" ? savedAcquisitions.external : true,
+    });
+    if (typeof configuration.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(configuration.includeNonShinySpecials);
+    if (configuration.genderMode === "notable" || configuration.genderMode === "all") setGenderMode(configuration.genderMode);
+    const savedFormOptions = configuration.formOptions as Record<string, unknown> | undefined;
+    if (savedFormOptions) setFormOptions({
+      alternate: typeof savedFormOptions.alternate === "boolean" ? savedFormOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
+      alcremie: typeof savedFormOptions.alcremie === "boolean" ? savedFormOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
+      minior: typeof savedFormOptions.minior === "boolean" ? savedFormOptions.minior : DEFAULT_FORM_OPTIONS.minior,
+    });
+    if (typeof configuration.normalLivingDex === "boolean") setNormalLivingDex(configuration.normalLivingDex);
+    if (typeof configuration.originMarkDex === "boolean") setOriginMarkDex(configuration.originMarkDex);
+    if (typeof configuration.collectionPreset === "string" && COLLECTION_PRESETS.includes(configuration.collectionPreset as CollectionPreset)) setCollectionPreset(configuration.collectionPreset as CollectionPreset);
+    const savedAvailabilityFilters = configuration.availabilityFilters as Record<string, unknown> | undefined;
+    if (savedAvailabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, savedAvailabilityFilters[status] !== false])) as AvailabilityFilters);
+    if (typeof configuration.favoritesOnly === "boolean") setFavoritesOnly(configuration.favoritesOnly);
+    if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
+    if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
+    if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
+    if (typeof configuration.missingOnly === "boolean") setMissingOnly(configuration.missingOnly);
+    if (typeof configuration.selectedGamePlan === "string" && GAME_PLANS.some((game) => game.id === configuration.selectedGamePlan)) setSelectedGamePlan(configuration.selectedGamePlan as GamePlanId);
+    if (typeof configuration.collectionGoal === "string") setCollectionGoal(configuration.collectionGoal.slice(0, 8));
+    if (typeof configuration.collectionNotes === "string") setCollectionNotes(configuration.collectionNotes.slice(0, 2_000));
+    const parsedThemes = parseThemeConfig(value.themes);
+    if (parsedThemes) setThemeConfig(parsedThemes);
+    setLocationAnnouncement(t("backup_imported"));
+  };
+
+  const importData = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const looksJson = file.name.endsWith(".json") || file.name.endsWith(".homechecklist") || text.trimStart().startsWith("{");
+      if (looksJson) {
+        const value = JSON.parse(text);
+        if (value?.s === "pokemon-home-ocr") applyCollectionRecords(parseCompactTransfer(value), "csv");
+        else restoreBackup(value);
+      } else {
+        applyCollectionRecords(parseCollectionCsv(text), "csv");
+      }
+    } catch { window.alert(t("invalid_collection")); }
+    event.target.value = "";
   };
 
   const exportThemeBackup = () => {
     const payload = { type: "origin-marks-box-themes", version: 1, exportedAt: new Date().toISOString(), themes: themeConfig };
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
-    link.download = "origin-marks-themes-backup.json";
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadText("origin-marks-themes-backup.json", JSON.stringify(payload, null, 2), "application/json");
   };
 
   const importThemeBackup = (event: ChangeEvent<HTMLInputElement>) => {
@@ -978,50 +1137,6 @@ export default function App() {
         if (!themes) throw new Error("invalid");
         setThemeConfig(themes);
       } catch { window.alert(t("invalid_theme_backup")); }
-    });
-    event.target.value = "";
-  };
-
-  const importBackup = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    file.text().then((text) => {
-      try {
-        const value = JSON.parse(text);
-        if (!Array.isArray(value.owned)) throw new Error("invalid");
-        setOwned(new Set(value.owned.filter((id: unknown) => typeof id === "string")));
-        ownedHistoryRef.current = [];
-        setUndoDepth(0);
-        if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
-        if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
-        if (Array.isArray(value.selectedCollections)) {
-          const savedCollections = value.selectedCollections.filter((collection: string) => COLLECTIONS.includes(collection));
-          setSelectedCollections(value.catalogVersion >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar"])]);
-        }
-        if (value.variants) setVariants({ shiny: Boolean(value.variants.shiny), normal: Boolean(value.variants.normal) });
-        if (value.acquisitions) setAcquisitions({
-          own: Boolean(value.acquisitions.own),
-          trade: typeof value.acquisitions.trade === "boolean" ? value.acquisitions.trade : true,
-          event: Boolean(value.acquisitions.event),
-          external: typeof value.acquisitions.external === "boolean" ? value.acquisitions.external : true,
-        });
-        if (typeof value.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(value.includeNonShinySpecials);
-        if (value.genderMode === "notable" || value.genderMode === "all") setGenderMode(value.genderMode);
-        if (value.formOptions) setFormOptions({
-          alternate: typeof value.formOptions.alternate === "boolean" ? value.formOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
-          alcremie: typeof value.formOptions.alcremie === "boolean" ? value.formOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
-          minior: typeof value.formOptions.minior === "boolean" ? value.formOptions.minior : DEFAULT_FORM_OPTIONS.minior,
-        });
-        if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
-        if (typeof value.originMarkDex === "boolean") setOriginMarkDex(value.originMarkDex);
-        if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
-        if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
-        if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
-        if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
-        if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
-        if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
-        if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
-      } catch { window.alert(t("invalid_backup")); }
     });
     event.target.value = "";
   };
@@ -1045,6 +1160,10 @@ export default function App() {
   const pageAllOwned = visiblePageEntries.length > 0 && visiblePageEntries.every((entry) => owned.has(entry.planId));
   const themeGameOption = themeTab === "custom" ? null : themeTab === "concept" ? CONCEPT_ART_GAMES.find((game) => game.id === conceptGame) ?? CONCEPT_ART_GAMES[0] : BOX_THEME_GAMES.find((game) => game.id === themeTab) ?? BOX_THEME_GAMES[0];
   const themeCanApply = themeTab !== "custom" || themeDraft.kind === "custom";
+  const savedMinutesAgo = lastSavedAt ? Math.max(0, Math.floor((clock - lastSavedAt) / 60_000)) : null;
+  const savedWhen = savedMinutesAgo === null
+    ? t("not_saved_yet")
+    : savedMinutesAgo < 1 ? t("saved_now") : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-savedMinutesAgo, "minute");
 
   return (
     <main className="app-shell">
@@ -1067,6 +1186,15 @@ export default function App() {
         </div>
       </header>
       <span className="sr-only" role="status" aria-live="polite">{locationAnnouncement}</span>
+
+      {importNotice && <section className="import-notice" role="status" aria-live="polite">
+        <span className="import-notice-icon" aria-hidden="true">✓</span>
+        <div>
+          <strong>{importNotice.source === "ocr" ? t("ocr_import_complete") : t("collection_import_complete")}</strong>
+          <p>{t("identified")}: <b>{importNotice.rowsRead.toLocaleString(locale)}</b> · {t("matched")}: <b>{importNotice.matchedRows.toLocaleString(locale)}</b> · {t("new_entries")}: <b>{importNotice.newPlanIds.length.toLocaleString(locale)}</b>{importNotice.alreadyOwned ? ` · ${t("already_marked")}: ${importNotice.alreadyOwned.toLocaleString(locale)}` : ""}{importNotice.unmatched ? ` · ${t("unmatched")}: ${importNotice.unmatched.toLocaleString(locale)}` : ""}{importNotice.ambiguous ? ` · ${t("ambiguous")}: ${importNotice.ambiguous.toLocaleString(locale)}` : ""}</p>
+        </div>
+        <button aria-label={t("close_import_summary")} onClick={() => setImportNotice(null)}>×</button>
+      </section>}
 
       {themeOpen && (
         <div className="theme-modal-layer">
@@ -1243,9 +1371,17 @@ export default function App() {
             </div>
           </section>
 
+          <section className="filter-section collection-planning">
+            <p className="panel-label">{t("personal_planning")}</p>
+            <label><span>{t("collection_goal")}</span><input type="number" min="1" max="8000" inputMode="numeric" value={collectionGoal} placeholder={t("goal_placeholder")} onChange={(event) => setCollectionGoal(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))} /></label>
+            <label><span>{t("collection_notes")}</span><textarea value={collectionNotes} maxLength={2000} rows={3} placeholder={t("notes_placeholder")} onChange={(event) => setCollectionNotes(event.target.value)} /></label>
+          </section>
+
           <div className="backup-actions">
-            <span>{t("checklist_backup")}</span>
-            <button onClick={exportBackup}>{t("export")}</button><button onClick={() => importRef.current?.click()}>{t("import")}</button><input ref={importRef} type="file" accept="application/json" onChange={importBackup} hidden />
+            <span>{t("collection_and_backup")}</span>
+            <button className="wide" onClick={() => importRef.current?.click()}>{t("import_collection")}</button><input ref={importRef} type="file" accept=".csv,.json,.homechecklist,text/csv,application/json,application/vnd.home-checklist+json" onChange={importData} hidden />
+            <button onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button className="wide" onClick={() => exportBackup("project")}>{t("export_project")}</button>
+            <small className="auto-save-status"><i aria-hidden="true" />{t("last_saved")} {savedWhen}</small>
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
             <button className="reset-progress" onClick={resetProgress} disabled={!owned.size}>{t("reset_progress")}</button>
