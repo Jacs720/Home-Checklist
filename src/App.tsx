@@ -429,7 +429,28 @@ function applyCatalogCorrections(entries: PokemonEntry[]) {
       });
     });
   }
+  
+  const alolanFormsWithoutGenderDifference = new Set([19, 20, 26]);
 
+  correctedEntries = correctedEntries
+  .filter((entry) =>
+    !(
+      entry.form === "Alolan" &&
+      alolanFormsWithoutGenderDifference.has(entry.dex) &&
+      entry.genderVariant === "extra"
+    )
+  )
+  .map((entry) =>
+    entry.form === "Alolan" &&
+    alolanFormsWithoutGenderDifference.has(entry.dex)
+      ? {
+          ...entry,
+          gender: undefined,
+          genderDifferenceTier: undefined,
+          genderVariant: undefined,
+        }
+      : entry
+  );
   return markLgpeAlolanFormsAsInGameTrades(removeInvalidGbaKingambit(correctedEntries)).map((entry) => {
     let correctedEntry = entry;
     if (correctedEntry.dex === 678 && correctedEntry.gender === "female") {
