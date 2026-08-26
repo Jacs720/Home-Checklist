@@ -640,13 +640,13 @@ function buildBoxes(
       ),
 
       ...(includeEventMythicals
-        ? eventMythicalsForMark(
-            key,
-            entries,
-            specialEntries
-          )
+        ? eventMythicalsForMark(key, entries, specialEntries)
         : []),
-    ],
+    ].sort((a, b) => {
+      if (a.dex !== b.dex) return a.dex - b.dex;
+
+      return (a.form ?? "").localeCompare(b.form ?? "");
+    }),
     special: false,
     })),
     ...COLLECTIONS.filter((collection) => selectedCollections.includes(collection)).map((key) => ({ key, label: groupName(language, key), entries: specialEntries.filter((entry) => entry.collection === key), special: true })),
@@ -669,16 +669,51 @@ function buildBoxes(
       const includeAsNormal = entry.normalEligible !== false && (variants.normal || (group.special && variants.shiny && includeNonShinySpecials && !entry.shinyEligible));
       if (includeAsNormal) {
         const ownOt = entry.ownOtNormal;
-        const acquisition = entry.acquisitionCategory ?? COLLECTION_ACQUISITIONS[entry.collection ?? ""] ?? (ownOt ? "own" : "event");
-        if (acquisitions[acquisition]) {
-          planned.push({ ...entry, variant: "normal", ownOt, groupKey: group.key, groupLabel: group.label, planId: `${entry.id}:normal` });
+        const acquisition =
+          entry.acquisitionCategory ??
+          COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
+          (ownOt ? "own" : "event");
+
+        const isHistoricalEventMythical =
+          entry.id.includes(":historical-event:");
+
+        if (
+          acquisitions[acquisition] ||
+          (includeEventMythicals && isHistoricalEventMythical)
+        ) {
+          planned.push({
+            ...entry,
+            variant: "normal",
+            ownOt,
+            groupKey: group.key,
+            groupLabel: group.label,
+            planId: `${entry.id}:normal`,
+          });
         }
       }
       if (variants.shiny && entry.shinyEligible) {
         const ownOt = entry.ownOtShiny;
-        const acquisition = entry.acquisitionCategory ?? COLLECTION_ACQUISITIONS[entry.collection ?? ""] ?? (ownOt ? "own" : "event");
-        if (acquisitions[acquisition]) {
-          planned.push({ ...entry, variant: "shiny", ownOt, groupKey: group.key, groupLabel: group.label, planId: `${entry.id}:shiny` });
+
+        const acquisition =
+          entry.acquisitionCategory ??
+          COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
+          (ownOt ? "own" : "event");
+
+        const isHistoricalEventMythical =
+          entry.id.includes(":historical-event:");
+
+        if (
+          acquisitions[acquisition] ||
+          (includeEventMythicals && isHistoricalEventMythical)
+        ) {
+          planned.push({
+            ...entry,
+            variant: "shiny",
+            ownOt,
+            groupKey: group.key,
+            groupLabel: group.label,
+            planId: `${entry.id}:shiny`,
+          });
         }
       }
     }
@@ -1035,7 +1070,7 @@ export default function App() {
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
   const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}`;
-  
+
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
     if (summary.newPlanIds.length) {
@@ -1903,11 +1938,6 @@ export default function App() {
                   setIncludeEventMythicals(checked);
 
                   if (checked) {
-                    setAcquisitions((current) => ({
-                      ...current,
-                      event: true,
-                    }));
-
                     setAvailabilityFilters((current) => ({
                       ...current,
                       historical: true,
