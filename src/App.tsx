@@ -614,6 +614,7 @@ function buildBoxes(
   variants: Record<Variant, boolean>,
   acquisitions: Record<Acquisition, boolean>,
   includeNonShinySpecials: boolean,
+  includeEventMythicals: boolean,
   genderMode: GenderMode,
   formOptions: FormOptions,
   normalLivingDex: boolean,
@@ -626,11 +627,27 @@ function buildBoxes(
   const unifiedCandidates: PlannedEntry[] = [];
   const unifiedProfile = normalLivingDex || UNIFIED_COLLECTION_PRESETS.has(collectionPreset);
   const groups = [
-    ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
-      key,
-      label: groupName(language, key),
-      entries: [...entries.filter((entry) => entry.mark === key), ...specialEntries.filter((entry) => entry.collection === "events" && entry.mark === key)],
-      special: false,
+  ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
+    key,
+    label: groupName(language, key),
+    entries: [
+      ...entries.filter((entry) => entry.mark === key),
+
+      ...specialEntries.filter(
+        (entry) =>
+          entry.collection === "events" &&
+          entry.mark === key
+      ),
+
+      ...(includeEventMythicals
+        ? eventMythicalsForMark(
+            key,
+            entries,
+            specialEntries
+          )
+        : []),
+    ],
+    special: false,
     })),
     ...COLLECTIONS.filter((collection) => selectedCollections.includes(collection)).map((key) => ({ key, label: groupName(language, key), entries: specialEntries.filter((entry) => entry.collection === key), special: true })),
   ];
@@ -752,6 +769,7 @@ export default function App() {
   const [variants, setVariants] = useState<Record<Variant, boolean>>({ shiny: true, normal: false });
   const [acquisitions, setAcquisitions] = useState<Record<Acquisition, boolean>>({ own: true, trade: true, event: true, external: true });
   const [includeNonShinySpecials, setIncludeNonShinySpecials] = useState(true);
+  const [includeEventMythicals, setIncludeEventMythicals] = useState(false);
   const [genderMode, setGenderMode] = useState<GenderMode>("notable");
   const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
   const [normalLivingDex, setNormalLivingDex] = useState(false);
@@ -860,6 +878,8 @@ export default function App() {
           external: typeof value.acquisitions.external === "boolean" ? value.acquisitions.external : true,
         });
         if (typeof value.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(value.includeNonShinySpecials);
+        if (typeof value.includeEventMythicals === "boolean")
+           setIncludeEventMythicals(value.includeEventMythicals);
         if (value.genderMode === "notable" || value.genderMode === "all") setGenderMode(value.genderMode);
         if (value.formOptions) setFormOptions({
           alternate: typeof value.formOptions.alternate === "boolean" ? value.formOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
@@ -896,10 +916,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
+  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -923,7 +943,7 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).map((box) => ({
+  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).map((box) => ({
     ...box,
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
   })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language, boxNameOverrides]);
@@ -1014,8 +1034,8 @@ export default function App() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}`;
-
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}`;
+  
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
     if (summary.newPlanIds.length) {
@@ -1559,11 +1579,11 @@ export default function App() {
   if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
 
   const markCounts = Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   }));
   const collectionCounts = Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   }));
   const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
@@ -1826,10 +1846,89 @@ export default function App() {
 
           <section className="filter-section">
             <p className="panel-label">{t("acquisition")}</p>
-            <label className="switch-row" htmlFor="acquisition-own" aria-label={t("own_ot")}><span><b>{t("own_ot")}</b></span><GooeyCheckbox id="acquisition-own" checked={acquisitions.own} onChange={() => setAcquisition("own")} /></label>
-            <label className="switch-row" htmlFor="acquisition-trade" aria-label={t("in_game_trades")}><span><b>{t("in_game_trades")}</b></span><GooeyCheckbox id="acquisition-trade" checked={acquisitions.trade} onChange={() => setAcquisition("trade")} /></label>
-            <label className="switch-row" htmlFor="acquisition-event" aria-label={t("events")}><span><b>{t("events")}</b></span><GooeyCheckbox id="acquisition-event" checked={acquisitions.event} onChange={() => setAcquisition("event")} /></label>
-            <label className="switch-row" htmlFor="acquisition-external" aria-label={t("other_games_apps")}><span><b>{t("other_games_apps")}</b></span><GooeyCheckbox id="acquisition-external" checked={acquisitions.external} onChange={() => setAcquisition("external")} /></label>
+
+            <label
+              className="switch-row"
+              htmlFor="acquisition-own"
+              aria-label={t("own_ot")}
+            >
+              <span><b>{t("own_ot")}</b></span>
+              <GooeyCheckbox
+                id="acquisition-own"
+                checked={acquisitions.own}
+                onChange={() => setAcquisition("own")}
+              />
+            </label>
+
+            <label
+              className="switch-row"
+              htmlFor="acquisition-trade"
+              aria-label={t("in_game_trades")}
+            >
+              <span><b>{t("in_game_trades")}</b></span>
+              <GooeyCheckbox
+                id="acquisition-trade"
+                checked={acquisitions.trade}
+                onChange={() => setAcquisition("trade")}
+              />
+            </label>
+
+            <label
+              className="switch-row"
+              htmlFor="acquisition-event"
+              aria-label={t("events")}
+            >
+              <span><b>{t("events")}</b></span>
+              <GooeyCheckbox
+                id="acquisition-event"
+                checked={acquisitions.event}
+                onChange={() => setAcquisition("event")}
+              />
+            </label>
+
+            <label
+              className="switch-row"
+              htmlFor="historical-event-mythicals"
+              aria-label="Historical event Mythicals"
+            >
+              <span><b>Historical event Mythicals</b></span>
+
+              <GooeyCheckbox
+                id="historical-event-mythicals"
+                checked={includeEventMythicals}
+                onChange={(event) => {
+                  markProfileCustom();
+
+                  const checked = event.target.checked;
+                  setIncludeEventMythicals(checked);
+
+                  if (checked) {
+                    setAcquisitions((current) => ({
+                      ...current,
+                      event: true,
+                    }));
+
+                    setAvailabilityFilters((current) => ({
+                      ...current,
+                      historical: true,
+                    }));
+                  }
+                }}
+              />
+            </label>
+
+            <label
+              className="switch-row"
+              htmlFor="acquisition-external"
+              aria-label={t("other_games_apps")}
+            >
+              <span><b>{t("other_games_apps")}</b></span>
+              <GooeyCheckbox
+                id="acquisition-external"
+                checked={acquisitions.external}
+                onChange={() => setAcquisition("external")}
+              />
+            </label>
           </section>
 
           <section className="filter-section availability-section">
