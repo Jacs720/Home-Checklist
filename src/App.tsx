@@ -106,6 +106,7 @@ type SpecialDataset = {
   entries: PokemonEntry[];
 };
 type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
+type PokewalkerDataset = { meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; encounterCount: number; caveat: string }; dexes: number[] };
 type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
@@ -199,7 +200,7 @@ const ORIGIN_MARK_ICONS: Record<string, string> = {
 const STORAGE_KEY = "origin-marks-home-checklist-v1";
 const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
 const CATALOG_VERSION = 6;
-const BACKUP_VERSION = 8;
+const BACKUP_VERSION = 9;
 const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
 const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   n: "trade",
@@ -794,6 +795,7 @@ export default function App() {
   const [pokemonNames, setPokemonNames] = useState<PokemonNames | null>(null);
   const [speciesRules, setSpeciesRules] = useState<Map<number, SpeciesRule>>(new Map());
   const [homeChallenges, setHomeChallenges] = useState<HomeChallenge[]>([]);
+  const [pokewalkerDexes, setPokewalkerDexes] = useState<Set<number>>(new Set());
   const [loadError, setLoadError] = useState(false);
   const [selectedMarks, setSelectedMarks] = useState<string[]>(DEFAULT_MARKS);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(DEFAULT_COLLECTIONS);
@@ -832,6 +834,7 @@ export default function App() {
   const [missingOnly, setMissingOnly] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [homeChallengesOnly, setHomeChallengesOnly] = useState(false);
+  const [pokewalkerOnly, setPokewalkerOnly] = useState(false);
   const [detailEntry, setDetailEntry] = useState<LocatedEntry | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [themeConfig, setThemeConfig] = useState<BoxThemeConfig>(EMPTY_THEME_CONFIG);
@@ -870,19 +873,20 @@ export default function App() {
   const displayNote = (entry: PokemonEntry) => localizeCatalogText(language, entry.note);
 
   useEffect(() => {
-    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json")), fetch(assetUrl("data/species-rules.json")), fetch(assetUrl("data/home-challenges.json"))])
-      .then(async ([baseResponse, specialResponse, namesResponse, rulesResponse, challengesResponse]) => {
-        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok || !rulesResponse.ok || !challengesResponse.ok) throw new Error("data");
-        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json(), rulesResponse.json(), challengesResponse.json()]);
+    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json")), fetch(assetUrl("data/species-rules.json")), fetch(assetUrl("data/home-challenges.json")), fetch(assetUrl("data/pokewalker.json"))])
+      .then(async ([baseResponse, specialResponse, namesResponse, rulesResponse, challengesResponse, pokewalkerResponse]) => {
+        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok || !rulesResponse.ok || !challengesResponse.ok || !pokewalkerResponse.ok) throw new Error("data");
+        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json(), rulesResponse.json(), challengesResponse.json(), pokewalkerResponse.json()]);
       })
-      .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset]) => {
+      .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue, pokewalkerValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset, PokewalkerDataset]) => {
         const correctedEntries = applyCatalogCorrections(baseValue.entries);
         const correctedSpecialEntries = addGoStorableForms(specialValue.entries, correctedEntries);
         setDataset({ ...baseValue, entries: correctedEntries });
         setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length } }, entries: correctedSpecialEntries });
         setPokemonNames(namesValue);
         setSpeciesRules(new Map(rulesValue.species.map((rule) => [rule.dex, rule])));
-        setHomeChallenges(challengesValue.challenges);
+        setHomeChallenges(challengesValue.challenges ?? []);
+        setPokewalkerDexes(new Set(pokewalkerValue.dexes));
       })
       .catch(() => setLoadError(true));
   }, []);
@@ -923,6 +927,7 @@ export default function App() {
         if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
         if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
         if (typeof value.homeChallengesOnly === "boolean") setHomeChallengesOnly(value.homeChallengesOnly);
+        if (typeof value.pokewalkerOnly === "boolean") setPokewalkerOnly(value.pokewalkerOnly);
         if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
         if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
         if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
@@ -947,10 +952,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
+  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -1073,7 +1078,7 @@ export default function App() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}`;
 
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
@@ -1159,6 +1164,7 @@ export default function App() {
       && (!missingOnly || !entryIsOwned(entry))
       && (!favoritesOnly || favorites.has(entry.planId))
       && (!homeChallengesOnly || homeChallengeDexes.has(entry.dex))
+      && (!pokewalkerOnly || pokewalkerDexes.has(entry.dex))
       && availabilityFilters[availabilityForEntry(entry)];
   };
 
@@ -1298,6 +1304,7 @@ export default function App() {
     setAvailabilityFilters(DEFAULT_AVAILABILITY_FILTERS);
     setFavoritesOnly(false);
     setHomeChallengesOnly(false);
+    setPokewalkerOnly(false);
     setNormalLivingDex(preset === "basic");
     setOriginMarkDex(preset === "origin");
     if (preset === "basic") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
@@ -1466,7 +1473,7 @@ export default function App() {
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
       genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
-      availabilityFilters, favoritesOnly, homeChallengesOnly, language, capacity, viewMode, missingOnly,
+      availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
     themes: themeConfig,
@@ -1531,6 +1538,7 @@ export default function App() {
     if (savedAvailabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, savedAvailabilityFilters[status] !== false])) as AvailabilityFilters);
     if (typeof configuration.favoritesOnly === "boolean") setFavoritesOnly(configuration.favoritesOnly);
     if (typeof configuration.homeChallengesOnly === "boolean") setHomeChallengesOnly(configuration.homeChallengesOnly);
+    if (typeof configuration.pokewalkerOnly === "boolean") setPokewalkerOnly(configuration.pokewalkerOnly);
     if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
     if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
     if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
@@ -2008,6 +2016,11 @@ export default function App() {
           </section>
 
           <section className="filter-section">
+            <p className="panel-label">{t("pokewalker")}</p>
+            <label className="switch-row" htmlFor="pokewalker-only" aria-label={t("pokewalker_only")}><span><b>{t("pokewalker_only")}</b><small>{t("pokewalker_only_desc").replace("{count}", pokewalkerDexes.size.toLocaleString(locale))}</small></span><GooeyCheckbox id="pokewalker-only" checked={pokewalkerOnly} onChange={(event) => setPokewalkerOnly(event.target.checked)} /></label>
+          </section>
+
+          <section className="filter-section">
             <p className="panel-label">{t("capacity")}</p>
             <div className="capacity-toggle">
               <button className={capacity === 6000 ? "active" : ""} onClick={() => setCapacity(6000)}>{(6000).toLocaleString(locale)}<small>{t("current")}</small></button>
@@ -2219,7 +2232,7 @@ export default function App() {
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || pokewalkerOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
@@ -2295,7 +2308,7 @@ export default function App() {
           )}
 
           <section className="data-note">
-            <div className="source-links"><a href="https://bulbapedia.bulbagarden.net/wiki/N%27s_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("n_source")}</a><a href="https://www.serebii.net/blackwhite/dreamworldpokemon.shtml" target="_blank" rel="noreferrer">{t("dream_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Dream_Radar#Pok%C3%A9mon_encounters" target="_blank" rel="noreferrer">{t("radar_source")}</a><a href="https://www.serebii.net/events/" target="_blank" rel="noreferrer">{t("event_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Challenge_(HOME)" target="_blank" rel="noreferrer">{t("home_challenges_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Shadow_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("shadow_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/In-game_trade" target="_blank" rel="noreferrer">{t("trade_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_with_gender_differences" target="_blank" rel="noreferrer">{t("gender_source")}</a><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noreferrer">{t("art_source")}</a></div>
+            <div className="source-links"><a href="https://bulbapedia.bulbagarden.net/wiki/N%27s_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("n_source")}</a><a href="https://www.serebii.net/blackwhite/dreamworldpokemon.shtml" target="_blank" rel="noreferrer">{t("dream_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Dream_Radar#Pok%C3%A9mon_encounters" target="_blank" rel="noreferrer">{t("radar_source")}</a><a href="https://www.serebii.net/events/" target="_blank" rel="noreferrer">{t("event_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/Challenge_(HOME)" target="_blank" rel="noreferrer">{t("home_challenges_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_found_through_the_Pok%C3%A9walker" target="_blank" rel="noreferrer">{t("pokewalker_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Shadow_Pok%C3%A9mon" target="_blank" rel="noreferrer">{t("shadow_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/In-game_trade" target="_blank" rel="noreferrer">{t("trade_source")}</a><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_with_gender_differences" target="_blank" rel="noreferrer">{t("gender_source")}</a><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noreferrer">{t("art_source")}</a></div>
           </section>
         </section>
       </div>

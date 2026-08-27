@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "source": "Bulbapedia · List of Pokémon found through the Pokéwalker",
+    "sourceUrl": "https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_found_through_the_Pok%C3%A9walker",
+    "generatedAt": "2026-08-27",
+    "speciesCount": 118,
+    "encounterCount": 162,
+    "caveat": "Species are deduplicated by National Pokédex number; the source lists multiple encounters for some species."
+  },
+  "dexes": [
+    16, 19, 21, 25, 29, 32, 35, 39, 41, 42, 43, 44, 46, 48, 52, 54, 60, 61, 63, 66,
+    69, 70, 72, 74, 77, 79, 81, 84, 86, 88, 90, 92, 93, 95, 98, 100, 102, 105, 109, 111,
+    114, 115, 116, 118, 120, 128, 129, 133, 147, 161, 162, 163, 164, 170, 173, 174, 177, 179, 183, 187,
+    191, 194, 198, 200, 202, 203, 215, 218, 220, 222, 223, 224, 228, 234, 238, 239, 240, 255, 263, 264,
+    265, 279, 298, 300, 302, 307, 313, 314, 318, 320, 349, 351, 352, 355, 357, 361, 374, 399, 400, 401,
+    403, 406, 415, 417, 418, 422, 427, 433, 436, 438, 439, 440, 441, 442, 446, 453, 456, 459
+  ]
+}
