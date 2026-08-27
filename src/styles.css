@@ -521,11 +521,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .entry-facts > div { min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14,44,40,.42); }
 .entry-facts dt { margin-bottom: 5px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .entry-facts dd { margin: 0; color: #e3efed; font-size: 10px; line-height: 1.48; }
-.entry-explanation, .entry-catalog-note { margin-top: 12px; padding: 13px 14px; border-radius: 11px; }
+.entry-home-challenges, .entry-explanation, .entry-catalog-note { margin-top: 12px; padding: 13px 14px; border-radius: 11px; }
+.entry-home-challenges { border: 1px solid rgba(243,200,87,.28); background: rgba(86,67,17,.16); }
 .entry-explanation { border: 1px solid rgba(85,224,192,.22); background: rgba(35,114,99,.11); }
 .entry-catalog-note { border: 1px solid var(--line); background: rgba(8,31,28,.55); }
-.entry-explanation h3, .entry-catalog-note h3 { margin: 0 0 6px; color: var(--teal); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
-.entry-explanation p, .entry-catalog-note p { margin: 0; color: #c4d8d4; font-size: 10px; line-height: 1.55; }
+.entry-home-challenges h3, .entry-explanation h3, .entry-catalog-note h3 { margin: 0 0 6px; color: var(--teal); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.entry-home-challenges h3 { color: var(--yellow); }
+.entry-home-challenges p, .entry-explanation p, .entry-catalog-note p { margin: 0; color: #c4d8d4; font-size: 10px; line-height: 1.55; }
+.entry-home-challenges ul { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.entry-home-challenges li { position: relative; padding-left: 13px; color: #ecf3e4; font-size: 10px; line-height: 1.48; }
+.entry-home-challenges li::before { position: absolute; left: 0; color: var(--yellow); content: "◆"; font-size: 7px; }
 .entry-catalog-note small { display: block; margin-top: 7px; color: var(--dim); font-size: 8px; }
 
 @media (max-width: 1400px) {

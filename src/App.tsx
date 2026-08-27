@@ -16,6 +16,7 @@ import {
   resolveBoxTheme,
 } from "./box-themes";
 import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName, localizeCatalogText } from "./translations";
+import { HomeChallenge, HomeChallengesDataset, localizeHomeChallengeTitle } from "./home-challenges";
 import { addGoStorableForms, addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "./austin-john-import";
 import {
@@ -105,8 +106,6 @@ type SpecialDataset = {
   entries: PokemonEntry[];
 };
 type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
-type HomeChallengesDataset = { meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; caveat: string }; dexes: number[] };
-
 type Variant = "shiny" | "normal";
 type Acquisition = "own" | "trade" | "event" | "external";
 type GenderMode = "notable" | "all";
@@ -569,7 +568,10 @@ function eventMythicalsForMark(
   const existing = new Set(
     normalEntries
       .filter((entry) => entry.mark === mark)
-      .map((entry) => `${entry.dex}:${entry.form ?? ""}`)
+      .flatMap((entry) => [
+        ...(entry.normalEligible !== false ? [`${entry.dex}:${entry.form ?? ""}:normal`] : []),
+        ...(entry.shinyEligible ? [`${entry.dex}:${entry.form ?? ""}:shiny`] : []),
+      ])
   );
 
   const seen = new Set<string>();
@@ -581,7 +583,8 @@ function eventMythicalsForMark(
       MYTHICAL_DEX.has(entry.dex)
     )
     .filter((entry) => {
-      const key = `${entry.dex}:${entry.form ?? ""}`;
+      const variant = entry.shinyEligible ? "shiny" : "normal";
+      const key = `${entry.dex}:${entry.form ?? ""}:${variant}`;
 
       if (existing.has(key)) return false;
       if (seen.has(key)) return false;
@@ -589,22 +592,20 @@ function eventMythicalsForMark(
       seen.add(key);
       return true;
     })
-    .map((entry) => ({
-      ...entry,
-      id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}`,
-      collection: undefined,
-      acquisitionCategory: "event" as const,
-      availability: "historical" as const,
-      note: "Available through a past event distribution",
-
-      trainerName: undefined,
-      trainerId: undefined,
-      eventYear: undefined,
-      eventLocation: undefined,
-      eventType: undefined,
-      startDate: undefined,
-      endDate: undefined,
-    }));
+    .map((entry) => {
+      const variant = entry.shinyEligible ? "shiny" : "normal";
+      return {
+        ...entry,
+        id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}:${variant}`,
+        collection: undefined,
+        acquisitionCategory: "event" as const,
+        availability: "historical" as const,
+        normalEligible: variant === "normal",
+        shinyEligible: variant === "shiny",
+        ownOtNormal: false,
+        ownOtShiny: false,
+      };
+    });
 }
 function buildBoxes(
   entries: PokemonEntry[],
@@ -632,13 +633,6 @@ function buildBoxes(
     label: groupName(language, key),
     entries: [
       ...entries.filter((entry) => entry.mark === key),
-
-      ...specialEntries.filter(
-        (entry) =>
-          entry.collection === "events" &&
-          entry.mark === key
-      ),
-
       ...(includeEventMythicals
         ? eventMythicalsForMark(key, entries, specialEntries)
         : []),
@@ -797,7 +791,7 @@ export default function App() {
   const [specialDataset, setSpecialDataset] = useState<SpecialDataset | null>(null);
   const [pokemonNames, setPokemonNames] = useState<PokemonNames | null>(null);
   const [speciesRules, setSpeciesRules] = useState<Map<number, SpeciesRule>>(new Map());
-  const [homeChallengeDexes, setHomeChallengeDexes] = useState<Set<number>>(new Set());
+  const [homeChallenges, setHomeChallenges] = useState<HomeChallenge[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [selectedMarks, setSelectedMarks] = useState<string[]>(DEFAULT_MARKS);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(DEFAULT_COLLECTIONS);
@@ -886,7 +880,7 @@ export default function App() {
         setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length } }, entries: correctedSpecialEntries });
         setPokemonNames(namesValue);
         setSpeciesRules(new Map(rulesValue.species.map((rule) => [rule.dex, rule])));
-        setHomeChallengeDexes(new Set(challengesValue.dexes));
+        setHomeChallenges(challengesValue.challenges);
       })
       .catch(() => setLoadError(true));
   }, []);
@@ -981,7 +975,7 @@ export default function App() {
   const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).map((box) => ({
     ...box,
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language, boxNameOverrides]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language, boxNameOverrides]);
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -1030,6 +1024,14 @@ export default function App() {
   }, [databaseChoiceByPlanId, hydrated, normalLivingDex, owned]);
   const plannedEntries = useMemo(() => boxes.flatMap((box) => box.entries), [boxes]);
   const locatedEntries = useMemo(() => boxes.flatMap((box) => box.entries.map((entry, slotIndex) => ({ entry, box, slotIndex }))), [boxes]);
+  const homeChallengesByDex = useMemo(() => {
+    const byDex = new Map<number, HomeChallenge[]>();
+    for (const challenge of homeChallenges) {
+      for (const dex of challenge.dexes) byDex.set(dex, [...(byDex.get(dex) ?? []), challenge]);
+    }
+    return byDex;
+  }, [homeChallenges]);
+  const homeChallengeDexes = useMemo(() => new Set(homeChallengesByDex.keys()), [homeChallengesByDex]);
   const supportedLivingDexDexes = useMemo(() => new Set(allImportEntries
     .filter((entry) => !entry.collection && entry.availability !== "excluded" && entry.normalEligible !== false)
     .map((entry) => entry.dex)), [allImportEntries]);
@@ -1777,6 +1779,7 @@ export default function App() {
         const originMarkKey = entry.mark ?? entry.groupKey;
         const availability = availabilityForEntry(entry);
         const favorite = favorites.has(entry.planId);
+        const matchingHomeChallenges = homeChallengesByDex.get(entry.dex) ?? [];
         return <div className="entry-modal-layer">
           <button className="entry-modal-scrim" aria-label={t("close_details")} onClick={() => setDetailEntry(null)} />
           <section className="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-dialog-title">
@@ -1819,6 +1822,11 @@ export default function App() {
               {(entry.startDate || entry.endDate) && <div><dt>{t("event_period")}</dt><dd>{[entry.startDate, entry.endDate].filter(Boolean).join(" — ")}</dd></div>}
               <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>
             </dl>
+            {matchingHomeChallenges.length > 0 && <section className="entry-home-challenges">
+              <h3>{t("home_challenges_met")}</h3>
+              <p>{t("home_challenges_met_desc")}</p>
+              <ul>{matchingHomeChallenges.map((challenge) => <li key={challenge.id}>{localizeHomeChallengeTitle(language, challenge, pokemonNames)}</li>)}</ul>
+            </section>}
             <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
             <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && (entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{localizeCatalogText(language, entry.sourceLabel)} ↗</a> : <small>{localizeCatalogText(language, entry.sourceLabel)}</small>)}</section>
           </section>
@@ -1924,9 +1932,9 @@ export default function App() {
             <label
               className="switch-row"
               htmlFor="historical-event-mythicals"
-              aria-label="Historical event Mythicals"
+              aria-label={t("historical_event_mythicals")}
             >
-              <span><b>Historical event Mythicals</b></span>
+              <span><b>{t("historical_event_mythicals")}</b></span>
 
               <GooeyCheckbox
                 id="historical-event-mythicals"
@@ -1990,7 +1998,6 @@ export default function App() {
                 <OriginMarkIcon mark={collection} label={label} className={originMarkIconUrl(collection) ? "filter-mark-icon" : ""} /><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
               </label>;
             })}
-            <div className="catalog-caveat"><b>{groupName(language, "cherish")}</b><span>{t("cherish_beta")}</span></div>
           </section>
 
           <section className="filter-section">

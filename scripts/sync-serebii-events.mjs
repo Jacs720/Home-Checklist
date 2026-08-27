@@ -65,6 +65,20 @@ function markForGames(games) {
   return "Sin marca";
 }
 
+function homeGiftOrigin(description, games) {
+  if (!/\bHOME\b/i.test(games)) return null;
+  const completionGifts = [
+    [/FireRed\s*&\s*LeafGreen Pok[eé]Dex Completion Gift/i, { mark: "GBA", game: "FireRed, LeafGreen" }],
+    [/Legends:\s*Z-A Pok[eé]Dex Completion Gift/i, { mark: "LZA", game: "Legends: Z-A" }],
+    [/Complete Pok[eé]Dex for Brilliant Diamond\s*&\s*Shining Pearl/i, { mark: "BDSP", game: "Brilliant Diamond, Shining Pearl" }],
+    [/Complete Pok[eé]Dex for Legends:\s*Arceus/i, { mark: "LA", game: "Legends: Arceus" }],
+    [/Complete Pok[eé]Dex for Sword\s*&\s*Shield/i, { mark: "SwSh", game: "Sword, Shield" }],
+    [/Complete Pok[eé]Dex for Let's Go, Pikachu\s*&\s*Eevee/i, { mark: "LGPE", game: "Let's Go, Pikachu!, Let's Go, Eevee!" }],
+    [/Complete all three Pok[eé]Dexes in Scarlet\s*&\s*Violet/i, { mark: "SV", game: "Scarlet, Violet" }],
+  ];
+  return completionGifts.find(([pattern]) => pattern.test(description))?.[1] ?? null;
+}
+
 function isUntransferableClassicEvent(games) {
   const hasClassic = /\b(?:Red|Green|Blue|Yellow|Gold|Silver|Crystal)\b/i.test(games);
   const hasLaterGame = /Ruby|Sapphire|Emerald|FireRed|LeafGreen|Diamond|Pearl|Platinum|HeartGold|SoulSilver|Black|White|X|Y|Sun|Moon|Let's Go|Sword|Shield|Arceus|Brilliant|Shining|Scarlet|Violet|Z-A/i.test(games);
@@ -135,11 +149,13 @@ function parseEventPage(html, dex, template, sourceUrl) {
     const endDate = cleanHtml(dates?.[2]) || undefined;
     const games = cleanHtml(block.match(/>Games Available<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/i)?.[1]) || undefined;
     const shiny = /\/Shiny\/|&#9733;|★/i.test(block);
-    const mark = markForGames(games ?? "");
+    const homeOrigin = homeGiftOrigin(description, games ?? "");
+    const mark = homeOrigin?.mark ?? markForGames(games ?? "");
+    const originGame = homeOrigin?.game ?? games;
     const ownOt = /^Yours$/i.test(trainerName ?? "");
     const requirements = {
       ...(gender ? { gender } : {}),
-      ...(games ? { originGame: games } : {}),
+      ...(originGame ? { originGame } : {}),
       ball,
       ...(nature && !/^Any$/i.test(nature) ? { nature } : {}),
       ...(ability ? { ability } : {}),
@@ -176,7 +192,7 @@ function parseEventPage(html, dex, template, sourceUrl) {
       trainerName,
       trainerId,
       acquisitionCategory: "event",
-      game: games,
+      game: originGame,
       gender,
       requirements,
       level,
@@ -221,6 +237,9 @@ const templates = new Map();
 for (const entry of baseDataset.entries) {
   if (!templates.has(entry.dex) || (templates.get(entry.dex).form && !entry.form)) templates.set(entry.dex, entry);
 }
+for (const entry of specialDataset.entries) {
+  if (!templates.has(entry.dex) || (templates.get(entry.dex).form && !entry.form)) templates.set(entry.dex, entry);
+}
 
 const dexes = unique([...indexHtml.matchAll(/\/events\/dex\/(\d{3,4})\.shtml/gi)].map((match) => Number(match[1])))
   .filter((dex) => dex >= 1 && dex <= 1025 && templates.has(dex))
@@ -235,8 +254,38 @@ const pages = await parallelMap(dexes, concurrency, async (dex) => {
 });
 
 const eventEntries = pages.flat().sort((left, right) => left.dex - right.dex || (right.eventYear ?? 0) - (left.eventYear ?? 0) || left.id.localeCompare(right.id));
-const existingEntries = specialDataset.entries.filter((entry) => entry.collection !== "event-dex");
-const entries = [...existingEntries, ...eventEntries];
+const cherishEventsByDex = new Map();
+for (const entry of eventEntries) {
+  if (entry.ball !== "Cherish Ball" || entry.availability === "historical") continue;
+  const events = cherishEventsByDex.get(entry.dex) ?? [];
+  events.push(entry);
+  cherishEventsByDex.set(entry.dex, events);
+}
+const cherishEntries = [...cherishEventsByDex.entries()].map(([dex, events]) => {
+  const template = templates.get(dex);
+  const shinyEligible = events.some((entry) => entry.shinyEligible);
+  return {
+    id: `cherish:${String(dex).padStart(4, "0")}`,
+    collection: "cherish",
+    name: template.name,
+    dex,
+    form: null,
+    types: template.types,
+    keyword: template.keyword ?? template.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    note: `Cherish Ball · verificado en Event Dex · ${shinyEligible ? "shiny señalado" : "sin shiny señalado"}`,
+    artId: template.artId ?? dex,
+    shinyEligible,
+    shinyReview: "verified-correction",
+    availability: "standard",
+    ownOtNormal: false,
+    ownOtShiny: false,
+    dataStatus: "source-backed",
+    sourceLabel: "Serebii · Event Database",
+    sourceUrl: `${ROOT_URL}dex/${String(dex).padStart(3, "0")}.shtml`,
+  };
+}).sort((left, right) => left.dex - right.dex);
+const existingEntries = specialDataset.entries.filter((entry) => entry.collection !== "event-dex" && entry.collection !== "cherish");
+const entries = [...existingEntries, ...cherishEntries, ...eventEntries];
 const counts = Object.fromEntries(unique(entries.map((entry) => entry.collection)).map((collection) => [collection, entries.filter((entry) => entry.collection === collection).length]));
 const output = {
   ...specialDataset,
@@ -245,10 +294,10 @@ const output = {
     generatedAt: new Date().toISOString().slice(0, 10),
     entryCount: entries.length,
     counts,
-    caveat: "Cherish Ball conserva la lista aproximada anterior; Event Dex se sincroniza por distribución desde Serebii.",
+    caveat: "Cherish Ball y Event Dex se sincronizan por distribución desde Serebii.",
   },
   entries,
 };
 
 await writeFile(OUTPUT_PATH, `${JSON.stringify(output)}\n`, "utf8");
-console.log(`Wrote ${eventEntries.length} event distributions across ${dexes.length} species pages to ${OUTPUT_PATH.pathname}`);
+console.log(`Wrote ${eventEntries.length} event distributions and ${cherishEntries.length} verified Cherish Ball species across ${dexes.length} species pages to ${OUTPUT_PATH.pathname}`);
