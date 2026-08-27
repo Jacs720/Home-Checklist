@@ -599,7 +599,9 @@ function eventMythicalsForMark(
         id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}:${variant}`,
         collection: undefined,
         acquisitionCategory: "event" as const,
-        availability: "historical" as const,
+        availability: entry.endDate && !/^No End Date$/i.test(entry.endDate)
+          ? "historical" as const
+          : entry.availability,
         normalEligible: variant === "normal",
         shinyEligible: variant === "shiny",
         ownOtNormal: false,
