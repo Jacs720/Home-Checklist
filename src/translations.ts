@@ -286,6 +286,7 @@ const FEATURE_EN: Copy = {
   generation: "Generation", summary_entries: "entries", availability_breakdown: "AVAILABILITY BREAKDOWN", summary_filters_note: "Figures follow your active collection profile and filters.",
   game_planner: "What can I get in this game?", game_planner_desc: "Choose a title to turn your current missing entries into a focused capture and transfer plan.",
   select_game: "Select a game", obtainable_missing: "missing entries you can work on", game_plan_complete: "You already have every matching entry in this plan.",
+  best_games_to_progress: "BEST GAMES TO ADVANCE YOUR COLLECTION", obtainable_missing_count: "OBTAINABLE MISSING", missing_obtainable: "missing obtainable", open_game_planner: "Open Game Planner for", no_game_recommendations: "No game has missing entries for the active plan.",
   game_plan_caveat: "Based on origin marks and cataloged in-game sources. Version-exclusive encounters may still require the paired title or a trade.", show_more: "Show more", remaining_results: "more results",
   game_sv: "Pokémon Scarlet / Violet", game_lza: "Pokémon Legends: Z-A", game_swsh: "Pokémon Sword / Shield", game_pla: "Pokémon Legends: Arceus",
   game_bdsp: "Brilliant Diamond / Shining Pearl", game_lgpe: "Pokémon: Let's Go", game_usum: "Sun / Moon / Ultra Sun / Ultra Moon", game_kalos_hoenn: "X / Y / Omega Ruby / Alpha Sapphire",
@@ -347,6 +348,7 @@ const FEATURE_ES: Copy = {
   generation: "Generación", summary_entries: "entradas", availability_breakdown: "DISTRIBUCIÓN POR DISPONIBILIDAD", summary_filters_note: "Las cifras respetan el perfil de colección y los filtros activos.",
   game_planner: "¿Qué puedo conseguir en este juego?", game_planner_desc: "Elige un título para convertir tus faltantes actuales en un plan concreto de captura y transferencia.",
   select_game: "Selecciona un juego", obtainable_missing: "faltantes que puedes trabajar", game_plan_complete: "Ya tienes todas las entradas que corresponden a este plan.",
+  best_games_to_progress: "MEJORES JUEGOS PARA AVANZAR TU COLECCIÓN", obtainable_missing_count: "FALTANTES OBTENIBLES", missing_obtainable: "faltantes obtenibles", open_game_planner: "Abrir el Game Planner para", no_game_recommendations: "Ningún juego tiene faltantes para el plan activo.",
   game_plan_caveat: "Basado en marcas de origen y fuentes internas catalogadas. Los exclusivos de versión todavía pueden requerir el juego complementario o un intercambio.", show_more: "Mostrar más", remaining_results: "resultados adicionales",
   game_sv: "Pokémon Escarlata / Púrpura", game_lza: "Leyendas Pokémon: Z-A", game_swsh: "Pokémon Espada / Escudo", game_pla: "Leyendas Pokémon: Arceus",
   game_bdsp: "Diamante Brillante / Perla Reluciente", game_lgpe: "Pokémon: Let's Go", game_usum: "Sol / Luna / Ultrasol / Ultraluna", game_kalos_hoenn: "X / Y / Rubí Omega / Zafiro Alfa",
@@ -406,6 +408,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   DEU: {
     summary_view: "Übersicht", collection_summary: "Sammlungsübersicht", pokemon_registered: "Registrierte Pokémon", pokemon_missing: "Fehlend", completion: "Fortschritt", by_generation: "NACH GENERATION", by_origin: "NACH HERKUNFT", generation: "Generation", summary_entries: "Einträge", availability_breakdown: "NACH VERFÜGBARKEIT",
     game_planner: "Was kann ich in diesem Spiel bekommen?", select_game: "Spiel auswählen", obtainable_missing: "fehlende verfügbare Einträge", game_plan_complete: "Alle passenden Einträge dieses Plans sind bereits vorhanden.", show_more: "Mehr anzeigen", remaining_results: "weitere Ergebnisse",
+    best_games_to_progress: "BESTE SPIELE FÜR DEINEN SAMMLUNGSFORTSCHRITT", obtainable_missing_count: "ERHÄLTLICHE FEHLENDE", missing_obtainable: "erhältliche fehlende", open_game_planner: "Spielplaner öffnen für", no_game_recommendations: "Für den aktiven Plan fehlen in keinem Spiel Einträge.",
     game_sv: "Pokémon Karmesin / Purpur", game_lza: "Pokémon-Legenden: Z-A", game_swsh: "Pokémon Schwert / Schild", game_pla: "Pokémon-Legenden: Arceus", game_bdsp: "Strahlender Diamant / Leuchtende Perle", game_lgpe: "Pokémon: Let's Go", game_usum: "Sonne / Mond / Ultrasonne / Ultramond", game_kalos_hoenn: "X / Y / Omega Rubin / Alpha Saphir", game_bw2: "Schwarz 2 / Weiß 2 + Traumradar", game_gb: "Game-Boy-Virtual-Console", game_gba: "GBA-Port-Szenario für Switch",
     undo: "Rückgängig", undo_desc: "Letzte Fortschrittsänderung rückgängig machen", nothing_to_undo: "Nichts rückgängig zu machen", reset_progress: "Gesamten Fortschritt zurücksetzen", confirm_unmark_many: "{count} erhaltene Einträge abwählen?", confirm_reset_progress: "Alle {count} erhaltenen Einträge zurücksetzen?",
     keyboard_shortcuts: "TASTATURKÜRZEL", shortcut_arrows: "Zwischen Plätzen wechseln", shortcut_space: "Erhalten / fehlend", shortcut_favorite: "Ziel", shortcut_search: "Suche fokussieren", shortcut_boxes: "Vorherige / nächste Box", shortcut_undo: "Letzte Änderung rückgängig",
@@ -429,6 +432,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   FRA: {
     summary_view: "Résumé", collection_summary: "Résumé de la collection", pokemon_registered: "Pokémon enregistrés", pokemon_missing: "Manquants", completion: "Progression", by_generation: "PAR GÉNÉRATION", by_origin: "PAR ORIGINE", generation: "Génération", summary_entries: "entrées", availability_breakdown: "PAR DISPONIBILITÉ",
     game_planner: "Que puis-je obtenir dans ce jeu ?", select_game: "Choisir un jeu", obtainable_missing: "entrées manquantes accessibles", game_plan_complete: "Toutes les entrées correspondantes sont déjà obtenues.", show_more: "Afficher plus", remaining_results: "résultats supplémentaires",
+    best_games_to_progress: "MEILLEURS JEUX POUR FAIRE AVANCER VOTRE COLLECTION", obtainable_missing_count: "MANQUANTS OBTENABLES", missing_obtainable: "manquants obtenables", open_game_planner: "Ouvrir le planificateur pour", no_game_recommendations: "Aucun jeu ne contient d’entrée manquante pour le plan actif.",
     game_sv: "Pokémon Écarlate / Violet", game_lza: "Légendes Pokémon : Z-A", game_swsh: "Pokémon Épée / Bouclier", game_pla: "Légendes Pokémon : Arceus", game_bdsp: "Diamant Étincelant / Perle Scintillante", game_lgpe: "Pokémon : Let's Go", game_usum: "Soleil / Lune / Ultra-Soleil / Ultra-Lune", game_kalos_hoenn: "X / Y / Rubis Oméga / Saphir Alpha", game_bw2: "Noir 2 / Blanc 2 + RAdar Pokémon", game_gb: "Console Virtuelle Game Boy", game_gba: "Scénario de portage GBA sur Switch",
     undo: "Annuler", undo_desc: "Annuler la dernière modification", nothing_to_undo: "Aucune modification à annuler", reset_progress: "Réinitialiser la progression", confirm_unmark_many: "Démarquer {count} entrées obtenues ?", confirm_reset_progress: "Réinitialiser les {count} entrées obtenues ?",
     keyboard_shortcuts: "RACCOURCIS CLAVIER", shortcut_arrows: "Changer d'emplacement", shortcut_space: "Obtenu / manquant", shortcut_favorite: "Objectif", shortcut_search: "Activer la recherche", shortcut_boxes: "Boîte précédente / suivante", shortcut_undo: "Annuler la dernière action",
@@ -452,6 +456,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   ITA: {
     summary_view: "Riepilogo", collection_summary: "Riepilogo collezione", pokemon_registered: "Pokémon registrati", pokemon_missing: "Mancanti", completion: "Completamento", by_generation: "PER GENERAZIONE", by_origin: "PER ORIGINE", generation: "Generazione", summary_entries: "voci", availability_breakdown: "PER DISPONIBILITÀ",
     game_planner: "Cosa posso ottenere in questo gioco?", select_game: "Seleziona un gioco", obtainable_missing: "voci mancanti ottenibili", game_plan_complete: "Hai già tutte le voci corrispondenti.", show_more: "Mostra altro", remaining_results: "altri risultati",
+    best_games_to_progress: "MIGLIORI GIOCHI PER FAR PROGREDIRE LA COLLEZIONE", obtainable_missing_count: "MANCANTI OTTENIBILI", missing_obtainable: "mancanti ottenibili", open_game_planner: "Apri il pianificatore per", no_game_recommendations: "Nessun gioco contiene voci mancanti per il piano attivo.",
     game_sv: "Pokémon Scarlatto / Violetto", game_lza: "Leggende Pokémon: Z-A", game_swsh: "Pokémon Spada / Scudo", game_pla: "Leggende Pokémon: Arceus", game_bdsp: "Diamante Lucente / Perla Splendente", game_lgpe: "Pokémon: Let's Go", game_usum: "Sole / Luna / Ultrasole / Ultraluna", game_kalos_hoenn: "X / Y / Rubino Omega / Zaffiro Alpha", game_bw2: "Nero 2 / Bianco 2 + Pokémon Dream Radar", game_gb: "Virtual Console Game Boy", game_gba: "Scenario port GBA su Switch", game_colosseum: "Pokémon Colosseum", game_xd: "Pokémon XD: Tempesta Oscura", game_go: "Pokémon GO",
     undo: "Annulla", undo_desc: "Annulla l'ultima modifica", nothing_to_undo: "Niente da annullare", reset_progress: "Azzera i progressi", confirm_unmark_many: "Deselezionare {count} voci ottenute?", confirm_reset_progress: "Azzerare tutte le {count} voci ottenute?",
     keyboard_shortcuts: "SCORCIATOIE DA TASTIERA", shortcut_arrows: "Sposta tra gli slot", shortcut_space: "Ottenuto / mancante", shortcut_favorite: "Obiettivo", shortcut_search: "Attiva ricerca", shortcut_boxes: "Box precedente / successivo", shortcut_undo: "Annulla ultima modifica",
@@ -475,6 +480,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   JPN: {
     summary_view: "サマリー", collection_summary: "コレクション概要", pokemon_registered: "登録済みポケモン", pokemon_missing: "未登録", completion: "達成率", by_generation: "世代別", by_origin: "出身別", generation: "第", summary_entries: "件", availability_breakdown: "入手状況別",
     game_planner: "このソフトで入手できるポケモン", select_game: "ソフトを選択", obtainable_missing: "入手可能な未登録項目", game_plan_complete: "該当する項目はすべて登録済みです。", show_more: "さらに表示", remaining_results: "件の追加結果",
+    best_games_to_progress: "コレクションを進めやすいゲーム", obtainable_missing_count: "入手可能な未登録", missing_obtainable: "入手可能な未登録", open_game_planner: "ゲームプランナーを開く：", no_game_recommendations: "現在のプランでは、どのゲームにも未登録項目がありません。",
     game_sv: "ポケットモンスター スカーレット / バイオレット", game_lza: "Pokémon LEGENDS Z-A", game_swsh: "ポケットモンスター ソード / シールド", game_pla: "Pokémon LEGENDS アルセウス", game_bdsp: "ブリリアントダイヤモンド / シャイニングパール", game_lgpe: "Let's Go! ピカチュウ / イーブイ", game_usum: "サン / ムーン / ウルトラサン / ウルトラムーン", game_kalos_hoenn: "X / Y / オメガルビー / アルファサファイア", game_bw2: "ブラック2 / ホワイト2 + ポケモンARサーチャー", game_gb: "ゲームボーイ バーチャルコンソール", game_gba: "Switch向けGBA移植想定", game_colosseum: "ポケモンコロシアム", game_xd: "ポケモンXD 闇の旋風ダーク・ルギア", game_go: "Pokémon GO",
     undo: "元に戻す", undo_desc: "最後の進捗変更を元に戻す", nothing_to_undo: "元に戻せる変更はありません", reset_progress: "進捗をすべてリセット", confirm_unmark_many: "登録済み{count}件を解除しますか？", confirm_reset_progress: "登録済み{count}件をすべてリセットしますか？",
     keyboard_shortcuts: "キーボード操作", shortcut_arrows: "スロット移動", shortcut_space: "登録／未登録", shortcut_favorite: "目標", shortcut_search: "検索へ移動", shortcut_boxes: "前／次のボックス", shortcut_undo: "最後の変更を元に戻す",
@@ -498,6 +504,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   KOR: {
     summary_view: "요약", collection_summary: "컬렉션 요약", pokemon_registered: "등록한 포켓몬", pokemon_missing: "미등록", completion: "완성도", by_generation: "세대별", by_origin: "출신별", generation: "세대", summary_entries: "항목", availability_breakdown: "획득 가능성별",
     game_planner: "이 게임에서 얻을 수 있는 포켓몬", select_game: "게임 선택", obtainable_missing: "얻을 수 있는 미등록 항목", game_plan_complete: "해당하는 항목을 모두 보유하고 있습니다.", show_more: "더 보기", remaining_results: "개의 추가 결과",
+    best_games_to_progress: "컬렉션 진행에 좋은 게임", obtainable_missing_count: "획득 가능한 미보유", missing_obtainable: "획득 가능한 미보유", open_game_planner: "게임 플래너 열기:", no_game_recommendations: "현재 플랜에서 어느 게임에도 미보유 항목이 없습니다.",
     game_sv: "포켓몬스터 스칼렛 / 바이올렛", game_lza: "Pokémon LEGENDS Z-A", game_swsh: "포켓몬스터 소드 / 실드", game_pla: "Pokémon LEGENDS 아르세우스", game_bdsp: "브릴리언트 다이아몬드 / 샤이닝 펄", game_lgpe: "레츠고! 피카츄 / 이브이", game_usum: "썬 / 문 / 울트라썬 / 울트라문", game_kalos_hoenn: "X / Y / 오메가루비 / 알파사파이어", game_bw2: "블랙2 / 화이트2 + 포켓몬 AR 서처", game_gb: "게임보이 버추얼 콘솔", game_gba: "Switch용 GBA 이식 가정", game_colosseum: "포켓몬 콜로세움", game_xd: "Pokémon XD", game_go: "Pokémon GO",
     undo: "실행 취소", undo_desc: "마지막 진행 변경 취소", nothing_to_undo: "취소할 변경이 없습니다", reset_progress: "진행도 초기화", confirm_unmark_many: "보유한 {count}개 항목을 해제할까요?", confirm_reset_progress: "보유한 {count}개 항목을 모두 초기화할까요?",
     keyboard_shortcuts: "키보드 단축키", shortcut_arrows: "슬롯 이동", shortcut_space: "보유 / 미보유", shortcut_favorite: "목표", shortcut_search: "검색으로 이동", shortcut_boxes: "이전 / 다음 박스", shortcut_undo: "마지막 변경 취소",
@@ -521,6 +528,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   CHS: {
     summary_view: "概览", collection_summary: "收藏概览", pokemon_registered: "已登记宝可梦", pokemon_missing: "未登记", completion: "完成度", by_generation: "按世代", by_origin: "按来源", generation: "第", summary_entries: "项", availability_breakdown: "按可获得性",
     game_planner: "这个游戏中能获得什么？", select_game: "选择游戏", obtainable_missing: "可获得的未登记项目", game_plan_complete: "对应项目均已获得。", show_more: "显示更多", remaining_results: "条更多结果",
+    best_games_to_progress: "推进收藏的最佳游戏", obtainable_missing_count: "可获得的未收集项", missing_obtainable: "个可获得的未收集项", open_game_planner: "打开游戏规划器：", no_game_recommendations: "当前方案在任何游戏中都没有未收集项。",
     game_sv: "宝可梦 朱 / 紫", game_lza: "宝可梦传说 Z-A", game_swsh: "宝可梦 剑 / 盾", game_pla: "宝可梦传说 阿尔宙斯", game_bdsp: "晶灿钻石 / 明亮珍珠", game_lgpe: "Let's Go! 皮卡丘 / 伊布", game_usum: "太阳 / 月亮 / 究极之日 / 究极之月", game_kalos_hoenn: "X / Y / 欧米伽红宝石 / 阿尔法蓝宝石", game_bw2: "黑2 / 白2 + 宝可梦梦境雷达", game_gb: "Game Boy 虚拟主机", game_gba: "Switch GBA 移植设想", game_colosseum: "宝可梦 Colosseum", game_xd: "Pokémon XD", game_go: "Pokémon GO",
     undo: "撤销", undo_desc: "撤销上一次进度更改", nothing_to_undo: "没有可撤销的更改", reset_progress: "重置全部进度", confirm_unmark_many: "取消标记 {count} 个已获得项目？", confirm_reset_progress: "重置全部 {count} 个已获得项目？",
     keyboard_shortcuts: "键盘快捷键", shortcut_arrows: "移动位置", shortcut_space: "已获得／未获得", shortcut_favorite: "目标", shortcut_search: "定位搜索", shortcut_boxes: "上一个／下一个盒子", shortcut_undo: "撤销上次更改",
@@ -544,6 +552,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
   CHT: {
     summary_view: "概覽", collection_summary: "收藏概覽", pokemon_registered: "已登記寶可夢", pokemon_missing: "未登記", completion: "完成度", by_generation: "按世代", by_origin: "按來源", generation: "第", summary_entries: "項", availability_breakdown: "按可獲得性",
     game_planner: "這個遊戲中能獲得什麼？", select_game: "選擇遊戲", obtainable_missing: "可獲得的未登記項目", game_plan_complete: "對應項目均已獲得。", show_more: "顯示更多", remaining_results: "筆更多結果",
+    best_games_to_progress: "推進收藏的最佳遊戲", obtainable_missing_count: "可獲得的未收集項目", missing_obtainable: "個可獲得的未收集項目", open_game_planner: "開啟遊戲規劃器：", no_game_recommendations: "目前方案在任何遊戲中都沒有未收集項目。",
     game_sv: "寶可夢 朱 / 紫", game_lza: "寶可夢傳說 Z-A", game_swsh: "寶可夢 劍 / 盾", game_pla: "寶可夢傳說 阿爾宙斯", game_bdsp: "晶燦鑽石 / 明亮珍珠", game_lgpe: "Let's Go! 皮卡丘 / 伊布", game_usum: "太陽 / 月亮 / 究極之日 / 究極之月", game_kalos_hoenn: "X / Y / 終極紅寶石 / 始源藍寶石", game_bw2: "黑2 / 白2 + 寶可夢夢境雷達", game_gb: "Game Boy 虛擬主機", game_gba: "Switch GBA 移植設想", game_colosseum: "寶可夢 Colosseum", game_xd: "Pokémon XD", game_go: "Pokémon GO",
     undo: "復原", undo_desc: "復原上一次進度變更", nothing_to_undo: "沒有可復原的變更", reset_progress: "重設全部進度", confirm_unmark_many: "取消標記 {count} 個已獲得項目？", confirm_reset_progress: "重設全部 {count} 個已獲得項目？",
     keyboard_shortcuts: "鍵盤快速鍵", shortcut_arrows: "移動位置", shortcut_space: "已獲得／未獲得", shortcut_favorite: "目標", shortcut_search: "定位搜尋", shortcut_boxes: "上一個／下一個盒子", shortcut_undo: "復原上次變更",
@@ -710,6 +719,49 @@ const AUSTIN_IMPORT_COPY: Partial<Record<UiLanguage, Copy>> = {
   ...AUSTIN_IMPORT_LOCALIZED,
 };
 
+const NAVIGATION_BACKUP_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": {
+    return_to_query: "← Volver a {count} resultados de “{query}”", return_to_missing: "← Volver a {count} faltantes", return_to_results: "← Volver a {count} resultados",
+    last_external_backup: "Último backup", no_external_backup: "todavía no has creado uno", changes_since_backup: "Has realizado {count} cambios desde entonces.", one_change_since_backup: "Has realizado 1 cambio desde entonces.", create_backup: "Crear backup",
+  },
+  "ES-ES": {
+    return_to_query: "← Volver a {count} resultados de «{query}»", return_to_missing: "← Volver a {count} pendientes", return_to_results: "← Volver a {count} resultados",
+    last_external_backup: "Última copia", no_external_backup: "todavía no has creado una", changes_since_backup: "Has realizado {count} cambios desde entonces.", one_change_since_backup: "Has realizado 1 cambio desde entonces.", create_backup: "Crear copia de seguridad",
+  },
+  ENG: {
+    return_to_query: "← Back to {count} results for “{query}”", return_to_missing: "← Back to {count} missing", return_to_results: "← Back to {count} results",
+    last_external_backup: "Last backup", no_external_backup: "none created yet", changes_since_backup: "You have made {count} changes since then.", one_change_since_backup: "You have made 1 change since then.", create_backup: "Create backup",
+  },
+  DEU: {
+    return_to_query: "← Zurück zu {count} Ergebnissen für „{query}“", return_to_missing: "← Zurück zu {count} fehlenden Einträgen", return_to_results: "← Zurück zu {count} Ergebnissen",
+    last_external_backup: "Letzte Sicherung", no_external_backup: "noch keine erstellt", changes_since_backup: "{count} Änderungen seitdem.", one_change_since_backup: "1 Änderung seitdem.", create_backup: "Sicherung erstellen",
+  },
+  FRA: {
+    return_to_query: "← Retour aux {count} résultats pour « {query} »", return_to_missing: "← Retour aux {count} manquants", return_to_results: "← Retour aux {count} résultats",
+    last_external_backup: "Dernière sauvegarde", no_external_backup: "aucune pour le moment", changes_since_backup: "{count} modifications depuis.", one_change_since_backup: "1 modification depuis.", create_backup: "Créer une sauvegarde",
+  },
+  ITA: {
+    return_to_query: "← Torna ai {count} risultati per “{query}”", return_to_missing: "← Torna ai {count} mancanti", return_to_results: "← Torna ai {count} risultati",
+    last_external_backup: "Ultimo backup", no_external_backup: "non ancora creato", changes_since_backup: "{count} modifiche da allora.", one_change_since_backup: "1 modifica da allora.", create_backup: "Crea backup",
+  },
+  JPN: {
+    return_to_query: "← 「{query}」の検索結果{count}件に戻る", return_to_missing: "← 未入手{count}件に戻る", return_to_results: "← 検索結果{count}件に戻る",
+    last_external_backup: "最終バックアップ", no_external_backup: "まだ作成されていません", changes_since_backup: "以降の変更：{count}件", one_change_since_backup: "以降の変更：1件", create_backup: "バックアップを作成",
+  },
+  KOR: {
+    return_to_query: "← “{query}” 검색 결과 {count}개로 돌아가기", return_to_missing: "← 미보유 {count}개로 돌아가기", return_to_results: "← 결과 {count}개로 돌아가기",
+    last_external_backup: "마지막 백업", no_external_backup: "아직 생성하지 않음", changes_since_backup: "이후 변경 {count}건", one_change_since_backup: "이후 변경 1건", create_backup: "백업 만들기",
+  },
+  CHS: {
+    return_to_query: "← 返回“{query}”的 {count} 个结果", return_to_missing: "← 返回 {count} 个未获得项目", return_to_results: "← 返回 {count} 个结果",
+    last_external_backup: "上次备份", no_external_backup: "尚未创建", changes_since_backup: "此后进行了 {count} 次更改。", one_change_since_backup: "此后进行了 1 次更改。", create_backup: "创建备份",
+  },
+  CHT: {
+    return_to_query: "← 返回「{query}」的 {count} 個結果", return_to_missing: "← 返回 {count} 個未獲得項目", return_to_results: "← 返回 {count} 個結果",
+    last_external_backup: "上次備份", no_external_backup: "尚未建立", changes_since_backup: "此後進行了 {count} 次變更。", one_change_since_backup: "此後進行了 1 次變更。", create_backup: "建立備份",
+  },
+};
+
 const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   "Sin marca": { ENG: "No mark", DEU: "Ohne Zeichen", FRA: "Sans marque", ITA: "Senza marchio", JPN: "マークなし", KOR: "마크 없음", CHS: "无标记", CHT: "無標記" },
   GB: { ENG: "Game Boy", DEU: "Game Boy", FRA: "Game Boy", ITA: "Game Boy", JPN: "ゲームボーイ", KOR: "게임보이", CHS: "Game Boy", CHT: "Game Boy" },
@@ -817,7 +869,17 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? SIDEBAR_COPY[language]?.[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return NAVIGATION_BACKUP_COPY[language]?.[key] ?? AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? SIDEBAR_COPY[language]?.[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+}
+
+export function hasCopy(language: UiLanguage, key: string) {
+  if (key === "box") return true;
+  if (language === "ES-ES" && ["profile_shiny", "shiny_available", "shiny_locked"].includes(key)) return true;
+  if (Object.hasOwn(FORM_FILTER_COPY[language], key)) return true;
+  if (key === "preset_normal" || key === "preset_normal_desc" || key === "normal_living_dex" || key === "normal_living_dex_desc") return true;
+  if (copy(language, key) !== key) return true;
+  return [AUSTIN_IMPORT_EN, FEATURE_EN, GLOBAL_VIEW_COPY.ENG, UI_COPY.ENG, ES]
+    .some((source) => Object.hasOwn(source, key));
 }
 
 export function groupName(language: UiLanguage, key: string) {

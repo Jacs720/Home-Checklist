@@ -44,6 +44,11 @@ const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
   "SV:901:Bloodmoon", "SV:999:Roaming Form",
   "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
 ]);
+
+export function isOwnOtShinyLocked(entry: Pick<PokemonEntry, "mark" | "dex" | "form">) {
+  const formKey = `${entry.mark}:${entry.dex}:${entry.form ?? ""}`;
+  return Boolean(entry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[entry.mark]?.has(entry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
+}
 const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
 const LZA_SHINY_VIVILLON_FORMS = new Set(["Garden", "Meadow"]);
 const VIVILLON_FORM_ART_IDS: Record<string, number> = {
@@ -115,7 +120,8 @@ function expandCollectibleForms(entries: PokemonEntry[]) {
 }
 
 export function applyCatalogCorrections(entries: PokemonEntry[]) {
-  let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(entries)));
+  const uniqueFormIds = entries.map((entry) => entry.id === "LZA:hoopa" && entry.form === "Unbound" ? { ...entry, id: "LZA:hoopa-unbound" } : entry);
+  let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(uniqueFormIds)));
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {
@@ -217,9 +223,7 @@ export function applyCatalogCorrections(entries: PokemonEntry[]) {
     if (correctedEntry.dex === 550 && correctedEntry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(correctedEntry.mark ?? "")) {
       return { ...correctedEntry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
     }
-    const formKey = `${correctedEntry.mark}:${correctedEntry.dex}:${correctedEntry.form ?? ""}`;
-    const isLocked = Boolean(correctedEntry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[correctedEntry.mark]?.has(correctedEntry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
-    if (!isLocked) return correctedEntry;
+    if (!isOwnOtShinyLocked(correctedEntry)) return correctedEntry;
     return { ...correctedEntry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
   });
 }
@@ -386,6 +390,7 @@ export function buildBoxes(
 
         if (
           acquisitions[acquisition] ||
+          unifiedProfile ||
           (includeEventMythicals && isHistoricalEventMythical)
         ) {
           planned.push({
@@ -428,6 +433,18 @@ export function buildBoxes(
     else chunk(originMarkDex ? selectNormalLivingDexEntries(planned) : planned, 30).forEach((boxEntries, index) => {
       boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
     });
+  }
+  if (unifiedProfile && variants.normal) {
+    specialEntries
+      .filter((entry) => entry.availability !== "excluded" && entry.normalEligible !== false)
+      .forEach((entry) => unifiedCandidates.push({
+        ...entry,
+        variant: "normal",
+        ownOt: entry.ownOtNormal,
+        groupKey: entry.collection ?? entry.mark ?? "generic",
+        groupLabel: groupName(language, entry.collection ?? entry.mark ?? "generic"),
+        planId: `${entry.id}:normal`,
+      }));
   }
   if (unifiedProfile) {
     if (collectionPreset === "original_generation") {

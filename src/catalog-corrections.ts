@@ -28,6 +28,8 @@ const GO_ALCREMIE_SWEETS = ["Strawberry", "Berry", "Love", "Star", "Clover", "Fl
 const GO_MINIOR_CORES = ["Red Core", "Orange Core", "Yellow Core", "Green Core", "Blue Core", "Indigo Core", "Violet Core"] as const;
 
 function goFormSlug(form: string) {
+  if (form === "!") return "exclamation";
+  if (form === "?") return "question";
   return form.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 

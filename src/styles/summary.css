@@ -29,7 +29,7 @@
 .progress-bar { height: 5px; overflow: hidden; border-radius: 20px; background: rgba(104, 144, 137, .18); }
 .progress-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #35b99d, var(--teal)); }
 .summary-origin-icon { width: 22px; height: 22px; }
-.availability-panel, .game-planner, .shortcut-guide { grid-column: 1 / -1; }
+.availability-panel, .game-recommendations, .game-planner, .shortcut-guide { grid-column: 1 / -1; }
 .availability-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .availability-summary article { padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(6, 27, 24, .62); }
 .availability-summary span, .availability-summary strong { display: block; }
@@ -41,7 +41,16 @@
 .availability-summary .legacy span { color: #f4b879; }
 .availability-summary .historical { border-color: rgba(177, 139, 234, .3); }
 .availability-summary .historical span { color: #c8a9ee; }
-.game-planner { padding: clamp(18px, 2.6vw, 28px); }
+.game-recommendation-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.game-recommendation-list button { display: grid; grid-template-columns: 25px minmax(0, 1fr) auto 15px; align-items: center; gap: 9px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(6, 28, 25, .68); color: var(--ink); text-align: left; }
+.game-recommendation-list button:hover, .game-recommendation-list button.active { border-color: rgba(85, 224, 192, .42); background: rgba(35, 114, 99, .16); }
+.game-recommendation-list button > strong { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.game-recommendation-list button > span:nth-last-child(2) { color: var(--muted); font-size: 8px; white-space: nowrap; }
+.game-recommendation-list button > span:nth-last-child(2) b { color: var(--teal); font-size: 11px; }
+.game-recommendation-list button > span:last-child { color: var(--teal); font-size: 13px; }
+.game-recommendation-rank { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: rgba(85, 224, 192, .1); color: var(--teal); font-size: 9px; font-weight: 900; }
+.game-recommendation-empty { margin: 0; padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 9px; text-align: center; }
+.game-planner { scroll-margin-top: 18px; padding: clamp(18px, 2.6vw, 28px); }
 .game-plan-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
 .game-plan-header h3 { margin: 0 0 5px; font-size: 22px; letter-spacing: -.035em; }
 .game-plan-header > div > span { color: var(--muted); font-size: 9px; }
@@ -85,11 +94,12 @@ kbd { flex: 0 0 auto; min-width: 31px; padding: 5px 7px; border: 1px solid var(-
   .summary-ring { width: 112px; height: 112px; }
   .summary-ring strong { font-size: 21px; }
   .summary-grid { grid-template-columns: 1fr; }
-  .summary-panel, .availability-panel, .game-planner, .shortcut-guide { grid-column: 1; }
+  .summary-panel, .availability-panel, .game-recommendations, .game-planner, .shortcut-guide { grid-column: 1; }
   .summary-metrics { gap: 5px; }
   .summary-metrics article { padding: 10px 6px; }
   .progress-row { grid-template-columns: minmax(105px, 1.2fr) minmax(60px, 1fr) 32px; }
   .availability-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-recommendation-list { grid-template-columns: 1fr; }
   .game-plan-header { align-items: stretch; flex-direction: column; gap: 14px; }
   .game-plan-header label { flex-basis: auto; }
   .game-results { grid-template-columns: 1fr; }

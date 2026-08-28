@@ -24,10 +24,11 @@ import {
   COLLECTION_PRESETS,
   GAME_PLANS,
   availabilityForEntry,
+  createGamePlanMatcher,
   genericSpecimenKey,
   generationForDex,
-  matchesGamePlan,
   methodKeyForEntry,
+  rankGamePlans,
   reasonKeyForEntry,
   requiresPokemonBank,
   transferKeyForEntry,
@@ -62,6 +63,7 @@ import type {
   FormOptions,
   GenderMode,
   GlobalGroupMode,
+  GlobalReturnContext,
   GlobalSortMode,
   GlobalTooltip,
   ImportNotice,
@@ -79,8 +81,17 @@ import type {
   Variant,
 } from "./app-types";
 import { applyCatalogCorrections, buildBoxes, pokemonArtworkUrl } from "./catalog-planner";
+import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "./navigation-url";
 import { assetUrl, downloadText, normalize, prepareThemeImage } from "./app-utils";
 import { BankBadge, CompactCheckbox, FavoriteButton, GooeyCheckbox, OriginMarkChip, OriginMarkIcon, PokemonArtwork, StyledSelect, originMarkIconUrl } from "./components/ui-controls";
+
+function changedSetEntries<T>(before: ReadonlySet<T>, after: ReadonlySet<T>) {
+  let changes = 0;
+  before.forEach((value) => { if (!after.has(value)) changes += 1; });
+  after.forEach((value) => { if (!before.has(value)) changes += 1; });
+  return changes;
+}
+
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [specialDataset, setSpecialDataset] = useState<SpecialDataset | null>(null);
@@ -124,6 +135,7 @@ export default function App() {
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [locationAnnouncement, setLocationAnnouncement] = useState("");
   const [globalTooltip, setGlobalTooltip] = useState<GlobalTooltip | null>(null);
+  const [globalReturnContext, setGlobalReturnContext] = useState<GlobalReturnContext | null>(null);
   const [query, setQuery] = useState("");
   const [missingOnly, setMissingOnly] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -142,6 +154,8 @@ export default function App() {
   const [collectionGoal, setCollectionGoal] = useState("");
   const [collectionNotes, setCollectionNotes] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [lastExternalBackupAt, setLastExternalBackupAt] = useState<number | null>(null);
+  const [changesSinceBackup, setChangesSinceBackup] = useState(0);
   const [clock, setClock] = useState(() => Date.now());
   const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
   const [austinPreview, setAustinPreview] = useState<AustinJohnPreview | null>(null);
@@ -154,10 +168,14 @@ export default function App() {
   const themeImageRef = useRef<HTMLInputElement>(null);
   const highlightedEntryRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const gamePlannerRef = useRef<HTMLElement>(null);
   const progressHistoryRef = useRef<ProgressSnapshot[]>([]);
   const livingDexProgressStoredRef = useRef(false);
   const livingDexMigrationCheckedRef = useRef(false);
   const transferProcessedRef = useRef(false);
+  const pendingGlobalScrollRef = useRef<number | null>(null);
+  const navigationInitializedRef = useRef(false);
+  const suppressNavigationSyncRef = useRef(false);
   const languageOption = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0];
   const locale = languageOption.locale;
   const t = (key: string) => copy(language, key);
@@ -232,6 +250,8 @@ export default function App() {
         if (typeof value.collectionGoal === "string") setCollectionGoal(value.collectionGoal.slice(0, 8));
         if (typeof value.collectionNotes === "string") setCollectionNotes(value.collectionNotes.slice(0, 2_000));
         if (typeof value.savedAt === "number") setLastSavedAt(value.savedAt);
+        if (typeof value.lastExternalBackupAt === "number") setLastExternalBackupAt(value.lastExternalBackupAt);
+        if (typeof value.changesSinceBackup === "number" && value.changesSinceBackup >= 0) setChangesSinceBackup(Math.floor(value.changesSinceBackup));
       }
       const savedThemes = localStorage.getItem(THEME_STORAGE_KEY);
       if (savedThemes) {
@@ -246,10 +266,10 @@ export default function App() {
     if (!hydrated) return;
     const savedAt = Date.now();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ catalogVersion: CATALOG_VERSION, savedAt, owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup }));
       setLastSavedAt(savedAt);
     } catch { /* Keep the in-memory session usable if browser storage is full. */ }
-  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, hydrated]);
+  }, [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -334,7 +354,7 @@ export default function App() {
   }, [homeChallenges]);
   const homeChallengeDexes = useMemo(() => new Set(homeChallengesByDex.keys()), [homeChallengesByDex]);
   const supportedLivingDexDexes = useMemo(() => new Set(allImportEntries
-    .filter((entry) => !entry.collection && entry.availability !== "excluded" && entry.normalEligible !== false)
+    .filter((entry) => entry.availability !== "excluded" && entry.normalEligible !== false)
     .map((entry) => entry.dex)), [allImportEntries]);
   const entryIsOwned = useCallback((entry: PlannedEntry) => {
     if (normalLivingDex) return livingDexOwned.has(entry.dex) || derivedGenericProgress.normalSpecies.has(entry.dex);
@@ -364,7 +384,9 @@ export default function App() {
     const entries = plannedEntries.filter((entry) => availabilityForEntry(entry) === status);
     return { status, total: entries.length, registered: entries.filter(entryIsOwned).length };
   }), [entryIsOwned, plannedEntries]);
-  const gameMissingEntries = useMemo(() => locatedEntries.filter(({ entry }) => !entryIsOwned(entry) && matchesGamePlan(entry, selectedGamePlan)), [entryIsOwned, locatedEntries, selectedGamePlan]);
+  const gameRecommendations = useMemo(() => rankGamePlans(plannedEntries, entryIsOwned, allImportEntries), [allImportEntries, entryIsOwned, plannedEntries]);
+  const selectedGameMatcher = useMemo(() => createGamePlanMatcher(selectedGamePlan, allImportEntries), [allImportEntries, selectedGamePlan]);
+  const gameMissingEntries = useMemo(() => locatedEntries.filter(({ entry }) => !entryIsOwned(entry) && selectedGameMatcher(entry)), [entryIsOwned, locatedEntries, selectedGameMatcher]);
   const capacityBoxes = Math.ceil(capacity / 30);
   const totalPages = Math.max(1, Math.ceil(Math.max(boxes.length, capacityBoxes) / 30));
   const ownedCount = useMemo(() => plannedEntries.reduce((sum, entry) => sum + Number(entryIsOwned(entry)), 0), [entryIsOwned, plannedEntries]);
@@ -380,6 +402,7 @@ export default function App() {
       const importedIds = new Set(summary.newPlanIds);
       const importedEntries = allImportEntries.filter((entry) => importedIds.has(`${entry.id}:normal`) || importedIds.has(`${entry.id}:shiny`));
       setOwned((current) => new Set([...current, ...summary.newPlanIds]));
+      setChangesSinceBackup((current) => current + summary.newPlanIds.length);
       progressHistoryRef.current = [];
       setUndoDepth(0);
       setCollectionPreset("custom");
@@ -428,6 +451,67 @@ export default function App() {
   useEffect(() => setPageIndex((current) => Math.min(current, totalPages - 1)), [totalPages]);
 
   useEffect(() => {
+    if (!hydrated || !boxes.length) return;
+    const applyHash = () => {
+      const route = parseSharedNavigationHash(window.location.hash);
+      if (!route) return;
+      suppressNavigationSyncRef.current = true;
+      setGlobalReturnContext(null);
+      if (route.kind === "global") {
+        setQuery(route.query);
+        setMissingOnly(route.missingOnly);
+        setFavoritesOnly(false);
+        setHomeChallengesOnly(route.homeChallengesOnly);
+        setPokewalkerOnly(route.pokewalkerOnly);
+        setGlobalSortMode(route.sortMode);
+        setGlobalGroupMode(route.groupMode);
+        setSelectedBoxIndex(null);
+        setGlobalTooltip(null);
+        setViewMode("global");
+      } else if (route.boxIndex < boxes.length) {
+        const box = boxes[route.boxIndex];
+        const slotIndex = Math.min(route.slotIndex, Math.max(0, box.entries.length - 1));
+        const requestedHash = window.location.hash;
+        const applyBoxSelection = () => {
+          if (window.location.hash !== requestedHash) return;
+          setPageIndex(Math.floor(route.boxIndex / 30));
+          setSelectedBoxIndex(route.boxIndex);
+          setKeyboardSlotIndex(slotIndex);
+          setHighlightedPlanId(box.entries[slotIndex]?.planId ?? null);
+          setViewMode("boxes");
+        };
+        setQuery("");
+        setMissingOnly(false);
+        setFavoritesOnly(false);
+        setHomeChallengesOnly(false);
+        setPokewalkerOnly(false);
+        applyBoxSelection();
+        window.setTimeout(applyBoxSelection, 50);
+      }
+      window.setTimeout(() => { suppressNavigationSyncRef.current = false; }, route.kind === "box" ? 80 : 0);
+    };
+    if (!navigationInitializedRef.current) {
+      navigationInitializedRef.current = true;
+      applyHash();
+    }
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [boxes, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !boxes.length || !navigationInitializedRef.current || suppressNavigationSyncRef.current) return;
+    const currentParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (currentParams.has("ocr")) return;
+    const nextHash = viewMode === "global"
+      ? buildGlobalNavigationHash({ query, missingOnly, homeChallengesOnly, pokewalkerOnly, sortMode: globalSortMode, groupMode: globalGroupMode })
+      : viewMode === "boxes" && selectedBoxIndex !== null
+        ? buildBoxNavigationHash(selectedBoxIndex, keyboardSlotIndex)
+        : "";
+    if (window.location.hash === nextHash) return;
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
+  }, [boxes.length, globalGroupMode, globalSortMode, homeChallengesOnly, hydrated, keyboardSlotIndex, missingOnly, pokewalkerOnly, query, selectedBoxIndex, viewMode]);
+
+  useEffect(() => {
     if (viewMode !== "boxes" || selectedBoxIndex === null || !highlightedPlanId) return;
     const frame = window.requestAnimationFrame(() => highlightedEntryRef.current?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -449,6 +533,22 @@ export default function App() {
     return () => {
       window.removeEventListener("scroll", closeTooltip, true);
       window.removeEventListener("resize", closeTooltip);
+    };
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (viewMode !== "global" || pendingGlobalScrollRef.current === null) return;
+    const scrollY = pendingGlobalScrollRef.current;
+    const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "auto" })));
+    const timers = [140, 400].map((delay) => window.setTimeout(() => window.scrollTo({ top: scrollY, behavior: "auto" }), delay));
+    const finalTimer = window.setTimeout(() => {
+      window.scrollTo({ top: scrollY, behavior: "auto" });
+      if (pendingGlobalScrollRef.current === scrollY) pendingGlobalScrollRef.current = null;
+    }, 800);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.clearTimeout(finalTimer);
     };
   }, [viewMode]);
 
@@ -502,6 +602,13 @@ export default function App() {
   })();
   const globalAllOwned = visibleGlobalEntries.length > 0 && visibleGlobalEntries.every(({ entry }) => entryIsOwned(entry));
   const globalBulkLabel = t(globalAllOwned ? "unmark_results" : "mark_results").replace("{count}", visibleGlobalEntries.length.toLocaleString(locale));
+  const globalReturnLabel = globalReturnContext
+    ? globalReturnContext.query
+      ? t("return_to_query").replace("{count}", globalReturnContext.resultsCount.toLocaleString(locale)).replace("{query}", globalReturnContext.query)
+      : globalReturnContext.missingOnly
+        ? t("return_to_missing").replace("{count}", globalReturnContext.resultsCount.toLocaleString(locale))
+        : t("return_to_results").replace("{count}", globalReturnContext.resultsCount.toLocaleString(locale))
+    : "";
 
   const showGlobalTooltip = (element: HTMLButtonElement, located: LocatedEntry) => {
     const rect = element.getBoundingClientRect();
@@ -512,6 +619,20 @@ export default function App() {
   };
 
   const locateEntryInBoxes = (located: LocatedEntry) => {
+    if (viewMode === "global") {
+      setGlobalReturnContext({
+        query,
+        missingOnly,
+        homeChallengesOnly,
+        pokewalkerOnly,
+        sortMode: globalSortMode,
+        groupMode: globalGroupMode,
+        resultsCount: visibleGlobalEntries.length,
+        scrollY: window.scrollY,
+      });
+    } else {
+      setGlobalReturnContext(null);
+    }
     setGlobalTooltip(null);
     setPageIndex(Math.floor(located.box.globalIndex / 30));
     setSelectedBoxIndex(located.box.globalIndex);
@@ -521,20 +642,40 @@ export default function App() {
     setViewMode("boxes");
   };
 
+  const returnToGlobalResults = () => {
+    if (!globalReturnContext) return;
+    pendingGlobalScrollRef.current = globalReturnContext.scrollY;
+    setQuery(globalReturnContext.query);
+    setMissingOnly(globalReturnContext.missingOnly);
+    setFavoritesOnly(false);
+    setHomeChallengesOnly(globalReturnContext.homeChallengesOnly);
+    setPokewalkerOnly(globalReturnContext.pokewalkerOnly);
+    setGlobalSortMode(globalReturnContext.sortMode);
+    setGlobalGroupMode(globalReturnContext.groupMode);
+    setSelectedBoxIndex(null);
+    setGlobalTooltip(null);
+    setGlobalReturnContext(null);
+    setViewMode("global");
+  };
+
   const rememberProgressChange = useCallback((nextOwned: Set<string>, nextLivingDexOwned: Set<number>) => {
+    const changedEntries = changedSetEntries(owned, nextOwned) + changedSetEntries(livingDexOwned, nextLivingDexOwned);
     progressHistoryRef.current = [...progressHistoryRef.current.slice(-29), { owned: new Set(owned), livingDexOwned: new Set(livingDexOwned) }];
     setUndoDepth(progressHistoryRef.current.length);
     setOwned(nextOwned);
     setLivingDexOwned(nextLivingDexOwned);
+    if (changedEntries) setChangesSinceBackup((current) => current + changedEntries);
   }, [livingDexOwned, owned]);
 
   const undoOwned = useCallback(() => {
     const previous = progressHistoryRef.current.pop();
     if (!previous) return;
+    const changedEntries = changedSetEntries(owned, previous.owned) + changedSetEntries(livingDexOwned, previous.livingDexOwned);
     setOwned(previous.owned);
     setLivingDexOwned(previous.livingDexOwned);
     setUndoDepth(progressHistoryRef.current.length);
-  }, []);
+    if (changedEntries) setChangesSinceBackup((current) => current + changedEntries);
+  }, [livingDexOwned, owned]);
 
   const toggleOwned = useCallback((entry: PlannedEntry) => {
     const nextOwned = new Set(owned);
@@ -796,14 +937,16 @@ export default function App() {
     setThemeOpen(false);
   };
 
-  const createBackupPayload = () => ({
+  const createBackupPayload = (backupAt: number) => ({
     type: "home-checklist-backup",
     version: BACKUP_VERSION,
     catalogVersion: CATALOG_VERSION,
-    exportedAt: new Date().toISOString(),
+    exportedAt: new Date(backupAt).toISOString(),
+    lastExternalBackupAt: backupAt,
+    changesSinceBackup: 0,
     progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites] },
     configuration: {
-      selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials,
+      selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
       genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
       availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
@@ -813,11 +956,14 @@ export default function App() {
 
   const exportBackup = (format: "json" | "project") => {
     const projectFile = format === "project";
+    const backupAt = Date.now();
     downloadText(
       projectFile ? "home-checklist-backup.homechecklist" : "home-checklist-backup.json",
-      JSON.stringify(createBackupPayload(), null, 2),
+      JSON.stringify(createBackupPayload(backupAt), null, 2),
       projectFile ? "application/vnd.home-checklist+json" : "application/json",
     );
+    setLastExternalBackupAt(backupAt);
+    setChangesSinceBackup(0);
   };
 
   const exportProgressCsv = () => downloadText("home-checklist-progress.csv", buildOwnedProgressCsv(owned, allImportEntries), "text/csv;charset=utf-8");
@@ -856,6 +1002,7 @@ export default function App() {
       external: typeof savedAcquisitions.external === "boolean" ? savedAcquisitions.external : true,
     });
     if (typeof configuration.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(configuration.includeNonShinySpecials);
+    if (typeof configuration.includeEventMythicals === "boolean") setIncludeEventMythicals(configuration.includeEventMythicals);
     if (configuration.genderMode === "notable" || configuration.genderMode === "all") setGenderMode(configuration.genderMode);
     const savedFormOptions = configuration.formOptions as Record<string, unknown> | undefined;
     if (savedFormOptions) setFormOptions({
@@ -882,6 +1029,10 @@ export default function App() {
     if (Array.isArray(configuration.customBoxes)) setCustomBoxes(configuration.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: box.planIds.filter((id) => typeof id === "string").slice(0, 30) })));
     const parsedThemes = parseThemeConfig(value.themes);
     if (parsedThemes) setThemeConfig(parsedThemes);
+    const exportedAt = typeof value.exportedAt === "string" ? Date.parse(value.exportedAt) : Number.NaN;
+    const backupAt = typeof value.lastExternalBackupAt === "number" ? value.lastExternalBackupAt : exportedAt;
+    setLastExternalBackupAt(Number.isFinite(backupAt) ? backupAt : Date.now());
+    setChangesSinceBackup(0);
     setLocationAnnouncement(t("backup_imported"));
   };
 
@@ -976,6 +1127,17 @@ export default function App() {
   const savedWhen = savedMinutesAgo === null
     ? t("not_saved_yet")
     : savedMinutesAgo < 1 ? t("saved_now") : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-savedMinutesAgo, "minute");
+  const externalBackupWhen = (() => {
+    if (!lastExternalBackupAt) return t("no_external_backup");
+    const ageSeconds = Math.max(0, Math.floor((clock - lastExternalBackupAt) / 1_000));
+    const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+    if (ageSeconds < 60) return formatter.format(-ageSeconds, "second");
+    const ageMinutes = Math.floor(ageSeconds / 60);
+    if (ageMinutes < 60) return formatter.format(-ageMinutes, "minute");
+    const ageHours = Math.floor(ageMinutes / 60);
+    if (ageHours < 24) return formatter.format(-ageHours, "hour");
+    return formatter.format(-Math.floor(ageHours / 24), "day");
+  })();
   const boxBeingRenamed = boxes[renameBoxIndex] ?? null;
   const customBoxEditor = customBoxes.find((box) => box.id === customBoxEditorId) ?? null;
   const normalizedCustomBoxQuery = normalize(customBoxQuery);
@@ -1372,7 +1534,8 @@ export default function App() {
             <span>{t("collection_and_backup")}</span>
             <button className="wide" onClick={() => importRef.current?.click()}>{t("import_collection")}</button><input ref={importRef} type="file" accept=".csv,.json,.homechecklist,text/csv,application/json,application/vnd.home-checklist+json" onChange={importData} hidden />
             <button className="wide austin-import-button" disabled={austinImportBusy} onClick={() => austinImportRef.current?.click()}>{austinImportBusy ? t("austin_reading") : t("austin_import_button")}</button><input ref={austinImportRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importAustinJohnData} hidden />
-            <button onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button className="wide" onClick={() => exportBackup("project")}>{t("export_project")}</button>
+            <div className={`backup-health ${lastExternalBackupAt ? "" : "needs-backup"}`}><strong>{t("last_external_backup")}: {externalBackupWhen}</strong><span>{t(changesSinceBackup === 1 ? "one_change_since_backup" : "changes_since_backup").replace("{count}", changesSinceBackup.toLocaleString(locale))}</span></div>
+            <button onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button className="wide create-backup" onClick={() => exportBackup("project")}>{t("create_backup")}</button>
             <small className="auto-save-status"><i aria-hidden="true" />{t("last_saved")} {savedWhen}</small>
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
@@ -1384,8 +1547,8 @@ export default function App() {
           <div className="utility-row">
             {viewMode !== "summary" && <div className="utility-navigation">
               <nav className={`view-switcher ${viewMode === "global" ? "global-active" : "boxes-active"}`} aria-label={t("choose_view")}>
-                <button type="button" className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
-                <button type="button" className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
+                <button type="button" className={viewMode === "boxes" ? "active" : ""} aria-pressed={viewMode === "boxes"} onClick={() => { setViewMode("boxes"); setGlobalTooltip(null); setGlobalReturnContext(null); }}><span aria-hidden="true">▦</span>{t("boxes_view")}</button>
+                <button type="button" className={viewMode === "global" ? "active" : ""} aria-pressed={viewMode === "global"} onClick={() => { setViewMode("global"); setGlobalTooltip(null); setGlobalReturnContext(null); }}><span aria-hidden="true">◉</span>{t("global_view")}</button>
               </nav>
               {viewMode === "boxes" && <nav className="breadcrumbs">
                 <button className={!selectedBox ? "current" : ""} onClick={() => setSelectedBoxIndex(null)}>{t("page")} {pageIndex + 1}</button>
@@ -1431,7 +1594,7 @@ export default function App() {
                   <div className="progress-list origin-progress-list">{originSummary.map((item) => {
                     const itemProgress = item.total ? Math.round((item.registered / item.total) * 100) : 0;
                     return <div className="progress-row" key={item.key}>
-                      <div><strong>{originMarkIconUrl(item.key) ? <OriginMarkIcon mark={item.key} label={groupName(language, item.key)} className="summary-origin-icon" /> : groupName(language, item.key)}</strong><span>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</span></div>
+                      <div><strong>{originMarkIconUrl(item.key) ? <OriginMarkIcon mark={item.key} label={groupName(language, item.key)} className="summary-origin-icon" /> : item.key === "living-dex" ? t("normal_living_dex") : groupName(language, item.key)}</strong><span>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</span></div>
                       <div className="progress-bar" aria-label={`${itemProgress}%`}><i style={{ width: `${itemProgress}%` }} /></div><b>{itemProgress}%</b>
                     </div>;
                   })}</div>
@@ -1442,7 +1605,26 @@ export default function App() {
                   <div className="availability-summary">{availabilitySummary.map((item) => <article className={item.status} key={item.status}><span>{t(`availability_${item.status}`)}</span><strong>{item.registered.toLocaleString(locale)} / {item.total.toLocaleString(locale)}</strong></article>)}</div>
                 </section>
 
-                <section className="summary-panel game-planner">
+                <section className="summary-panel game-recommendations">
+                  <div className="summary-panel-heading"><span>{t("best_games_to_progress")}</span><b>{t("obtainable_missing_count")}</b></div>
+                  {gameRecommendations.length ? <div className="game-recommendation-list">{gameRecommendations.map((game, index) => <button
+                    className={game.id === selectedGamePlan ? "active" : ""}
+                    key={game.id}
+                    aria-label={`${t("open_game_planner")} ${t(`game_${game.id}`)}`}
+                    onClick={() => {
+                      setSelectedGamePlan(game.id);
+                      setGameResultLimit(24);
+                      window.requestAnimationFrame(() => gamePlannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+                    }}
+                  >
+                    <span className="game-recommendation-rank">{index + 1}</span>
+                    <strong>{t(`game_${game.id}`)}</strong>
+                    <span><b>{game.count.toLocaleString(locale)}</b> {t("missing_obtainable")}</span>
+                    <span aria-hidden="true">→</span>
+                  </button>)}</div> : <p className="game-recommendation-empty">{t("no_game_recommendations")}</p>}
+                </section>
+
+                <section className="summary-panel game-planner" ref={gamePlannerRef} id="game-planner">
                   <div className="game-plan-header">
                     <div><p className="eyebrow teal">{t("game_planner")}</p><h3>{t("obtainable_missing")}</h3></div>
                     <div><span className="sr-only">{t("select_game")}</span><StyledSelect value={selectedGamePlan} options={GAME_PLANS.map((game) => ({ value: game.id, label: t(`game_${game.id}`) }))} onChange={(game) => { setSelectedGamePlan(game); setGameResultLimit(24); }} ariaLabel={t("select_game")} className="game-selector" /></div>
@@ -1590,7 +1772,7 @@ export default function App() {
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || pokewalkerOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => setSelectedBoxIndex(globalIndex)} style={boxThemeStyle(tileTheme)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || pokewalkerOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => { setSelectedBoxIndex(globalIndex); setKeyboardSlotIndex(0); setGlobalReturnContext(null); }} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
@@ -1611,6 +1793,7 @@ export default function App() {
             </>
           ) : (
             <>
+              {globalReturnContext && <button className="return-to-global" onClick={returnToGlobalResults}>{globalReturnLabel}</button>}
               <div className="view-heading box-detail-heading">
                 <div><p className="eyebrow teal">{t("page").toUpperCase()} {Math.floor(selectedBox.globalIndex / 30) + 1} · {t("box")} {String((selectedBox.globalIndex % 30) + 1).padStart(2, "0")}</p><h2>{selectedBox.label}</h2><p>{t("box_instruction")}</p></div>
                 <div className="detail-nav"><button onClick={() => setSelectedBoxIndex(Math.max(0, selectedBox.globalIndex - 1))} disabled={selectedBox.globalIndex === 0}>←</button><button onClick={() => setSelectedBoxIndex(null)}>{t("page_view_button")}</button><button onClick={() => setSelectedBoxIndex(Math.min(boxes.length - 1, selectedBox.globalIndex + 1))} disabled={selectedBox.globalIndex === boxes.length - 1}>→</button></div>

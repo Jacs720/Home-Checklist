@@ -99,6 +99,12 @@
 .backup-actions > span { grid-column: 1 / -1; margin-top: 5px; color: var(--dim); font-size: 7px; font-weight: 800; letter-spacing: .12em; }
 .backup-actions button { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 9px; }
 .backup-actions .wide { grid-column: 1 / -1; }
+.backup-health { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 3px; padding: 10px 11px; border: 1px solid rgba(85, 224, 192, .2); border-radius: 9px; background: rgba(35, 114, 99, .08); }
+.backup-health strong { color: var(--ink); font-size: 9px; line-height: 1.35; }
+.backup-health span { color: var(--muted); font-size: 8px; line-height: 1.4; }
+.backup-health.needs-backup { border-color: rgba(243, 200, 87, .28); background: rgba(243, 200, 87, .06); }
+.backup-actions .create-backup { border-color: rgba(85, 224, 192, .48); background: rgba(35, 114, 99, .18); color: var(--teal); font-weight: 800; }
+.backup-actions .create-backup:hover { border-color: rgba(85, 224, 192, .7); background: rgba(35, 114, 99, .28); color: #d9fff6; }
 .auto-save-status { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--dim); font-size: 8px; }
 .auto-save-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(85, 224, 192, .5); }
 .drawer-scrim { display: none; }

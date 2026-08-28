@@ -242,6 +242,11 @@ type AccessEntry = {
   mark?: string;
   collection?: string;
   dex: number;
+  form?: string | null;
+  variant?: "normal" | "shiny";
+  genericEntry?: boolean;
+  normalEligible?: boolean;
+  shinyEligible?: boolean;
   availability?: "standard" | "historical" | "hypothetical" | "excluded";
   game?: string;
   acquisitionCategory?: "own" | "trade" | "event" | "external";
@@ -282,12 +287,44 @@ export function generationForDex(dex: number) {
   return 9;
 }
 
-export function matchesGamePlan(entry: AccessEntry, planId: GamePlanId) {
+function matchesGamePlanSource(entry: AccessEntry, planId: GamePlanId) {
   const plan = GAME_PLANS.find((candidate) => candidate.id === planId);
-  if (!plan || entry.availability === "hypothetical" || entry.collection === "dream" || entry.collection === "events" || entry.collection === "cherish" || entry.acquisitionCategory === "event") return false;
+  if (!plan || entry.availability === "hypothetical" || entry.availability === "excluded" || entry.collection === "dream" || entry.collection === "events" || entry.collection === "cherish" || entry.acquisitionCategory === "event") return false;
   if (entry.mark && plan.marks?.includes(entry.mark)) return true;
   if (entry.collection && plan.collections?.includes(entry.collection)) return true;
   return entry.collection === "trades" && Boolean(entry.game && plan.gamePattern?.test(entry.game));
+}
+
+function specimenKey(entry: AccessEntry, variant = entry.variant ?? "normal") {
+  return `${entry.dex}:${entry.form ?? ""}:${variant}`;
+}
+
+export function createGamePlanMatcher(planId: GamePlanId, sourceEntries: AccessEntry[] = []) {
+  const obtainableGenericSpecimens = new Set<string>();
+  sourceEntries.forEach((source) => {
+    if (!matchesGamePlanSource(source, planId)) return;
+    if (source.normalEligible !== false) obtainableGenericSpecimens.add(specimenKey(source, "normal"));
+    if (source.shinyEligible) obtainableGenericSpecimens.add(specimenKey(source, "shiny"));
+  });
+  return (entry: AccessEntry) => entry.genericEntry ? obtainableGenericSpecimens.has(specimenKey(entry)) : matchesGamePlanSource(entry, planId);
+}
+
+export function matchesGamePlan(entry: AccessEntry, planId: GamePlanId, sourceEntries: AccessEntry[] = []) {
+  return createGamePlanMatcher(planId, sourceEntries)(entry);
+}
+
+export function rankGamePlans<T extends AccessEntry>(entries: T[], isOwned: (entry: T) => boolean, sourceEntries: AccessEntry[] = []) {
+  return GAME_PLANS.map((game, order) => {
+    const matchesGame = createGamePlanMatcher(game.id, sourceEntries);
+    return {
+      id: game.id,
+      count: entries.reduce((total, entry) => total + Number(!isOwned(entry) && matchesGame(entry)), 0),
+      order,
+    };
+  })
+    .filter((game) => game.count > 0)
+    .sort((left, right) => right.count - left.count || left.order - right.order)
+    .map(({ id, count }) => ({ id, count }));
 }
 
 export function requiresPokemonBank(entry: AccessEntry) {

@@ -77,6 +77,16 @@ export type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; gr
 export type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
 export type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
 export type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
+export type GlobalReturnContext = {
+  query: string;
+  missingOnly: boolean;
+  homeChallengesOnly: boolean;
+  pokewalkerOnly: boolean;
+  sortMode: GlobalSortMode;
+  groupMode: GlobalGroupMode;
+  resultsCount: number;
+  scrollY: number;
+};
 export type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
 export type SelectOption<T extends string | number> = { value: T; label: string; icon?: ReactNode };
 export type CustomBox = { id: string; name: string; planIds: string[] };
