@@ -19,8 +19,9 @@ export function OriginMarkChip({ mark, label, count, selected, onClick }: { mark
     onClick={onClick}
     style={{ "--mark-from": colors.from, "--mark-to": colors.to } as CSSProperties}
   >
-    <span className="origin-mark-chip-dot" aria-hidden="true" />
-    <span className="origin-mark-chip-label">{label}</span>
+    {originMarkIconUrl(mark)
+      ? <OriginMarkIcon mark={mark} label={label} className="origin-mark-chip-icon" />
+      : <span className="origin-mark-chip-unmarked" aria-hidden="true">—</span>}
     <em>{count}</em>
   </button>;
 }
