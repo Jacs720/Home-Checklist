@@ -2008,16 +2008,8 @@ export default function App() {
                 <OriginMarkIcon mark={collection} label={label} className={originMarkIconUrl(collection) ? "filter-mark-icon" : ""} /><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
               </label>;
             })}
-          </section>
-
-          <section className="filter-section">
-            <p className="panel-label">{t("home_challenges")}</p>
             <label className="switch-row" htmlFor="home-challenges-only" aria-label={t("home_challenges_only")}><span><b>{t("home_challenges_only")}</b></span><GooeyCheckbox id="home-challenges-only" checked={homeChallengesOnly} onChange={(event) => setHomeChallengesOnly(event.target.checked)} /></label>
-          </section>
-
-          <section className="filter-section">
-            <p className="panel-label">{t("pokewalker")}</p>
-            <label className="switch-row" htmlFor="pokewalker-only" aria-label={t("pokewalker_only")}><span><b>{t("pokewalker_only")}</b><small>{t("pokewalker_only_desc").replace("{count}", pokewalkerDexes.size.toLocaleString(locale))}</small></span><GooeyCheckbox id="pokewalker-only" checked={pokewalkerOnly} onChange={(event) => setPokewalkerOnly(event.target.checked)} /></label>
+            <label className="switch-row" htmlFor="pokewalker-only" aria-label={t("pokewalker_only")}><span><b>{t("pokewalker_only")}</b></span><GooeyCheckbox id="pokewalker-only" checked={pokewalkerOnly} onChange={(event) => setPokewalkerOnly(event.target.checked)} /></label>
           </section>
 
           <section className="filter-section">
