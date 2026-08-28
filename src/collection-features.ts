@@ -1,9 +1,13 @@
 export type AvailabilityStatus = "current" | "legacy" | "historical" | "hypothetical";
 export type CollectionPreset =
   | "basic"
+  | "shiny_basic"
   | "final"
+  | "shiny_final"
   | "regional"
+  | "shiny_regional"
   | "forms_lite"
+  | "shiny_forms_lite"
   | "forms"
   | "shiny"
   | "origin"
@@ -57,9 +61,13 @@ type SlotCandidate = {
 export const AVAILABILITY_STATUSES: AvailabilityStatus[] = ["current", "legacy", "historical", "hypothetical"];
 export const COLLECTION_PRESETS: CollectionPreset[] = [
   "basic",
+  "shiny_basic",
   "final",
+  "shiny_final",
   "regional",
+  "shiny_regional",
   "forms_lite",
+  "shiny_forms_lite",
   "forms",
   "shiny",
   "origin",
@@ -68,7 +76,20 @@ export const COLLECTION_PRESETS: CollectionPreset[] = [
   "completionist",
   "custom",
 ];
-export const UNIFIED_COLLECTION_PRESETS = new Set<CollectionPreset>(["basic", "final", "regional", "forms_lite", "forms", "shiny", "noah", "original_generation"]);
+export const UNIFIED_COLLECTION_PRESETS = new Set<CollectionPreset>([
+  "basic",
+  "shiny_basic",
+  "final",
+  "shiny_final",
+  "regional",
+  "shiny_regional",
+  "forms_lite",
+  "shiny_forms_lite",
+  "forms",
+  "shiny",
+  "noah",
+  "original_generation",
+]);
 
 const REGIONAL_FORM = /^(?:Alolan|Galarian|Hisuian|Paldean(?:\s|$))/i;
 const REGION_KEYS = ["kanto", "johto", "hoenn", "sinnoh", "unova", "kalos", "alola", "galar", "paldea"] as const;
@@ -114,6 +135,20 @@ function groupedByDex<T extends SlotCandidate>(entries: T[]) {
     groups.set(entry.dex, group);
   }
   return groups;
+}
+
+export function selectLivingDexEntries<T extends SlotCandidate>(entries: T[]) {
+  const specimens = new Map<string, T[]>();
+  for (const entry of entries) {
+    const key = `${entry.dex}:${entry.variant}`;
+    const candidates = specimens.get(key) ?? [];
+    candidates.push(entry);
+    specimens.set(key, candidates);
+  }
+  return [...specimens.values()]
+    .map((candidates) => preferredCandidate(candidates))
+    .filter((entry): entry is T => Boolean(entry))
+    .sort((left, right) => left.dex - right.dex || left.variant.localeCompare(right.variant));
 }
 
 export function selectLivingDexWithRegionalForms<T extends SlotCandidate>(entries: T[]) {

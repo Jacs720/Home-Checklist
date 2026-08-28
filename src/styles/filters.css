@@ -36,12 +36,14 @@
 .origin-mark-chip::before { content: ""; position: absolute; inset: -1px; padding: 1.5px; border-radius: inherit; background: linear-gradient(120deg, var(--mark-from), var(--mark-to)); opacity: 0; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; transition: opacity 160ms ease; }
 .origin-mark-chip-icon { width: 25px; height: 25px; }
 .origin-mark-chip-unmarked { display: grid; place-items: center; width: 25px; height: 25px; color: #aabbb8; font-size: 18px; font-weight: 400; }
+.origin-mark-chip-label { color: rgba(235, 247, 244, .9); font-size: 10px; font-weight: 800; white-space: nowrap; }
 .origin-mark-chip em { color: var(--muted); font-size: 8px; font-style: normal; font-weight: 500; }
 .origin-mark-chip:hover { border-color: var(--line-strong); background: rgba(18, 51, 46, .76); }
 .origin-mark-chip.active { border-color: transparent; background: #102c28; box-shadow: 0 3px 10px rgba(0, 0, 0, .16), 0 0 12px color-mix(in srgb, var(--mark-from) 10%, transparent); }
 .origin-mark-chip.active::before { opacity: 1; }
 .origin-mark-chip.active .origin-mark-chip-icon { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--mark-from) 45%, transparent)); }
 .origin-mark-chip.active .origin-mark-chip-unmarked { color: #f7fffd; }
+.origin-mark-chip.active .origin-mark-chip-label { color: #f7fffd; }
 .origin-mark-chip.active em { color: rgba(247, 255, 253, .68); }
 .origin-mark-chip:focus-visible { outline-color: color-mix(in srgb, var(--mark-from) 55%, var(--teal)); }
 .origin-mark-chip:active { transform: scale(.97); }

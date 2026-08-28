@@ -1,4 +1,4 @@
-import { COLLECTIONS, COLLECTION_ACQUISITIONS, MARKS, MYTHICAL_DEX } from "./app-config";
+import { COLLECTIONS, COLLECTION_ACQUISITIONS, DEFAULT_MARKS, MARKS, MYTHICAL_DEX } from "./app-config";
 import type { Acquisition, FormOptions, GenderMode, PlannedBox, PlannedEntry, PokemonEntry, Variant } from "./app-types";
 import { assetUrl, chunk } from "./app-utils";
 import {
@@ -18,6 +18,7 @@ import {
   genericSpecimenKey,
   regionKeyForGeneration,
   selectFinalFormDexEntries,
+  selectLivingDexEntries,
   selectLivingDexWithRegionalForms,
   selectLivingFormEntries,
   selectLivingFormLiteEntries,
@@ -337,6 +338,7 @@ export function buildBoxes(
   formOptions: FormOptions,
   normalLivingDex: boolean,
   originMarkDex: boolean,
+  originIndependentDex: boolean,
   collectionPreset: CollectionPreset,
   speciesRules: Map<number, SpeciesRule>,
   language: UiLanguage,
@@ -344,8 +346,11 @@ export function buildBoxes(
   const boxes: PlannedBox[] = [];
   const unifiedCandidates: PlannedEntry[] = [];
   const unifiedProfile = normalLivingDex || UNIFIED_COLLECTION_PRESETS.has(collectionPreset);
+  const hasUnifiedEntries = unifiedProfile || originIndependentDex;
+  const separateGroups: Array<{ key: string; label: string; entries: PlannedEntry[] }> = [];
+  const effectiveMarks = originIndependentDex ? DEFAULT_MARKS : selectedMarks;
   const groups = [
-  ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
+  ...MARKS.filter((mark) => effectiveMarks.includes(mark)).map((key) => ({
     key,
     label: groupName(language, key),
     entries: [
@@ -429,12 +434,14 @@ export function buildBoxes(
         }
       }
     }
-    if (unifiedProfile) unifiedCandidates.push(...planned);
-    else chunk(originMarkDex ? selectNormalLivingDexEntries(planned) : planned, 30).forEach((boxEntries, index) => {
-      boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+    if (unifiedProfile || (originIndependentDex && !group.special)) unifiedCandidates.push(...planned);
+    else separateGroups.push({
+      key: group.key,
+      label: group.label,
+      entries: originMarkDex ? selectNormalLivingDexEntries(planned) : planned,
     });
   }
-  if (unifiedProfile && variants.normal) {
+  if ((unifiedProfile || originIndependentDex) && variants.normal) {
     specialEntries
       .filter((entry) => entry.availability !== "excluded" && entry.normalEligible !== false)
       .forEach((entry) => unifiedCandidates.push({
@@ -446,7 +453,7 @@ export function buildBoxes(
         planId: `${entry.id}:normal`,
       }));
   }
-  if (unifiedProfile) {
+  if (hasUnifiedEntries) {
     if (collectionPreset === "original_generation") {
       const originalEntries = selectOriginalGenerationEntries(unifiedCandidates, speciesRules);
       for (let generation = 1; generation <= 9; generation += 1) {
@@ -460,23 +467,32 @@ export function buildBoxes(
         });
       }
     } else {
-      const selected = collectionPreset === "final"
-        ? selectFinalFormDexEntries(unifiedCandidates, speciesRules)
-        : collectionPreset === "regional"
-          ? selectLivingDexWithRegionalForms(unifiedCandidates)
-          : collectionPreset === "forms_lite"
-            ? selectLivingFormLiteEntries(unifiedCandidates)
-            : collectionPreset === "forms" || collectionPreset === "shiny"
-              ? selectLivingFormEntries(unifiedCandidates)
-            : collectionPreset === "noah"
-              ? selectNoahsArkEntries(unifiedCandidates, speciesRules)
-              : selectNormalLivingDexEntries(unifiedCandidates);
-      const groupKey = normalLivingDex ? "living-dex" : `profile-${collectionPreset}`;
-      const groupLabel = normalLivingDex ? copy(language, "normal_living_dex") : copy(language, `profile_${collectionPreset}`);
+      const selected = originIndependentDex
+        ? (formOptions.alternate || formOptions.alcremie || formOptions.minior || genderMode === "all"
+          ? selectLivingFormEntries(unifiedCandidates)
+          : selectLivingDexEntries(unifiedCandidates))
+        : collectionPreset === "final" || collectionPreset === "shiny_final"
+          ? selectFinalFormDexEntries(unifiedCandidates, speciesRules)
+          : collectionPreset === "regional" || collectionPreset === "shiny_regional"
+            ? selectLivingDexWithRegionalForms(unifiedCandidates)
+            : collectionPreset === "forms_lite" || collectionPreset === "shiny_forms_lite"
+              ? selectLivingFormLiteEntries(unifiedCandidates)
+              : collectionPreset === "forms" || collectionPreset === "shiny"
+                ? selectLivingFormEntries(unifiedCandidates)
+                : collectionPreset === "noah"
+                  ? selectNoahsArkEntries(unifiedCandidates, speciesRules)
+                  : selectNormalLivingDexEntries(unifiedCandidates);
+      const groupKey = normalLivingDex ? "living-dex" : originIndependentDex ? "origin-independent-living-dex" : `profile-${collectionPreset}`;
+      const groupLabel = normalLivingDex ? copy(language, "normal_living_dex") : originIndependentDex ? copy(language, "origin_mode_living_dex") : copy(language, `profile_${collectionPreset}`);
       chunk(selected.map((entry) => asGenericSpecimen({ ...entry, groupKey, groupLabel })), 30).forEach((boxEntries, index) => {
         boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
       });
     }
+  }
+  for (const group of separateGroups) {
+    chunk(group.entries, 30).forEach((boxEntries, index) => {
+      boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+    });
   }
   return boxes;
 }

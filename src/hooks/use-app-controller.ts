@@ -105,6 +105,7 @@ export function useAppController() {
   const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
   const [normalLivingDex, setNormalLivingDex] = useState(false);
   const [originMarkDex, setOriginMarkDex] = useState(false);
+  const [originIndependentDex, setOriginIndependentDex] = useState(false);
   const [collectionPreset, setCollectionPreset] = useState<CollectionPreset>("custom");
   const [availabilityFilters, setAvailabilityFilters] = useState<AvailabilityFilters>(DEFAULT_AVAILABILITY_FILTERS);
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
@@ -240,6 +241,15 @@ export function useAppController() {
     if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
     if (typeof value.originMarkDex === "boolean") setOriginMarkDex(value.originMarkDex);
     if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
+    if (typeof value.originIndependentDex === "boolean") {
+      setOriginIndependentDex(value.originIndependentDex);
+      if (value.originIndependentDex) {
+        setSelectedMarks([]);
+        setNormalLivingDex(false);
+        setOriginMarkDex(false);
+        setCollectionPreset("custom");
+      }
+    }
     if (value.availabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, value.availabilityFilters[status] !== false])) as AvailabilityFilters);
     if (typeof value.favoritesOnly === "boolean") setFavoritesOnly(value.favoritesOnly);
     if (typeof value.homeChallengesOnly === "boolean") setHomeChallengesOnly(value.homeChallengesOnly);
@@ -272,6 +282,7 @@ export function useAppController() {
     formOptions,
     normalLivingDex,
     originMarkDex,
+    originIndependentDex,
     collectionPreset,
     availabilityFilters,
     favoritesOnly,
@@ -288,7 +299,7 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
   const { hydrated, lastSavedAt, clock } = usePersistence({
     language,
@@ -305,10 +316,10 @@ export function useAppController() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [austinPreview, themeOpen, detailEntry]);
 
-  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).map((box) => ({
+  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language).map((box) => ({
     ...box,
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language, boxNameOverrides]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, boxNameOverrides]);
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -406,7 +417,7 @@ export function useAppController() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${originIndependentDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}`;
 
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
@@ -747,7 +758,16 @@ export function useAppController() {
   });
 
   const markProfileCustom = () => { setCollectionPreset("custom"); setNormalLivingDex(false); setOriginMarkDex(false); };
-  const toggleMark = (mark: string) => { markProfileCustom(); setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]); };
+  const selectOriginIndependentDex = () => {
+    markProfileCustom();
+    setOriginIndependentDex(true);
+    setSelectedMarks([]);
+  };
+  const toggleMark = (mark: string) => {
+    markProfileCustom();
+    setOriginIndependentDex(false);
+    setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]);
+  };
   const toggleCollection = (collection: string) => { markProfileCustom(); setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]); };
   const setVariant = (variant: Variant) => {
     if (collectionPreset !== "forms" && collectionPreset !== "forms_lite" && collectionPreset !== "shiny") markProfileCustom();
@@ -773,10 +793,15 @@ export function useAppController() {
     setPokewalkerOnly(false);
     setNormalLivingDex(preset === "basic");
     setOriginMarkDex(preset === "origin");
+    setOriginIndependentDex(false);
     if (preset === "basic") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
+    if (preset === "shiny_basic") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
     if (preset === "final") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
+    if (preset === "shiny_final") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
     if (preset === "regional") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
+    if (preset === "shiny_regional") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: true, alcremie: false, minior: false }); }
     if (preset === "forms_lite") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
+    if (preset === "shiny_forms_lite") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "forms") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "shiny") { setVariants({ shiny: true, normal: false }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("all"); setFormOptions({ alternate: true, alcremie: true, minior: true }); }
     if (preset === "origin") { setVariants({ shiny: false, normal: true }); setAcquisitions({ own: true, trade: false, event: false, external: false }); setIncludeNonShinySpecials(false); setSelectedMarks(DEFAULT_MARKS); setSelectedCollections([]); setGenderMode("notable"); setFormOptions({ alternate: false, alcremie: false, minior: false }); }
@@ -940,7 +965,7 @@ export function useAppController() {
     progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites] },
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
-      genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset,
+      genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
       availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
@@ -1005,6 +1030,15 @@ export function useAppController() {
     if (typeof configuration.normalLivingDex === "boolean") setNormalLivingDex(configuration.normalLivingDex);
     if (typeof configuration.originMarkDex === "boolean") setOriginMarkDex(configuration.originMarkDex);
     if (typeof configuration.collectionPreset === "string" && COLLECTION_PRESETS.includes(configuration.collectionPreset as CollectionPreset)) setCollectionPreset(configuration.collectionPreset as CollectionPreset);
+    if (typeof configuration.originIndependentDex === "boolean") {
+      setOriginIndependentDex(configuration.originIndependentDex);
+      if (configuration.originIndependentDex) {
+        setSelectedMarks([]);
+        setNormalLivingDex(false);
+        setOriginMarkDex(false);
+        setCollectionPreset("custom");
+      }
+    }
     const savedAvailabilityFilters = configuration.availabilityFilters as Record<string, unknown> | undefined;
     if (savedAvailabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, savedAvailabilityFilters[status] !== false])) as AvailabilityFilters);
     if (typeof configuration.favoritesOnly === "boolean") setFavoritesOnly(configuration.favoritesOnly);
@@ -1098,13 +1132,16 @@ export function useAppController() {
   };
 
   const markCounts: Record<string, number> = dataset && specialDataset ? Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   })) : {};
   const collectionCounts: Record<string, number> = dataset && specialDataset ? Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   })) : {};
+  const originIndependentCount = dataset && specialDataset
+    ? buildBoxes(dataset.entries, specialDataset.entries, [], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, false, false, true, "custom", speciesRules, language).flatMap((box) => box.entries).length
+    : 0;
   const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
   const favoriteCount = plannedEntries.filter((entry) => favorites.has(entry.planId)).length;
   const availabilityFiltering = AVAILABILITY_STATUSES.some((status) => !availabilityFilters[status]);
@@ -1150,6 +1187,7 @@ export function useAppController() {
     setGenderMode,
     formOptions,
     setFormOptions,
+    originIndependentDex,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,
@@ -1280,6 +1318,7 @@ export function useAppController() {
     updateCustomBox,
     toggleCustomBoxEntry,
     markProfileCustom,
+    selectOriginIndependentDex,
     toggleMark,
     toggleCollection,
     setVariant,
@@ -1303,6 +1342,7 @@ export function useAppController() {
     exportThemeBackup,
     importThemeBackup,
     markCounts,
+    originIndependentCount,
     collectionCounts,
     availabilityCounts,
     favoriteCount,

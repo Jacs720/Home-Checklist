@@ -22,6 +22,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
     setGenderMode,
     formOptions,
     setFormOptions,
+    originIndependentDex,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,
@@ -52,6 +53,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
     progress,
     resetProgress,
     markProfileCustom,
+    selectOriginIndependentDex,
     toggleMark,
     toggleCollection,
     setVariant,
@@ -65,6 +67,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
     exportThemeBackup,
     importThemeBackup,
     markCounts,
+    originIndependentCount,
     collectionCounts,
     availabilityCounts,
     savedWhen,
@@ -188,6 +191,14 @@ export function FilterPanel({ app }: FilterPanelProps) {
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>
             <div className="origin-mark-chip-list" role="group" aria-label={t("origin_marks")}>
+              <OriginMarkChip
+                mark="living-dex"
+                label={t("origin_mode_living_dex")}
+                count={originIndependentCount.toLocaleString(locale)}
+                selected={originIndependentDex}
+                onClick={selectOriginIndependentDex}
+                displayLabel
+              />
               {MARKS.map((mark) => <OriginMarkChip
                 key={mark}
                 mark={mark}

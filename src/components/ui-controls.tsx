@@ -9,7 +9,7 @@ export function CompactCheckbox({ checked, onChange, accent }: { checked: boolea
   return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
 }
 
-export function OriginMarkChip({ mark, label, count, selected, onClick }: { mark: string; label: string; count: string; selected: boolean; onClick: () => void }) {
+export function OriginMarkChip({ mark, label, count, selected, onClick, displayLabel = false }: { mark: string; label: string; count: string; selected: boolean; onClick: () => void; displayLabel?: boolean }) {
   const colors = ORIGIN_MARK_COLORS[mark] ?? { from: "#66827e", to: "#8aa5a3" };
   return <button
     type="button"
@@ -21,7 +21,9 @@ export function OriginMarkChip({ mark, label, count, selected, onClick }: { mark
   >
     {originMarkIconUrl(mark)
       ? <OriginMarkIcon mark={mark} label={label} className="origin-mark-chip-icon" />
-      : <span className="origin-mark-chip-unmarked" aria-hidden="true">—</span>}
+      : displayLabel
+        ? <span className="origin-mark-chip-label">{label}</span>
+        : <span className="origin-mark-chip-unmarked" aria-hidden="true">—</span>}
     <em>{count}</em>
   </button>;
 }

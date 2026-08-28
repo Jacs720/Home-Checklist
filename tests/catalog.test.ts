@@ -6,7 +6,7 @@ import { DEFAULT_MARKS, MARKS } from "../src/app-config";
 import type { Acquisition, Dataset, FormOptions, GenderMode, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
 import { addGoStorableForms } from "../src/catalog-corrections";
 import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/catalog-planner";
-import { GAME_PLANS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
+import { COLLECTION_PRESETS, GAME_PLANS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
@@ -40,6 +40,7 @@ type ProfileOptions = {
   forms?: FormOptions;
   normalLivingDex?: boolean;
   originMarkDex?: boolean;
+  originIndependentDex?: boolean;
 };
 
 function buildProfile(options: ProfileOptions) {
@@ -56,29 +57,47 @@ function buildProfile(options: ProfileOptions) {
     options.forms ?? noForms,
     options.normalLivingDex ?? false,
     options.originMarkDex ?? false,
+    options.originIndependentDex ?? false,
     options.preset,
     speciesRules,
     "ENG",
   );
 }
 
-const canonicalProfiles = {
-  "Living Dex": buildProfile({ preset: "basic", normalLivingDex: true }),
-  "Living Form Dex": buildProfile({ preset: "forms", gender: "all", forms: allForms }),
-  "Shiny Living Dex": buildProfile({ preset: "shiny", variants: { normal: false, shiny: true }, gender: "all", forms: allForms }),
-  "Origin Mark Dex": buildProfile({ preset: "origin", originMarkDex: true }),
-  "Event Dex": buildProfile({ preset: "custom", marks: [], collections: ["event-dex"], variants: { normal: true, shiny: true }, acquisitions: allAcquisitions, includeNonShinySpecials: true, gender: "all", forms: allForms }),
-};
+const canonicalProfileOptions = {
+  "Living Dex": { preset: "basic", normalLivingDex: true },
+  "Final Form Dex": { preset: "final", forms: { ...noForms, alternate: true } },
+  "Living Dex + Regional Forms": { preset: "regional", forms: { ...noForms, alternate: true } },
+  "Living Form Lite": { preset: "forms_lite", gender: "all", forms: allForms },
+  "Living Form Dex": { preset: "forms", gender: "all", forms: allForms },
+  "Shiny Living Dex": { preset: "shiny_basic", variants: { normal: false, shiny: true } },
+  "Shiny Final Form Dex": { preset: "shiny_final", variants: { normal: false, shiny: true }, forms: { ...noForms, alternate: true } },
+  "Shiny Living Dex + Regional Forms": { preset: "shiny_regional", variants: { normal: false, shiny: true }, forms: { ...noForms, alternate: true } },
+  "Shiny Living Form Lite": { preset: "shiny_forms_lite", variants: { normal: false, shiny: true }, gender: "all", forms: allForms },
+  "Shiny Form Living Dex": { preset: "shiny", variants: { normal: false, shiny: true }, gender: "all", forms: allForms },
+  "Origin Mark Dex": { preset: "origin", originMarkDex: true },
+  "Event Dex": { preset: "custom", marks: [], collections: ["event-dex"], variants: { normal: true, shiny: true }, acquisitions: allAcquisitions, includeNonShinySpecials: true, gender: "all", forms: allForms },
+} satisfies Record<string, ProfileOptions>;
+
+type CanonicalProfile = keyof typeof canonicalProfileOptions;
+const canonicalProfiles = Object.fromEntries(Object.entries(canonicalProfileOptions).map(([name, options]) => [name, buildProfile(options)])) as Record<CanonicalProfile, ReturnType<typeof buildProfile>>;
 
 const EXPECTED_PROFILE_COUNTS: Record<keyof typeof canonicalProfiles, number> = {
   "Living Dex": 1025,
+  "Final Form Dex": 606,
+  "Living Dex + Regional Forms": 1082,
+  "Living Form Lite": 1343,
   "Living Form Dex": 1447,
-  "Shiny Living Dex": 1323,
+  "Shiny Living Dex": 981,
+  "Shiny Final Form Dex": 563,
+  "Shiny Living Dex + Regional Forms": 1035,
+  "Shiny Living Form Lite": 1219,
+  "Shiny Form Living Dex": 1323,
   "Origin Mark Dex": 5044,
   "Event Dex": 1880,
 };
 
-function profileEntries(profile: keyof typeof canonicalProfiles) {
+function profileEntries(profile: CanonicalProfile) {
   return canonicalProfiles[profile].flatMap((box) => box.entries);
 }
 
@@ -102,7 +121,7 @@ test("own-OT shiny locks remain excluded", () => {
 });
 
 test("canonical profile counts match catalog snapshots", () => {
-  const actual = Object.fromEntries(Object.keys(canonicalProfiles).map((profile) => [profile, profileEntries(profile as keyof typeof canonicalProfiles).length]));
+  const actual = Object.fromEntries(Object.keys(canonicalProfiles).map((profile) => [profile, profileEntries(profile as CanonicalProfile).length]));
   assert.deepEqual(actual, EXPECTED_PROFILE_COUNTS);
 });
 
@@ -123,15 +142,7 @@ test("all planned entries fit boxes, have unique planIds and deterministic order
       assert.equal(box.globalIndex, index, `${profile} has a non-deterministic global box index`);
       assert.ok(box.entries.length <= 30, `${profile} overfilled box ${index + 1}`);
     });
-    const rebuilt = buildProfile(profile === "Living Dex"
-      ? { preset: "basic", normalLivingDex: true }
-      : profile === "Living Form Dex"
-        ? { preset: "forms", gender: "all", forms: allForms }
-        : profile === "Shiny Living Dex"
-          ? { preset: "shiny", variants: { normal: false, shiny: true }, gender: "all", forms: allForms }
-          : profile === "Origin Mark Dex"
-            ? { preset: "origin", originMarkDex: true }
-            : { preset: "custom", marks: [], collections: ["event-dex"], variants: { normal: true, shiny: true }, acquisitions: allAcquisitions, includeNonShinySpecials: true, gender: "all", forms: allForms });
+    const rebuilt = buildProfile(canonicalProfileOptions[profile as CanonicalProfile]);
     assert.deepEqual(rebuilt.flatMap((box) => box.entries.map((entry) => entry.planId)), entries.map((entry) => entry.planId), `${profile} order changed between identical builds`);
   }
 });
@@ -149,6 +160,20 @@ test("export and import preserve owned progress", () => {
   const secondCsv = buildOwnedProgressCsv(new Set(firstImport.newPlanIds), importEntries);
   const secondImport = matchCollectionRecords(parseCollectionCsv(secondCsv), importEntries, names, new Set());
   assert.deepEqual(new Set(secondImport.newPlanIds), expected);
+});
+
+test("custom Living Dex mode removes origin requirements while preserving custom form filters", () => {
+  const basic = buildProfile({ preset: "custom", marks: [], originIndependentDex: true });
+  const basicEntries = basic.flatMap((box) => box.entries);
+  assert.equal(basicEntries.length, 1025);
+  assert.ok(basicEntries.every((entry) => entry.genericEntry && !entry.mark && !entry.collection));
+
+  const withForms = buildProfile({ preset: "custom", marks: [], originIndependentDex: true, gender: "all", forms: allForms });
+  assert.ok(withForms.flatMap((box) => box.entries).some((entry) => entry.dex === 901 && entry.form === "Bloodmoon"));
+
+  const withSpecialCollection = buildProfile({ preset: "custom", marks: [], collections: ["n"], originIndependentDex: true, acquisitions: allAcquisitions });
+  assert.equal(withSpecialCollection[0]?.groupKey, "origin-independent-living-dex");
+  assert.ok(withSpecialCollection.some((box) => box.groupKey === "n"), "selected special collections should remain separate");
 });
 
 test("game recommendations use the planner rules and a stable tie break", () => {
@@ -191,6 +216,8 @@ test("required interface copy exists in every available language", async () => {
   const literalKeys = [...appSource.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1]);
   const dynamicKeys = [
     ...GAME_PLANS.map((game) => `game_${game.id}`),
+    ...COLLECTION_PRESETS.flatMap((preset) => [`profile_${preset}`, `profile_${preset}_desc`]),
+    "origin_mode_living_dex",
     "best_games_to_progress", "obtainable_missing_count", "missing_obtainable", "open_game_planner", "no_game_recommendations",
   ];
   const requiredKeys = [...new Set([...literalKeys, ...dynamicKeys])];
