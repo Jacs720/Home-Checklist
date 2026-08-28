@@ -139,7 +139,7 @@ export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[
   const forms = new Map<string, T[]>();
   for (const entry of entries) {
     if (entry.genderVariant === "extra") continue;
-    const key = `${entry.dex}:${entry.form ?? ""}`;
+    const key = `${entry.dex}:${entry.form ?? ""}:${entry.variant}`;
     const candidates = forms.get(key) ?? [];
     candidates.push(entry);
     forms.set(key, candidates);
@@ -153,7 +153,7 @@ export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[
 export function selectLivingFormEntries<T extends SlotCandidate>(entries: T[]) {
   const forms = new Map<string, T[]>();
   for (const entry of entries) {
-    const key = `${entry.dex}:${entry.form ?? ""}:${entry.genderVariant ?? "base"}`;
+    const key = `${entry.dex}:${entry.form ?? ""}:${entry.genderVariant ?? "base"}:${entry.variant}`;
     const candidates = forms.get(key) ?? [];
     candidates.push(entry);
     forms.set(key, candidates);
@@ -161,9 +161,9 @@ export function selectLivingFormEntries<T extends SlotCandidate>(entries: T[]) {
   const selected = [...forms.values()]
     .map((candidates) => preferredCandidate(candidates))
     .filter((entry): entry is T => Boolean(entry));
-  const genderedForms = new Set(selected.filter((entry) => entry.genderVariant === "extra").map((entry) => `${entry.dex}:${entry.form ?? ""}`));
+  const genderedForms = new Set(selected.filter((entry) => entry.genderVariant === "extra").map((entry) => `${entry.dex}:${entry.form ?? ""}:${entry.variant}`));
   return selected
-    .map((entry) => genderedForms.has(`${entry.dex}:${entry.form ?? ""}`) && entry.gender
+    .map((entry) => genderedForms.has(`${entry.dex}:${entry.form ?? ""}:${entry.variant}`) && entry.gender
       ? { ...entry, requirements: { ...entry.requirements, gender: entry.gender } }
       : entry)
     .sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? "") || (left.requirements?.gender ?? "").localeCompare(right.requirements?.gender ?? ""));

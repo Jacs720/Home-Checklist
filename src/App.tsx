@@ -1284,7 +1284,7 @@ export default function App() {
   const toggleMark = (mark: string) => { markProfileCustom(); setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]); };
   const toggleCollection = (collection: string) => { markProfileCustom(); setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]); };
   const setVariant = (variant: Variant) => {
-    markProfileCustom();
+    if (collectionPreset !== "forms" && collectionPreset !== "forms_lite" && collectionPreset !== "shiny") markProfileCustom();
     setVariants((current) => {
       const next = { ...current, [variant]: !current[variant] };
       return next.shiny || next.normal ? next : current;
