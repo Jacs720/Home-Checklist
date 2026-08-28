@@ -25,9 +25,6 @@
 .switch-row > span:first-child { display: flex; flex-direction: column; gap: 2px; }
 .switch-row b { font-size: 12px; }
 .switch-row small { color: var(--muted); font-size: 9px; }
-.collection-switch-row > span:first-child { flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 8px; }
-.collection-switch-row b { flex: 1; min-width: 0; }
-.collection-switch-row em { color: var(--muted); font-size: 9px; font-style: normal; }
 .special-normal-row { margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line); }
 .mark-row { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; min-height: 34px; color: #c8dcda; font-size: 11px; cursor: pointer; }
 .mark-row em { color: var(--muted); font-size: 9px; font-style: normal; }

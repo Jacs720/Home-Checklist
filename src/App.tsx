@@ -1294,13 +1294,13 @@ export default function App() {
             <p className="panel-label">{t("special_collections")}</p>
             {COLLECTIONS.map((collection) => {
               const label = groupName(language, collection);
-              return <label className="switch-row collection-switch-row" htmlFor={`collection-${collection}`} key={collection} aria-label={`${label}: ${collectionCounts[collection]?.toLocaleString(locale) ?? 0}`}>
-                <span><OriginMarkIcon mark={collection} label={label} className={originMarkIconUrl(collection) ? "filter-mark-icon" : ""} /><b>{label}</b><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em></span>
-                <GooeyCheckbox id={`collection-${collection}`} checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} />
+              return <label className="mark-row" key={collection} aria-label={`${label}: ${collectionCounts[collection]?.toLocaleString(locale) ?? 0}`}>
+                <CompactCheckbox checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} accent={GROUP_COLORS[collection]} />
+                <OriginMarkIcon mark={collection} label={label} className={originMarkIconUrl(collection) ? "filter-mark-icon" : ""} /><em>{collectionCounts[collection]?.toLocaleString(locale) ?? 0}</em>
               </label>;
             })}
-            <label className="switch-row collection-switch-row" htmlFor="home-challenges-only" aria-label={t("home_challenges_only")}><span><b>{t("home_challenges_only")}</b><em>{homeChallengeDexes.size.toLocaleString(locale)}</em></span><GooeyCheckbox id="home-challenges-only" checked={homeChallengesOnly} onChange={(event) => setHomeChallengesOnly(event.target.checked)} /></label>
-            <label className="switch-row collection-switch-row" htmlFor="pokewalker-only" aria-label={t("pokewalker_only")}><span><b>{t("pokewalker_only")}</b><em>{pokewalkerDexes.size.toLocaleString(locale)}</em></span><GooeyCheckbox id="pokewalker-only" checked={pokewalkerOnly} onChange={(event) => setPokewalkerOnly(event.target.checked)} /></label>
+            <label className="mark-row" aria-label={`${t("home_challenges_only")}: ${homeChallengeDexes.size.toLocaleString(locale)}`}><CompactCheckbox checked={homeChallengesOnly} onChange={() => setHomeChallengesOnly((current) => !current)} accent="#55e0c0" /><span>{t("home_challenges_only")}</span><em>{homeChallengeDexes.size.toLocaleString(locale)}</em></label>
+            <label className="mark-row" aria-label={`${t("pokewalker_only")}: ${pokewalkerDexes.size.toLocaleString(locale)}`}><CompactCheckbox checked={pokewalkerOnly} onChange={() => setPokewalkerOnly((current) => !current)} accent="#55e0c0" /><span>{t("pokewalker_only")}</span><em>{pokewalkerDexes.size.toLocaleString(locale)}</em></label>
           </section>
 
           <section className="filter-section">
