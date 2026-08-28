@@ -31,6 +31,19 @@
 .origin-mark-icon { display: inline-grid; place-items: center; flex: 0 0 auto; }
 .origin-mark-icon img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .72)); }
 .filter-mark-icon { justify-self: start; width: 27px; height: 27px; }
+.origin-mark-chip-list { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 4px; }
+.origin-mark-chip { --mark-from: #66827e; --mark-to: #8aa5a3; position: relative; isolation: isolate; display: inline-flex; flex: 1 1 auto; align-items: center; gap: 7px; min-width: 0; min-height: 32px; padding: 5px 9px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .035); color: rgba(235, 247, 244, .72); font-size: 10px; font-weight: 700; text-align: left; transition: color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.origin-mark-chip::before { content: ""; position: absolute; inset: 0; padding: 1px; border-radius: inherit; background: linear-gradient(120deg, color-mix(in srgb, var(--mark-from) 45%, transparent), color-mix(in srgb, var(--mark-to) 45%, transparent)); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.origin-mark-chip-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: linear-gradient(135deg, var(--mark-from) 0 50%, var(--mark-to) 50% 100%); opacity: .65; transition: opacity 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.origin-mark-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.origin-mark-chip em { margin-left: auto; color: var(--muted); font-size: 8px; font-style: normal; font-weight: 500; }
+.origin-mark-chip:hover { background: rgba(255, 255, 255, .06); color: rgba(245, 255, 252, .95); }
+.origin-mark-chip.active { background: linear-gradient(120deg, color-mix(in srgb, var(--mark-from) 13%, #102c28), color-mix(in srgb, var(--mark-to) 13%, #102c28)); color: #f7fffd; box-shadow: 0 3px 10px rgba(0, 0, 0, .16), 0 0 12px color-mix(in srgb, var(--mark-from) 10%, transparent); }
+.origin-mark-chip.active::before { padding: 1.5px; background: linear-gradient(120deg, var(--mark-from), var(--mark-to)); }
+.origin-mark-chip.active .origin-mark-chip-dot { opacity: 1; box-shadow: 0 0 8px color-mix(in srgb, var(--mark-from) 55%, transparent); transform: scale(1.08); }
+.origin-mark-chip.active em { color: rgba(247, 255, 253, .68); }
+.origin-mark-chip:focus-visible { outline-color: color-mix(in srgb, var(--mark-from) 55%, var(--teal)); }
+.origin-mark-chip:active { transform: scale(.97); }
 .compact-checkbox { --checkbox-accent: var(--teal); display: inline-flex; width: 30px; height: 20px; }
 .compact-checkbox input { appearance: none; position: relative; flex-shrink: 0; width: 30px; height: 20px; margin: 0; border: 0; border-radius: 72px; background: #dfe1e4; cursor: pointer; transition: background-color 100ms ease-out, filter 100ms ease-out; }
 .compact-checkbox input::before { content: ""; position: absolute; inset: -6px; }
@@ -58,6 +71,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gooey-control input:checked + .gooey-splash { animation-duration: 0s; }
   .gooey-check path { transition: none; }
+  .origin-mark-chip, .origin-mark-chip-dot { transition: none; }
 }
 .sub-rule { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 4px; margin: 9px 0 0 22px; padding: 9px; border-left: 2px solid var(--amber); background: rgba(243, 200, 87, .06); cursor: pointer; }
 .sub-rule span { display: flex; flex-direction: column; gap: 2px; }

@@ -35,6 +35,20 @@ export const MARK_COLORS: Record<string, string> = {
   "Sin marca": "#9eb4b1", GB: "#e8cc67", P: "#74b7ea", USUM: "#b18bea", LGPE: "#efaa6f",
   SwSh: "#e57b9e", LA: "#72c8c2", BDSP: "#8fb5f2", SV: "#ef715f", LZA: "#68d2a4", GBA: "#c4e56f",
 };
+export const ORIGIN_MARK_COLORS: Record<string, { from: string; to: string }> = {
+  "Sin marca": { from: "#444444", to: "#e1e1e1" },
+  GB: { from: "#da3914", to: "#2e50d8" },
+  P: { from: "#025da6", to: "#ea1a3e" },
+  USUM: { from: "#f1912b", to: "#5599ca" },
+  LGPE: { from: "#f5da26", to: "#d4924b" },
+  SwSh: { from: "#00a1e9", to: "#bf004f" },
+  LA: { from: "#36597b", to: "#36597b" },
+  BDSP: { from: "#44bae5", to: "#da7d99" },
+  SV: { from: "#f34134", to: "#8334b7" },
+  LZA: { from: "#31ca56", to: "#31ca56" },
+  GBA: { from: "#cd2236", to: "#3d51a7" },
+  go: { from: "#57a6e6", to: "#57a6e6" },
+};
 export const GROUP_COLORS: Record<string, string> = {
   ...MARK_COLORS,
   n: "#8f80de",

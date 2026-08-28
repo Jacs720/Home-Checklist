@@ -48,7 +48,6 @@ import {
   DEFAULT_FORM_OPTIONS,
   DEFAULT_MARKS,
   GROUP_COLORS,
-  MARK_COLORS,
   MARKS,
   STORAGE_KEY,
   THEME_STORAGE_KEY,
@@ -79,7 +78,7 @@ import type {
 } from "./app-types";
 import { applyCatalogCorrections, buildBoxes, pokemonArtworkUrl } from "./catalog-planner";
 import { assetUrl, downloadText, normalize, prepareThemeImage } from "./app-utils";
-import { BankBadge, CompactCheckbox, FavoriteButton, GooeyCheckbox, OriginMarkIcon, PokemonArtwork, StyledSelect, originMarkIconUrl } from "./components/ui-controls";
+import { BankBadge, CompactCheckbox, FavoriteButton, GooeyCheckbox, OriginMarkChip, OriginMarkIcon, PokemonArtwork, StyledSelect, originMarkIconUrl } from "./components/ui-controls";
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [specialDataset, setSpecialDataset] = useState<SpecialDataset | null>(null);
@@ -1281,18 +1280,28 @@ export default function App() {
 
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>
-            {MARKS.map((mark) => {
-              const label = groupName(language, mark);
-              return <label className="mark-row" key={mark} aria-label={`${label}: ${markCounts[mark]?.toLocaleString(locale) ?? 0}`}>
-                <CompactCheckbox checked={selectedMarks.includes(mark)} onChange={() => toggleMark(mark)} accent={MARK_COLORS[mark]} />
-                <OriginMarkIcon mark={mark} label={label} className={originMarkIconUrl(mark) ? "filter-mark-icon" : ""} /><em>{markCounts[mark]?.toLocaleString(locale) ?? 0}</em>
-              </label>;
-            })}
+            <div className="origin-mark-chip-list" role="group" aria-label={t("origin_marks")}>
+              {MARKS.map((mark) => <OriginMarkChip
+                key={mark}
+                mark={mark}
+                label={groupName(language, mark)}
+                count={markCounts[mark]?.toLocaleString(locale) ?? "0"}
+                selected={selectedMarks.includes(mark)}
+                onClick={() => toggleMark(mark)}
+              />)}
+              <OriginMarkChip
+                mark="go"
+                label={groupName(language, "go")}
+                count={collectionCounts.go?.toLocaleString(locale) ?? "0"}
+                selected={selectedCollections.includes("go")}
+                onClick={() => toggleCollection("go")}
+              />
+            </div>
           </section>
 
           <section className="filter-section">
             <p className="panel-label">{t("special_collections")}</p>
-            {COLLECTIONS.map((collection) => {
+            {COLLECTIONS.filter((collection) => collection !== "go").map((collection) => {
               const label = groupName(language, collection);
               return <label className="mark-row" key={collection} aria-label={`${label}: ${collectionCounts[collection]?.toLocaleString(locale) ?? 0}`}>
                 <CompactCheckbox checked={selectedCollections.includes(collection)} onChange={() => toggleCollection(collection)} accent={GROUP_COLORS[collection]} />

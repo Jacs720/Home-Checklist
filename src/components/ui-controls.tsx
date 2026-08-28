@@ -1,5 +1,5 @@
 import { type ChangeEvent, type CSSProperties, useEffect, useId, useRef, useState } from "react";
-import { ORIGIN_MARK_ICONS } from "../app-config";
+import { ORIGIN_MARK_COLORS, ORIGIN_MARK_ICONS } from "../app-config";
 import type { PlannedEntry, SelectOption } from "../app-types";
 import { assetUrl } from "../app-utils";
 import { pokemonArtworkUrl } from "../catalog-planner";
@@ -7,6 +7,22 @@ import { copy, type UiLanguage } from "../translations";
 
 export function CompactCheckbox({ checked, onChange, accent }: { checked: boolean; onChange: () => void; accent: string }) {
   return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
+}
+
+export function OriginMarkChip({ mark, label, count, selected, onClick }: { mark: string; label: string; count: string; selected: boolean; onClick: () => void }) {
+  const colors = ORIGIN_MARK_COLORS[mark] ?? { from: "#66827e", to: "#8aa5a3" };
+  return <button
+    type="button"
+    className={`origin-mark-chip ${selected ? "active" : ""}`}
+    aria-label={`${label}: ${count}`}
+    aria-pressed={selected}
+    onClick={onClick}
+    style={{ "--mark-from": colors.from, "--mark-to": colors.to } as CSSProperties}
+  >
+    <span className="origin-mark-chip-dot" aria-hidden="true" />
+    <span className="origin-mark-chip-label">{label}</span>
+    <em>{count}</em>
+  </button>;
 }
 
 export function originMarkIconUrl(mark?: string) {
