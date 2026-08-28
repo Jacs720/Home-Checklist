@@ -201,4 +201,5 @@ test("required interface copy exists in every available language", async () => {
   for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) {
     for (const key of rankingKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
   }
+  for (const { code } of LANGUAGE_OPTIONS) assert.match(copy(code, "game_gba"), /Pokémon|ポケットモンスター|포켓몬스터|宝可梦|寶可夢/);
 });
