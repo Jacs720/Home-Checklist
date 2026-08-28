@@ -61,6 +61,8 @@ import type {
   Dataset,
   FormOptions,
   GenderMode,
+  GlobalGroupMode,
+  GlobalSortMode,
   GlobalTooltip,
   ImportNotice,
   LocatedEntry,
@@ -108,6 +110,8 @@ export default function App() {
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<CollectionViewMode>("boxes");
+  const [globalSortMode, setGlobalSortMode] = useState<GlobalSortMode>("home");
+  const [globalGroupMode, setGlobalGroupMode] = useState<GlobalGroupMode>("none");
   const [selectedGamePlan, setSelectedGamePlan] = useState<GamePlanId>("usum");
   const [gameResultLimit, setGameResultLimit] = useState(24);
   const [undoDepth, setUndoDepth] = useState(0);
@@ -460,6 +464,44 @@ export default function App() {
 
   const visibleGlobalEntries = locatedEntries.filter(({ entry }) => matchesSearch(entry));
   const visibleGlobalOwned = visibleGlobalEntries.reduce((sum, { entry }) => sum + Number(entryIsOwned(entry)), 0);
+  const compareByHomeOrder = (a: LocatedEntry, b: LocatedEntry) => a.box.globalIndex - b.box.globalIndex || a.slotIndex - b.slotIndex;
+  const compareLocalized = (a: string, b: string) => a.localeCompare(b, locale, { numeric: true, sensitivity: "base" });
+  const sortedGlobalEntries = [...visibleGlobalEntries].sort((a, b) => {
+    if (globalSortMode === "pokedex") return a.entry.dex - b.entry.dex || compareByHomeOrder(a, b);
+    if (globalSortMode === "generation") return generationForDex(a.entry.dex) - generationForDex(b.entry.dex) || a.entry.dex - b.entry.dex || compareByHomeOrder(a, b);
+    if (globalSortMode === "origin-mark") {
+      const aLabel = a.entry.genericEntry ? t("no_origin_required") : groupName(language, a.entry.mark ?? a.entry.groupKey);
+      const bLabel = b.entry.genericEntry ? t("no_origin_required") : groupName(language, b.entry.mark ?? b.entry.groupKey);
+      return compareLocalized(aLabel, bLabel) || a.entry.dex - b.entry.dex || compareByHomeOrder(a, b);
+    }
+    if (globalSortMode === "missing-first") return Number(entryIsOwned(a.entry)) - Number(entryIsOwned(b.entry)) || compareByHomeOrder(a, b);
+    return compareByHomeOrder(a, b);
+  });
+  const globalEntryGroups = (() => {
+    if (globalGroupMode === "none") return [{ key: "all", label: "", entries: sortedGlobalEntries }];
+    const groups = new Map<string, { key: string; label: string; entries: LocatedEntry[] }>();
+    sortedGlobalEntries.forEach((located) => {
+      const { entry } = located;
+      let key: string;
+      let label: string;
+      if (globalGroupMode === "generation") {
+        key = `generation-${generationForDex(entry.dex)}`;
+        label = `${t("generation")} ${generationForDex(entry.dex)}`;
+      } else if (globalGroupMode === "collection") {
+        key = entry.collection ? `collection-${entry.collection}` : entry.genericEntry ? "collection-generic" : "collection-origin-marks";
+        label = entry.collection ? groupName(language, entry.collection) : entry.genericEntry ? t("generic_specimen") : t("origin_marks");
+      } else {
+        key = entry.genericEntry ? "origin-generic" : `origin-${entry.mark ?? entry.groupKey}`;
+        label = entry.genericEntry ? t("no_origin_required") : groupName(language, entry.mark ?? entry.groupKey);
+      }
+      const group = groups.get(key) ?? { key, label, entries: [] };
+      group.entries.push(located);
+      groups.set(key, group);
+    });
+    return [...groups.values()];
+  })();
+  const globalAllOwned = visibleGlobalEntries.length > 0 && visibleGlobalEntries.every(({ entry }) => entryIsOwned(entry));
+  const globalBulkLabel = t(globalAllOwned ? "unmark_results" : "mark_results").replace("{count}", visibleGlobalEntries.length.toLocaleString(locale));
 
   const showGlobalTooltip = (element: HTMLButtonElement, located: LocatedEntry) => {
     const rect = element.getBoundingClientRect();
@@ -1450,8 +1492,30 @@ export default function App() {
                 <div className="heading-metrics"><span><b>{visibleGlobalEntries.length.toLocaleString(locale)}</b> {t("results")}</span><span><b>{visibleGlobalOwned.toLocaleString(locale)}</b> {t("obtained")}</span></div>
               </div>
 
-              {visibleGlobalEntries.length ? <div className="global-gallery" aria-label={t("global_view")}>
-                {visibleGlobalEntries.map((located) => {
+              <div className="global-toolbar">
+                <div className="global-toolbar-selects">
+                  <label><span>{t("sort_by")}</span><StyledSelect value={globalSortMode} options={[
+                    { value: "home", label: t("sort_home"), icon: <span aria-hidden="true">⌂</span> },
+                    { value: "pokedex", label: t("sort_pokedex"), icon: <span aria-hidden="true">#</span> },
+                    { value: "generation", label: t("sort_generation"), icon: <span aria-hidden="true">Ⅰ</span> },
+                    { value: "origin-mark", label: t("sort_origin_mark"), icon: <span aria-hidden="true">◇</span> },
+                    { value: "missing-first", label: t("sort_missing_first"), icon: <span aria-hidden="true">○</span> },
+                  ]} onChange={setGlobalSortMode} ariaLabel={t("sort_by")} className="global-control-select" /></label>
+                  <label><span>{t("group_by")}</span><StyledSelect value={globalGroupMode} options={[
+                    { value: "none", label: t("group_none"), icon: <span aria-hidden="true">—</span> },
+                    { value: "origin-mark", label: t("group_origin_mark"), icon: <span aria-hidden="true">◇</span> },
+                    { value: "generation", label: t("group_generation"), icon: <span aria-hidden="true">Ⅰ</span> },
+                    { value: "collection", label: t("group_collection"), icon: <span aria-hidden="true">▦</span> },
+                  ]} onChange={setGlobalGroupMode} ariaLabel={t("group_by")} className="global-control-select" /></label>
+                </div>
+                <button className={`global-bulk-action ${globalAllOwned ? "all-owned" : ""}`} disabled={!visibleGlobalEntries.length} onClick={() => toggleEntries(visibleGlobalEntries.map(({ entry }) => entry))}><span aria-hidden="true">✓</span><b>{globalBulkLabel}</b></button>
+              </div>
+
+              {visibleGlobalEntries.length ? <div className="global-result-groups">
+                {globalEntryGroups.map((group) => <section className={`global-result-group ${globalGroupMode === "none" ? "ungrouped" : ""}`} key={group.key}>
+                  {globalGroupMode !== "none" && <div className="global-group-heading"><h3>{group.label}<span aria-hidden="true">—</span><b>{group.entries.length.toLocaleString(locale)}</b></h3></div>}
+                  <div className="global-gallery" aria-label={globalGroupMode === "none" ? t("global_view") : `${t("global_view")}: ${group.label}`}>
+                {group.entries.map((located) => {
                   const { entry, box, slotIndex } = located;
                   const localizedName = displayName(entry);
                   const localizedForm = displayForm(entry);
@@ -1482,6 +1546,8 @@ export default function App() {
                     <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="global-favorite" />
                   </div>;
                 })}
+                  </div>
+                </section>)}
               </div> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
 
               {globalTooltip && (() => {
