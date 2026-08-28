@@ -23,6 +23,7 @@ import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
   GAME_PLANS,
+  UNIFIED_COLLECTION_PRESETS,
   availabilityForEntry,
   createGamePlanMatcher,
   genericSpecimenKey,
@@ -757,16 +758,30 @@ export function useAppController() {
     return { ...box, planIds: [...box.planIds, planId] };
   });
 
-  const markProfileCustom = () => { setCollectionPreset("custom"); setNormalLivingDex(false); setOriginMarkDex(false); };
+  const presetUsesOriginIndependentDex = UNIFIED_COLLECTION_PRESETS.has(collectionPreset);
+  const originIndependentSelected = originIndependentDex || presetUsesOriginIndependentDex;
+  const markProfileCustom = () => {
+    setCollectionPreset("custom");
+    setNormalLivingDex(false);
+    setOriginMarkDex(false);
+    if (originIndependentSelected) {
+      setOriginIndependentDex(true);
+      setSelectedMarks([]);
+    }
+  };
   const selectOriginIndependentDex = () => {
+    if (originIndependentSelected) return;
     markProfileCustom();
     setOriginIndependentDex(true);
     setSelectedMarks([]);
   };
   const toggleMark = (mark: string) => {
+    const switchingFromOriginIndependent = originIndependentSelected;
     markProfileCustom();
     setOriginIndependentDex(false);
-    setSelectedMarks((current) => current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]);
+    setSelectedMarks((current) => switchingFromOriginIndependent
+      ? [mark]
+      : current.includes(mark) ? current.filter((item) => item !== mark) : [...current, mark]);
   };
   const toggleCollection = (collection: string) => { markProfileCustom(); setSelectedCollections((current) => current.includes(collection) ? current.filter((item) => item !== collection) : [...current, collection]); };
   const setVariant = (variant: Variant) => {
@@ -1139,9 +1154,11 @@ export function useAppController() {
     const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   })) : {};
-  const originIndependentCount = dataset && specialDataset
-    ? buildBoxes(dataset.entries, specialDataset.entries, [], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, false, false, true, "custom", speciesRules, language).flatMap((box) => box.entries).length
-    : 0;
+  const originIndependentCount = originIndependentSelected
+    ? plannedEntries.filter((entry) => entry.genericEntry).length
+    : dataset && specialDataset
+      ? buildBoxes(dataset.entries, specialDataset.entries, [], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, false, false, true, "custom", speciesRules, language).flatMap((box) => box.entries).length
+      : 0;
   const availabilityCounts = Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, plannedEntries.filter((entry) => availabilityForEntry(entry) === status).length])) as Record<AvailabilityStatus, number>;
   const favoriteCount = plannedEntries.filter((entry) => favorites.has(entry.planId)).length;
   const availabilityFiltering = AVAILABILITY_STATUSES.some((status) => !availabilityFilters[status]);
@@ -1188,6 +1205,7 @@ export function useAppController() {
     formOptions,
     setFormOptions,
     originIndependentDex,
+    originIndependentSelected,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,

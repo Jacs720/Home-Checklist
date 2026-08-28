@@ -6,7 +6,7 @@ import { DEFAULT_MARKS, MARKS } from "../src/app-config";
 import type { Acquisition, Dataset, FormOptions, GenderMode, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
 import { addGoStorableForms } from "../src/catalog-corrections";
 import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/catalog-planner";
-import { COLLECTION_PRESETS, GAME_PLANS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
+import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
@@ -174,6 +174,14 @@ test("custom Living Dex mode removes origin requirements while preserving custom
   const withSpecialCollection = buildProfile({ preset: "custom", marks: [], collections: ["n"], originIndependentDex: true, acquisitions: allAcquisitions });
   assert.equal(withSpecialCollection[0]?.groupKey, "origin-independent-living-dex");
   assert.ok(withSpecialCollection.some((box) => box.groupKey === "n"), "selected special collections should remain separate");
+});
+
+test("profiles without origin requirements are explicitly classified as Living Dex profiles", () => {
+  assert.deepEqual([...UNIFIED_COLLECTION_PRESETS], [
+    "basic", "shiny_basic", "final", "shiny_final", "regional", "shiny_regional",
+    "forms_lite", "shiny_forms_lite", "forms", "shiny", "noah", "original_generation",
+  ]);
+  for (const preset of ["origin", "completionist", "custom"] as const) assert.equal(UNIFIED_COLLECTION_PRESETS.has(preset), false);
 });
 
 test("game recommendations use the planner rules and a stable tie break", () => {

@@ -9,11 +9,11 @@ export function CompactCheckbox({ checked, onChange, accent }: { checked: boolea
   return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
 }
 
-export function OriginMarkChip({ mark, label, count, selected, onClick, displayLabel = false }: { mark: string; label: string; count: string; selected: boolean; onClick: () => void; displayLabel?: boolean }) {
+export function OriginMarkChip({ mark, label, count, selected, onClick, displayLabel = false, className = "" }: { mark: string; label: string; count: string; selected: boolean; onClick: () => void; displayLabel?: boolean; className?: string }) {
   const colors = ORIGIN_MARK_COLORS[mark] ?? { from: "#66827e", to: "#8aa5a3" };
   return <button
     type="button"
-    className={`origin-mark-chip ${selected ? "active" : ""}`}
+    className={`origin-mark-chip ${selected ? "active" : ""} ${className}`}
     aria-label={`${label}: ${count}`}
     aria-pressed={selected}
     onClick={onClick}

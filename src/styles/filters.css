@@ -33,6 +33,7 @@
 .filter-mark-icon { justify-self: start; width: 27px; height: 27px; }
 .origin-mark-chip-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 4px; }
 .origin-mark-chip { --mark-from: #66827e; --mark-to: #8aa5a3; position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 40px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 11px; background: rgba(14, 44, 40, .65); color: rgba(235, 247, 244, .72); transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.origin-mark-chip.origin-independent-chip { grid-column: 1 / -1; }
 .origin-mark-chip::before { content: ""; position: absolute; inset: -1px; padding: 1.5px; border-radius: inherit; background: linear-gradient(120deg, var(--mark-from), var(--mark-to)); opacity: 0; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; transition: opacity 160ms ease; }
 .origin-mark-chip-icon { width: 25px; height: 25px; }
 .origin-mark-chip-unmarked { display: grid; place-items: center; width: 25px; height: 25px; color: #aabbb8; font-size: 18px; font-weight: 400; }

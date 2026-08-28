@@ -22,7 +22,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
     setGenderMode,
     formOptions,
     setFormOptions,
-    originIndependentDex,
+    originIndependentSelected,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,
@@ -195,16 +195,17 @@ export function FilterPanel({ app }: FilterPanelProps) {
                 mark="living-dex"
                 label={t("origin_mode_living_dex")}
                 count={originIndependentCount.toLocaleString(locale)}
-                selected={originIndependentDex}
+                selected={originIndependentSelected}
                 onClick={selectOriginIndependentDex}
                 displayLabel
+                className="origin-independent-chip"
               />
               {MARKS.map((mark) => <OriginMarkChip
                 key={mark}
                 mark={mark}
                 label={groupName(language, mark)}
                 count={markCounts[mark]?.toLocaleString(locale) ?? "0"}
-                selected={selectedMarks.includes(mark)}
+                selected={!originIndependentSelected && selectedMarks.includes(mark)}
                 onClick={() => toggleMark(mark)}
               />)}
               <OriginMarkChip
