@@ -1,0 +1,83 @@
+import type { ReactNode } from "react";
+import type { ThemeGame } from "./box-themes";
+import type { AvailabilityStatus, SpecimenRequirements } from "./collection-features";
+import type { ImportMatchSummary } from "./import-export";
+import type { UiLanguage } from "./translations";
+
+export type PokemonEntry = {
+  id: string;
+  sourceNumber?: number;
+  mark?: string;
+  collection?: string;
+  name: string;
+  dex: number;
+  form: string | null;
+  types: string[];
+  keyword: string;
+  note: string;
+  artId: number | null;
+  shinyArtStyle?: "home";
+  shinyEligible: boolean;
+  shinyReview: "verified-correction" | "pending";
+  availability: "standard" | "historical" | "hypothetical" | "excluded";
+  normalEligible?: boolean;
+  ownOtNormal: boolean;
+  ownOtShiny: boolean;
+  dataStatus?: "source-backed" | "approximate";
+  sourceLabel?: string;
+  sourceUrl?: string;
+  displayDetail?: string;
+  trainerName?: string;
+  nickname?: string;
+  partnerRibbon?: boolean;
+  acquisitionCategory?: "own" | "trade" | "event" | "external";
+  game?: string;
+  gender?: "male" | "female";
+  genderDifferenceTier?: "notable" | "all";
+  genderVariant?: "base" | "extra";
+  requirements?: SpecimenRequirements;
+  level?: number;
+  trainerId?: string;
+  ball?: string;
+  nature?: string;
+  ability?: string;
+  heldItem?: string;
+  moves?: string[];
+  ribbons?: string[];
+  eventYear?: number;
+  eventLocation?: string;
+  eventType?: string;
+  startDate?: string;
+  endDate?: string;
+  genericEntry?: boolean;
+};
+
+export type Dataset = {
+  meta: { title: string; sourceDate: string; entryCount: number; caveat: string };
+  entries: PokemonEntry[];
+};
+
+export type SpecialDataset = {
+  meta: { title: string; generatedAt: string; entryCount: number; caveat: string; counts: Record<string, number> };
+  entries: PokemonEntry[];
+};
+
+export type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
+export type PokewalkerDataset = { meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; encounterCount: number; caveat: string }; dexes: number[] };
+export type Variant = "shiny" | "normal";
+export type Acquisition = "own" | "trade" | "event" | "external";
+export type GenderMode = "notable" | "all";
+export type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
+export type CollectionViewMode = "boxes" | "global" | "summary";
+export type ThemeScope = "all" | "mark" | "box";
+export type ThemeTab = ThemeGame | "concept" | "custom";
+export type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
+export type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
+export type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
+export type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
+export type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
+export type SelectOption<T extends string | number> = { value: T; label: string; icon?: ReactNode };
+export type CustomBox = { id: string; name: string; planIds: string[] };
+export type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
+export type AustinAppliedNotice = { imported: number; newOwned: number; mode: "merge" | "replace" };
+export type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };

@@ -1,794 +1,85 @@
-import { ChangeEvent, CSSProperties, ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  BoxTheme,
-  BoxThemeConfig,
   BOX_THEME_GAMES,
   CONCEPT_ART_GAMES,
   DEFAULT_BOX_THEME,
   EMPTY_THEME_CONFIG,
   THEME_GAMES,
-  ThemeGame,
   boxThemeKey,
   boxThemeStyle,
   createPresetTheme,
   parseThemeConfig,
   presetThemeName,
   resolveBoxTheme,
+  type BoxTheme,
+  type BoxThemeConfig,
+  type ThemeGame,
 } from "./box-themes";
-import { LANGUAGE_OPTIONS, UiLanguage, copy, formName, groupName, localizeCatalogText } from "./translations";
-import { HomeChallenge, HomeChallengesDataset, localizeHomeChallengeTitle } from "./home-challenges";
-import { addGoStorableForms, addStorableShayminSkyForms, addSwShHisuianEvolutionEntries, correctBloodmoonUrsalunaDex, insertCatalogEntry, markLgpeAlolanFormsAsInGameTrades, removeInvalidGbaKingambit, selectNormalLivingDexEntries } from "./catalog-corrections";
+import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "./translations";
+import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "./home-challenges";
+import { addGoStorableForms } from "./catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "./austin-john-import";
 import {
   AVAILABILITY_STATUSES,
   COLLECTION_PRESETS,
   GAME_PLANS,
-  UNIFIED_COLLECTION_PRESETS,
-  AvailabilityStatus,
-  CollectionPreset,
-  GamePlanId,
-  SpeciesRule,
-  SpeciesRulesDataset,
-  SpecimenRequirements,
   availabilityForEntry,
   genericSpecimenKey,
   generationForDex,
   matchesGamePlan,
   methodKeyForEntry,
   reasonKeyForEntry,
-  regionKeyForGeneration,
   requiresPokemonBank,
-  selectFinalFormDexEntries,
-  selectLivingDexWithRegionalForms,
-  selectLivingFormEntries,
-  selectLivingFormLiteEntries,
-  selectNoahsArkEntries,
-  selectOriginalGenerationEntries,
   transferKeyForEntry,
+  type AvailabilityStatus,
+  type CollectionPreset,
+  type GamePlanId,
+  type SpeciesRule,
+  type SpeciesRulesDataset,
+  type SpecimenRequirements,
 } from "./collection-features";
-import { buildOwnedProgressCsv, decodeOcrTransferHash, matchCollectionRecords, parseCollectionCsv, parseCompactTransfer, type CollectionRecord, type ImportCatalogEntry, type ImportMatchSummary } from "./import-export";
-
-type PokemonEntry = {
-  id: string;
-  sourceNumber?: number;
-  mark?: string;
-  collection?: string;
-  name: string;
-  dex: number;
-  form: string | null;
-  types: string[];
-  keyword: string;
-  note: string;
-  artId: number | null;
-  shinyArtStyle?: "home";
-  shinyEligible: boolean;
-  shinyReview: "verified-correction" | "pending";
-  availability: "standard" | "historical" | "hypothetical" | "excluded";
-  normalEligible?: boolean;
-  ownOtNormal: boolean;
-  ownOtShiny: boolean;
-  dataStatus?: "source-backed" | "approximate";
-  sourceLabel?: string;
-  sourceUrl?: string;
-  displayDetail?: string;
-  trainerName?: string;
-  nickname?: string;
-  partnerRibbon?: boolean;
-  acquisitionCategory?: "own" | "trade" | "event" | "external";
-  game?: string;
-  gender?: "male" | "female";
-  genderDifferenceTier?: "notable" | "all";
-  genderVariant?: "base" | "extra";
-  requirements?: SpecimenRequirements;
-  level?: number;
-  trainerId?: string;
-  ball?: string;
-  nature?: string;
-  ability?: string;
-  heldItem?: string;
-  moves?: string[];
-  ribbons?: string[];
-  eventYear?: number;
-  eventLocation?: string;
-  eventType?: string;
-  startDate?: string;
-  endDate?: string;
-  genericEntry?: boolean;
-};
-
-type Dataset = {
-  meta: { title: string; sourceDate: string; entryCount: number; caveat: string };
-  entries: PokemonEntry[];
-};
-
-type SpecialDataset = {
-  meta: { title: string; generatedAt: string; entryCount: number; caveat: string; counts: Record<string, number> };
-  entries: PokemonEntry[];
-};
-type PokemonNames = Record<string, Partial<Record<UiLanguage, string>>>;
-type PokewalkerDataset = { meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; encounterCount: number; caveat: string }; dexes: number[] };
-type Variant = "shiny" | "normal";
-type Acquisition = "own" | "trade" | "event" | "external";
-type GenderMode = "notable" | "all";
-type FormOptions = { alternate: boolean; alcremie: boolean; minior: boolean };
-type CollectionViewMode = "boxes" | "global" | "summary";
-type ThemeScope = "all" | "mark" | "box";
-type ThemeTab = ThemeGame | "concept" | "custom";
-type PlannedEntry = PokemonEntry & { planId: string; variant: Variant; groupKey: string; groupLabel: string; ownOt: boolean };
-type PlannedBox = { globalIndex: number; groupKey: string; number: number; label: string; entries: PlannedEntry[] };
-type LocatedEntry = { entry: PlannedEntry; box: PlannedBox; slotIndex: number };
-type GlobalTooltip = { located: LocatedEntry; left: number; top: number; above: boolean };
-type AvailabilityFilters = Record<AvailabilityStatus, boolean>;
-type SelectOption<T extends string | number> = { value: T; label: string; icon?: ReactNode };
-type CustomBox = { id: string; name: string; planIds: string[] };
-type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
-type AustinAppliedNotice = { imported: number; newOwned: number; mode: "merge" | "replace" };
-type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };
-
-const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
-const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
-const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "trades", "go"];
-const MYTHICAL_DEX = new Set([
-  151,  // Mew
-  251,  // Celebi
-  385,  // Jirachi
-  386,  // Deoxys
-  489,  // Phione
-  490,  // Manaphy
-  491,  // Darkrai
-  492,  // Shaymin
-  493,  // Arceus
-  494,  // Victini
-  647,  // Keldeo
-  648,  // Meloetta
-  649,  // Genesect
-  719,  // Diancie
-  720,  // Hoopa
-  721,  // Volcanion
-  801,  // Magearna
-  802,  // Marshadow
-  807,  // Zeraora
-  808,  // Meltan
-  809,  // Melmetal
-  893,  // Zarude
-  1025, // Pecharunt
-]);
-const DEFAULT_COLLECTIONS = COLLECTIONS.filter((collection) => collection !== "event-dex");
-const DEFAULT_AVAILABILITY_FILTERS: AvailabilityFilters = { current: true, legacy: true, historical: true, hypothetical: true };
-const MARK_COLORS: Record<string, string> = {
-  "Sin marca": "#9eb4b1", GB: "#e8cc67", P: "#74b7ea", USUM: "#b18bea", LGPE: "#efaa6f",
-  SwSh: "#e57b9e", LA: "#72c8c2", BDSP: "#8fb5f2", SV: "#ef715f", LZA: "#68d2a4", GBA: "#c4e56f",
-};
-const GROUP_COLORS: Record<string, string> = {
-  ...MARK_COLORS,
-  n: "#8f80de",
-  dream: "#7ec8ad",
-  radar: "#5fd0d6",
-  "shadow-colosseum": "#8a76a6",
-  "shadow-xd": "#6679a9",
-  cherish: "#e76d83",
-  "event-dex": "#ef718d",
-  trades: "#e7a65f",
-  go: "#57a6e6",
-  "profile-final": "#d6b466",
-  "profile-regional": "#8fc9f0",
-  "profile-forms_lite": "#9a8fe6",
-  "profile-noah": "#67c99b",
-  "region-kanto": "#e86e64",
-  "region-johto": "#dfb95a",
-  "region-hoenn": "#7faedc",
-  "region-sinnoh": "#9a91d2",
-  "region-unova": "#a9b3b6",
-  "region-kalos": "#67b8df",
-  "region-alola": "#f19d64",
-  "region-galar": "#db789d",
-  "region-paldea": "#9b7dd1",
-};
-const ORIGIN_MARK_ICONS: Record<string, string> = {
-  GB: "GB_icon_HOME.png",
-  P: "pentagon_HOME.png",
-  USUM: "Black_clover_HOME.png",
-  LGPE: "Let's_Go_icon_HOME.png",
-  SwSh: "Galar_symbol_HOME.png",
-  LA: "Arceus_mark_HOME.png",
-  BDSP: "BDSP_icon_HOME.png",
-  SV: "Paldea_icon_HOME.png",
-  LZA: "Z-A_icon_HOME.png",
-  GBA: "GBA_icon_HOME.png",
-  go: "GO_icon_HOME.png",
-};
-const STORAGE_KEY = "origin-marks-home-checklist-v1";
-const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
-const CATALOG_VERSION = 6;
-const BACKUP_VERSION = 9;
-const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
-const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
-  n: "trade",
-  trades: "trade",
-  cherish: "event",
-  events: "event",
-  "event-dex": "event",
-  dream: "external",
-  radar: "external",
-  "shadow-colosseum": "external",
-  "shadow-xd": "external",
-  go: "external",
-};
-
-function CompactCheckbox({ checked, onChange, accent }: { checked: boolean; onChange: () => void; accent: string }) {
-  return <span className="compact-checkbox" style={{ "--checkbox-accent": accent } as CSSProperties}><input type="checkbox" checked={checked} onChange={onChange} /></span>;
-}
-
-function originMarkIconUrl(mark?: string) {
-  const filename = mark ? ORIGIN_MARK_ICONS[mark] : undefined;
-  return filename ? assetUrl(`assets/origin-marks/${filename}`) : null;
-}
-
-function OriginMarkIcon({ mark, label, className = "" }: { mark: string; label: string; className?: string }) {
-  const src = originMarkIconUrl(mark);
-  if (!src) return <span className={className}>{label}</span>;
-  return <span className={`origin-mark-icon ${className}`} title={label}><img src={src} alt="" /><span className="sr-only">{label}</span></span>;
-}
-
-function FavoriteButton({ active, label, onClick, className = "" }: { active: boolean; label: string; onClick: () => void; className?: string }) {
-  return <button type="button" className={`favorite-star ${active ? "active" : ""} ${className}`} aria-pressed={active} aria-label={label} title={label} onClick={onClick}>
-    <img src={assetUrl("assets/favorite-star.png")} alt="" />
-  </button>;
-}
-
-function BankBadge({ label, className = "" }: { label: string; className?: string }) {
-  return <span className={`bank-badge ${className}`} title={label}><img src={assetUrl("assets/bank.png")} alt="" /><span>{label}</span></span>;
-}
-
-function StyledSelect<T extends string | number>({ value, options, onChange, ariaLabel, className = "", placeholder }: { value: T; options: SelectOption<T>[]; onChange: (value: T) => void; ariaLabel: string; className?: string; placeholder?: string }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const selected = options.find((option) => option.value === value);
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOutside = (event: PointerEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
-    document.addEventListener("pointerdown", closeOutside);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => { document.removeEventListener("pointerdown", closeOutside); window.removeEventListener("keydown", closeOnEscape); };
-  }, [open]);
-
-  return <div className={`styled-select ${open ? "open" : ""} ${className}`} ref={rootRef}>
-    <button type="button" className="styled-select-trigger" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
-      <span>{selected?.icon}{selected?.label ?? placeholder ?? ariaLabel}</span><b aria-hidden="true">⌄</b>
-    </button>
-    {open && <div className="styled-select-options" role="listbox" aria-label={ariaLabel}>{options.map((option) => <button type="button" role="option" aria-selected={option.value === value} className={option.value === value ? "active" : ""} key={String(option.value)} onClick={() => { onChange(option.value); setOpen(false); }}>{option.icon}<span>{option.label}</span></button>)}</div>}
-  </div>;
-}
-
-function GooeyCheckbox({ id, checked, onChange }: { id: string; checked: boolean; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
-  const filterId = `goo-${useId().replace(/:/g, "")}`;
-  return (
-    <span className="gooey-checkbox">
-      <span className="gooey-control">
-        <input id={id} type="checkbox" checked={checked} onChange={onChange} />
-        <span className="gooey-splash" style={{ filter: `url(#${filterId})` }} />
-        <svg className="gooey-check" width="15" height="14" viewBox="0 0 15 14" fill="none" aria-hidden="true"><path d="M2 8.36364L6.23077 12L13 2" /></svg>
-      </span>
-      <svg className="gooey-filter" aria-hidden="true"><defs><filter id={filterId}><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" /><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo" /><feBlend in="SourceGraphic" in2="goo" /></filter></defs></svg>
-    </span>
-  );
-}
-
-const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-const chunk = <T,>(items: T[], size: number) => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
-
-function downloadText(filename: string, text: string, type: string) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([text], { type }));
-  link.download = filename;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(link.href), 1_000);
-}
-const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
-
-async function prepareThemeImage(file: File) {
-  if (!/^image\/(?:png|jpeg|webp)$/i.test(file.type) || file.size > 12_000_000) throw new Error("invalid-image");
-  const source = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("invalid-image"));
-    reader.onerror = () => reject(new Error("invalid-image"));
-    reader.readAsDataURL(file);
-  });
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const element = new Image();
-    element.onload = () => resolve(element);
-    element.onerror = () => reject(new Error("invalid-image"));
-    element.src = source;
-  });
-  const scale = Math.min(1, 1600 / image.naturalWidth, 900 / image.naturalHeight);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("invalid-image");
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  let prepared = canvas.toDataURL("image/webp", .78);
-  if (prepared.length > 3_000_000) prepared = canvas.toDataURL("image/webp", .58);
-  if (prepared.length > 3_500_000) throw new Error("invalid-image");
-  return prepared;
-}
-
-// In the base catalog, only Bulbapedia's ✔ combinations belong to the player-OT shiny list.
-// Event and transfer shinies (marked ~) remain in special-collections.json with their external OT.
-const OWN_OT_SHINY_LOCKS_BY_MARK: Record<string, ReadonlySet<number>> = {
-  P: new Set([382, 383, 384, 386]),
-  USUM: new Set([151, 251, 385, 386, 490, 491, 492, 493, 494, 647, 648, 649, 718, 719, 720, 721, 785, 786, 787, 788, 789, 790, 791, 792, 800, 801, 802, 807, 808, 809]),
-  LGPE: new Set([151, 808, 809]),
-  SwSh: new Set([151, 251, 385, 386, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721, 772, 773, 789, 790, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905]),
-  LA: new Set([480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 641, 642, 645, 905]),
-  BDSP: new Set([151, 251, 385, 386, 490, 494, 647, 648, 649, 719, 720, 721, 772, 773, 789, 790, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905]),
-  SV: new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 380, 381, 382, 383, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025]),
-  LZA: new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488, 490, 491, 492, 493, 494, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 807, 808, 809, 888, 889, 890, 891, 892, 893, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025]),
-};
-
-const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
-  "USUM:666:Fancy", "USUM:666:Poké Ball",
-  "SwSh:144:Galarian", "SwSh:145:Galarian", "SwSh:146:Galarian",
-  "SV:901:Bloodmoon", "SV:999:Roaming Form",
-  "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
-]);
-const WHITE_STRIPE_BASCULIN_MARKS = new Set(["LA", "SV"]);
-const LZA_SHINY_VIVILLON_FORMS = new Set(["Garden", "Meadow"]);
-const VIVILLON_FORM_ART_IDS: Record<string, number> = {
-  Meadow: 666, "Icy Snow": 10086, Polar: 10087, Tundra: 10088, Continental: 10089, Garden: 10090, Elegant: 10091,
-  Modern: 10092, Marine: 10093, Archipelago: 10094, "High Plains": 10095, Sandstorm: 10096, River: 10097,
-  Monsoon: 10098, Savanna: 10099, Sun: 10100, Ocean: 10101, Jungle: 10102, Fancy: 10161, "Poké Ball": 10162,
-};
-const VIVILLON_FORM_ORDER = [
-  "Icy Snow", "Polar", "Tundra", "Continental", "Garden", "Elegant", "Meadow", "Modern", "Marine", "Archipelago",
-  "High Plains", "Sandstorm", "River", "Monsoon", "Savanna", "Sun", "Ocean", "Jungle", "Fancy", "Poké Ball",
-] as const;
-const VIVILLON_FORM_INDEX = new Map<string, number>(VIVILLON_FORM_ORDER.map((form, index) => [form, index]));
-const FURFROU_TRIM_ART_IDS = [
-  ["Heart", 10067], ["Star", 10068], ["Diamond", 10069], ["Debutante", 10070], ["Matron", 10071],
-  ["Dandy", 10072], ["La Reine", 10073], ["Kabuki", 10074], ["Pharaoh", 10075],
-] as const;
-const FURFROU_FORM_INDEX = new Map<string, number>([["", 0], ...FURFROU_TRIM_ART_IDS.map(([form], index) => [form, index + 1] as [string, number])]);
-const FLOWER_COLOR_INDEX = new Map<string, number>([
-  ["Red Flower", 0], ["Yellow Flower", 1], ["Orange Flower", 2], ["Blue Flower", 3], ["White Flower", 4],
-]);
-const ALCREMIE_CREAMS = ["Vanilla Cream", "Ruby Cream", "Matcha Cream", "Mint Cream", "Lemon Cream", "Salted Cream", "Ruby Swirl", "Caramel Swirl", "Rainbow Swirl"] as const;
-const ALCREMIE_SWEETS = ["Strawberry", "Berry", "Love", "Star", "Clover", "Flower", "Ribbon"] as const;
-const MINIOR_CORES = ["Red Core", "Orange Core", "Yellow Core", "Green Core", "Blue Core", "Indigo Core", "Violet Core"] as const;
-
-function expandCollectibleForms(entries: PokemonEntry[]) {
-  const expanded: PokemonEntry[] = [];
-  const processed = new Set<string>();
-  for (const entry of entries) {
-    if (entry.dex !== 869 && entry.dex !== 774) {
-      expanded.push(entry);
-      continue;
-    }
-    const speciesKey = `${entry.mark ?? entry.collection ?? "catalog"}:${entry.dex}`;
-    if (processed.has(speciesKey)) continue;
-    processed.add(speciesKey);
-    const templates = entries.filter((candidate) => candidate.dex === entry.dex && candidate.mark === entry.mark && candidate.collection === entry.collection);
-    if (entry.dex === 869) {
-      ALCREMIE_CREAMS.forEach((cream, creamIndex) => ALCREMIE_SWEETS.forEach((sweet, sweetIndex) => {
-        const existing = sweetIndex === 0 ? templates.find((candidate) => candidate.form === `${cream}, Strawberry`) : undefined;
-        const template = existing ?? templates[0] ?? entry;
-        const legacySuffix = creamIndex === 0 ? "" : `-${creamIndex}`;
-        const idSuffix = sweetIndex === 0 ? legacySuffix : `-${creamIndex}-${sweetIndex}`;
-        expanded.push({
-          ...template,
-          id: `${entry.mark ?? entry.collection ?? "catalog"}:alcremie${idSuffix}`,
-          sourceNumber: existing?.sourceNumber,
-          form: `${cream}, ${sweet}`,
-          artId: 869,
-          keyword: `alcremie-${creamIndex}-${sweetIndex}`,
-          note: `${template.note} · combinación de crema y dulce conservada en HOME`,
-        });
-      }));
-      continue;
-    }
-    MINIOR_CORES.forEach((form, index) => {
-      const template = templates.find((candidate) => candidate.form === form) ?? templates[0] ?? entry;
-      expanded.push({
-        ...template,
-        id: index === 0 ? entry.id : `${entry.mark ?? entry.collection ?? "catalog"}:minior-${index}`,
-        sourceNumber: index === 0 ? template.sourceNumber : undefined,
-        form,
-        artId: 10136 + index,
-        keyword: `minior-${index}`,
-        note: `${template.note} · color de núcleo conservado en HOME`,
-      });
-    });
-  }
-  return expanded;
-}
-
-function applyCatalogCorrections(entries: PokemonEntry[]) {
-  let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(entries)));
-  const phioneTemplate = entries.find((entry) => entry.dex === 489);
-  if (phioneTemplate) {
-    const breedingMarks: Record<string, string> = {
-      P: "Crianza en X/Y u ORAS · huevo con tu OT",
-      USUM: "Crianza en SM/USUM · huevo con tu OT",
-      BDSP: "Crianza en BDSP · huevo con tu OT",
-    };
-    for (const [mark, note] of Object.entries(breedingMarks)) {
-      correctedEntries = insertCatalogEntry(correctedEntries, {
-        ...phioneTemplate, id: `${mark}:phione`, sourceNumber: undefined, mark, note,
-        shinyEligible: true, shinyReview: "verified-correction", availability: "standard",
-        normalEligible: true, ownOtNormal: true, ownOtShiny: true,
-      });
-    }
-  }
-
-  for (const dex of [491, 492]) {
-    const template = entries.find((entry) => entry.dex === dex);
-    if (!template) continue;
-    correctedEntries = insertCatalogEntry(correctedEntries, {
-      ...template,
-      id: `BDSP:${template.keyword}`,
-      sourceNumber: undefined,
-      mark: "BDSP",
-      note: dex === 491
-        ? "BDSP · Carné Socio por regalo misterioso · Newmoon Island · captura con tu OT"
-        : "BDSP · Carta del Prof. Oak por regalo misterioso · Flower Paradise · captura con tu OT",
-      shinyEligible: true,
-      shinyReview: "verified-correction",
-      availability: "standard",
-      normalEligible: true,
-      ownOtNormal: true,
-      ownOtShiny: true,
-    });
-  }
-
-  correctedEntries = addStorableShayminSkyForms(correctedEntries);
-
-  for (const mark of ["P", "USUM"]) {
-    const base = correctedEntries.find((entry) => entry.id === `${mark}:furfrou`);
-    if (!base) continue;
-    FURFROU_TRIM_ART_IDS.forEach(([form, artId], index) => {
-      correctedEntries = insertCatalogEntry(correctedEntries, {
-        ...base, id: `${mark}:furfrou-${index + 1}`, sourceNumber: undefined, form, artId,
-        keyword: `furfrou-${index + 1}`, note: `${base.note} · corte conservado en cajas mediante Legends: Z-A`,
-      });
-    });
-  }
-  
-  const alolanFormsWithoutGenderDifference = new Set([19, 20, 26]);
-
-  correctedEntries = correctedEntries
-  .filter((entry) =>
-    !(
-      entry.form === "Alolan" &&
-      alolanFormsWithoutGenderDifference.has(entry.dex) &&
-      entry.genderVariant === "extra"
-    )
-  )
-  .map((entry) =>
-    entry.form === "Alolan" &&
-    alolanFormsWithoutGenderDifference.has(entry.dex)
-      ? {
-          ...entry,
-          gender: undefined,
-          genderDifferenceTier: undefined,
-          genderVariant: undefined,
-        }
-      : entry
-  );
-  return markLgpeAlolanFormsAsInGameTrades(removeInvalidGbaKingambit(correctedEntries)).map((entry) => {
-    let correctedEntry = entry;
-    if (correctedEntry.dex === 678 && correctedEntry.gender === "female") {
-      correctedEntry = { ...correctedEntry, artId: 10025, shinyArtStyle: "home" as const };
-    }
-    const vivillonForm = correctedEntry.dex === 666 ? correctedEntry.form : null;
-    if (vivillonForm && VIVILLON_FORM_ART_IDS[vivillonForm]) {
-      correctedEntry = { ...correctedEntry, artId: VIVILLON_FORM_ART_IDS[vivillonForm] };
-      if (correctedEntry.mark === "LZA" && !LZA_SHINY_VIVILLON_FORMS.has(vivillonForm)) {
-        return { ...correctedEntry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
-      }
-    }
-    if (correctedEntry.dex === 676 && correctedEntry.form) {
-      const trimArtId = FURFROU_TRIM_ART_IDS.find(([form]) => form === correctedEntry.form)?.[1];
-      if (trimArtId) correctedEntry = { ...correctedEntry, artId: trimArtId };
-    }
-    if (correctedEntry.mark === "GBA" && correctedEntry.dex === 385) {
-      return { ...correctedEntry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
-    }
-    if (correctedEntry.dex === 670 && correctedEntry.form === "Eternal Flower") {
-      return {
-        ...correctedEntry,
-        availability: correctedEntry.mark === "LZA" ? "standard" as const : "excluded" as const,
-        shinyEligible: false,
-        ownOtShiny: false,
-        shinyReview: "verified-correction" as const,
-      };
-    }
-    if (correctedEntry.dex === 550 && correctedEntry.form === "White Stripe" && !WHITE_STRIPE_BASCULIN_MARKS.has(correctedEntry.mark ?? "")) {
-      return { ...correctedEntry, availability: "excluded" as const, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
-    }
-    const formKey = `${correctedEntry.mark}:${correctedEntry.dex}:${correctedEntry.form ?? ""}`;
-    const isLocked = Boolean(correctedEntry.mark && OWN_OT_SHINY_LOCKS_BY_MARK[correctedEntry.mark]?.has(correctedEntry.dex)) || FORM_SPECIFIC_OWN_OT_SHINY_LOCKS.has(formKey);
-    if (!isLocked) return correctedEntry;
-    return { ...correctedEntry, shinyEligible: false, ownOtShiny: false, shinyReview: "verified-correction" as const };
-  });
-}
-
-function asGenericSpecimen(entry: PlannedEntry): PlannedEntry {
-  const requirements: SpecimenRequirements = {
-    gender: entry.requirements?.gender,
-    originGeneration: entry.requirements?.originGeneration,
-    originRegion: entry.requirements?.originRegion,
-    alpha: entry.requirements?.alpha,
-    gmaxFactor: entry.requirements?.gmaxFactor,
-  };
-  const cleanRequirements = Object.fromEntries(Object.entries(requirements).filter(([, value]) => value !== undefined)) as SpecimenRequirements;
-  const genericEntry = { ...entry, requirements: cleanRequirements };
-  const planId = genericSpecimenKey(genericEntry);
-  return {
-    ...genericEntry,
-    id: planId,
-    sourceNumber: undefined,
-    mark: undefined,
-    collection: undefined,
-    note: "",
-    sourceLabel: undefined,
-    sourceUrl: undefined,
-    trainerName: undefined,
-    trainerId: undefined,
-    nickname: undefined,
-    partnerRibbon: undefined,
-    ball: undefined,
-    nature: undefined,
-    ability: undefined,
-    heldItem: undefined,
-    moves: undefined,
-    ribbons: undefined,
-    eventYear: undefined,
-    eventLocation: undefined,
-    eventType: undefined,
-    startDate: undefined,
-    endDate: undefined,
-    acquisitionCategory: "own",
-    game: undefined,
-    gender: cleanRequirements.gender === "male" || cleanRequirements.gender === "female" ? cleanRequirements.gender : undefined,
-    genderVariant: cleanRequirements.gender === "male" || cleanRequirements.gender === "female" ? entry.genderVariant : undefined,
-    availability: "standard",
-    ownOtNormal: true,
-    ownOtShiny: true,
-    ownOt: true,
-    planId,
-    genericEntry: true,
-  };
-}
-function eventMythicalsForMark(
-  mark: string,
-  normalEntries: PokemonEntry[],
-  specialEntries: PokemonEntry[],
-) {
-  const existing = new Set(
-    normalEntries
-      .filter((entry) => entry.mark === mark)
-      .flatMap((entry) => [
-        ...(entry.normalEligible !== false ? [`${entry.dex}:${entry.form ?? ""}:normal`] : []),
-        ...(entry.shinyEligible ? [`${entry.dex}:${entry.form ?? ""}:shiny`] : []),
-      ])
-  );
-
-  const seen = new Set<string>();
-
-  return specialEntries
-    .filter((entry) =>
-      entry.collection === "event-dex" &&
-      entry.mark === mark &&
-      MYTHICAL_DEX.has(entry.dex)
-    )
-    .filter((entry) => {
-      const variant = entry.shinyEligible ? "shiny" : "normal";
-      const key = `${entry.dex}:${entry.form ?? ""}:${variant}`;
-
-      if (existing.has(key)) return false;
-      if (seen.has(key)) return false;
-
-      seen.add(key);
-      return true;
-    })
-    .map((entry) => {
-      const variant = entry.shinyEligible ? "shiny" : "normal";
-      return {
-        ...entry,
-        id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}:${variant}`,
-        collection: undefined,
-        acquisitionCategory: "event" as const,
-        availability: entry.endDate && !/^No End Date$/i.test(entry.endDate)
-          ? "historical" as const
-          : entry.availability,
-        normalEligible: variant === "normal",
-        shinyEligible: variant === "shiny",
-        ownOtNormal: false,
-        ownOtShiny: false,
-      };
-    });
-}
-function buildBoxes(
-  entries: PokemonEntry[],
-  specialEntries: PokemonEntry[],
-  selectedMarks: string[],
-  selectedCollections: string[],
-  variants: Record<Variant, boolean>,
-  acquisitions: Record<Acquisition, boolean>,
-  includeNonShinySpecials: boolean,
-  includeEventMythicals: boolean,
-  genderMode: GenderMode,
-  formOptions: FormOptions,
-  normalLivingDex: boolean,
-  originMarkDex: boolean,
-  collectionPreset: CollectionPreset,
-  speciesRules: Map<number, SpeciesRule>,
-  language: UiLanguage,
-) {
-  const boxes: PlannedBox[] = [];
-  const unifiedCandidates: PlannedEntry[] = [];
-  const unifiedProfile = normalLivingDex || UNIFIED_COLLECTION_PRESETS.has(collectionPreset);
-  const groups = [
-  ...MARKS.filter((mark) => selectedMarks.includes(mark)).map((key) => ({
-    key,
-    label: groupName(language, key),
-    entries: [
-      ...entries.filter((entry) => entry.mark === key),
-      ...(includeEventMythicals
-        ? eventMythicalsForMark(key, entries, specialEntries)
-        : []),
-    ].sort((a, b) => {
-      if (a.dex !== b.dex) return a.dex - b.dex;
-
-      return (a.form ?? "").localeCompare(b.form ?? "");
-    }),
-    special: false,
-    })),
-    ...COLLECTIONS.filter((collection) => selectedCollections.includes(collection)).map((key) => ({ key, label: groupName(language, key), entries: specialEntries.filter((entry) => entry.collection === key), special: true })),
-  ];
-
-  for (const group of groups) {
-    const planned: PlannedEntry[] = [];
-    const seenSpecies = new Set<string>();
-    for (const entry of group.entries) {
-      if (entry.availability === "excluded") continue;
-      if (entry.genderVariant === "extra" && entry.genderDifferenceTier === "all" && genderMode !== "all") continue;
-      const speciesKey = `${entry.mark ?? entry.collection ?? group.key}:${entry.dex}:${entry.genderVariant ?? "species"}`;
-      const firstSpeciesEntry = !seenSpecies.has(speciesKey);
-      seenSpecies.add(speciesKey);
-      if (!entry.collection && !firstSpeciesEntry) {
-        if (entry.dex === 869 && !formOptions.alcremie) continue;
-        if (entry.dex === 774 && !formOptions.minior) continue;
-        if (entry.dex !== 869 && entry.dex !== 774 && !formOptions.alternate) continue;
-      }
-      const includeAsNormal = entry.normalEligible !== false && (variants.normal || (group.special && variants.shiny && includeNonShinySpecials && !entry.shinyEligible));
-      if (includeAsNormal) {
-        const ownOt = entry.ownOtNormal;
-        const acquisition =
-          entry.acquisitionCategory ??
-          COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
-          (ownOt ? "own" : "event");
-
-        const isHistoricalEventMythical =
-          entry.id.includes(":historical-event:");
-
-        if (
-          acquisitions[acquisition] ||
-          (includeEventMythicals && isHistoricalEventMythical)
-        ) {
-          planned.push({
-            ...entry,
-            variant: "normal",
-            ownOt,
-            groupKey: group.key,
-            groupLabel: group.label,
-            planId: `${entry.id}:normal`,
-          });
-        }
-      }
-      if (variants.shiny && entry.shinyEligible) {
-        const ownOt = entry.ownOtShiny;
-
-        const acquisition =
-          entry.acquisitionCategory ??
-          COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
-          (ownOt ? "own" : "event");
-
-        const isHistoricalEventMythical =
-          entry.id.includes(":historical-event:");
-
-        if (
-          acquisitions[acquisition] ||
-          (includeEventMythicals && isHistoricalEventMythical)
-        ) {
-          planned.push({
-            ...entry,
-            variant: "shiny",
-            ownOt,
-            groupKey: group.key,
-            groupLabel: group.label,
-            planId: `${entry.id}:shiny`,
-          });
-        }
-      }
-    }
-    if (unifiedProfile) unifiedCandidates.push(...planned);
-    else chunk(originMarkDex ? selectNormalLivingDexEntries(planned) : planned, 30).forEach((boxEntries, index) => {
-      boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
-    });
-  }
-  if (unifiedProfile) {
-    if (collectionPreset === "original_generation") {
-      const originalEntries = selectOriginalGenerationEntries(unifiedCandidates, speciesRules);
-      for (let generation = 1; generation <= 9; generation += 1) {
-        const groupKey = regionKeyForGeneration(generation);
-        const groupLabel = groupName(language, groupKey);
-        const regionEntries = originalEntries
-          .filter((entry) => entry.requirements.originGeneration === generation)
-          .map((entry) => asGenericSpecimen({ ...entry, groupKey, groupLabel }));
-        chunk(regionEntries, 30).forEach((boxEntries, index) => {
-          boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
-        });
-      }
-    } else {
-      const selected = collectionPreset === "final"
-        ? selectFinalFormDexEntries(unifiedCandidates, speciesRules)
-        : collectionPreset === "regional"
-          ? selectLivingDexWithRegionalForms(unifiedCandidates)
-          : collectionPreset === "forms_lite"
-            ? selectLivingFormLiteEntries(unifiedCandidates)
-            : collectionPreset === "forms" || collectionPreset === "shiny"
-              ? selectLivingFormEntries(unifiedCandidates)
-            : collectionPreset === "noah"
-              ? selectNoahsArkEntries(unifiedCandidates, speciesRules)
-              : selectNormalLivingDexEntries(unifiedCandidates);
-      const groupKey = normalLivingDex ? "living-dex" : `profile-${collectionPreset}`;
-      const groupLabel = normalLivingDex ? copy(language, "normal_living_dex") : copy(language, `profile_${collectionPreset}`);
-      chunk(selected.map((entry) => asGenericSpecimen({ ...entry, groupKey, groupLabel })), 30).forEach((boxEntries, index) => {
-        boxes.push({ globalIndex: boxes.length, groupKey, number: index + 1, label: `${groupLabel} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
-      });
-    }
-  }
-  return boxes;
-}
-
-function unownSpriteKey(form: string | null) {
-  if (form === "!") return "exclamation";
-  if (form === "?") return "question";
-  return form?.toLowerCase() ?? null;
-}
-
-function pokemonArtworkUrl(entry: PlannedEntry) {
-  if (!entry.artId) return null;
-  const vivillonIndex = entry.dex === 666 && entry.form ? VIVILLON_FORM_INDEX.get(entry.form) : undefined;
-  const furfrouIndex = entry.dex === 676 ? FURFROU_FORM_INDEX.get(entry.form ?? "") : undefined;
-  const flowerIndex = entry.form ? FLOWER_COLOR_INDEX.get(entry.form) : undefined;
-  const alcremieCream = entry.dex === 869 && entry.form ? ALCREMIE_CREAMS.findIndex((cream) => entry.form?.startsWith(`${cream}, `)) : -1;
-  const alcremieSweet = entry.dex === 869 && entry.form ? ALCREMIE_SWEETS.findIndex((sweet) => entry.form?.endsWith(`, ${sweet}`)) : -1;
-  let customKey: string | null = null;
-  if (vivillonIndex !== undefined) customKey = `0666-${String(vivillonIndex).padStart(2, "0")}`;
-  if (furfrouIndex !== undefined) customKey = `0676-${String(furfrouIndex).padStart(2, "0")}`;
-  if (entry.dex >= 669 && entry.dex <= 671 && flowerIndex !== undefined) customKey = `${String(entry.dex).padStart(4, "0")}-${String(flowerIndex).padStart(2, "0")}`;
-  if (entry.dex === 670 && entry.form === "Eternal Flower" && entry.variant === "normal") customKey = "0670-05";
-  if (alcremieCream >= 0 && alcremieSweet >= 0) customKey = entry.variant === "shiny" ? `0869-shiny-${alcremieSweet}` : `0869-${alcremieCream}-${alcremieSweet}`;
-  if (entry.dex === 774 && entry.variant === "shiny") customKey = "10136";
-  if (customKey) return assetUrl(`assets/pokemon/${entry.variant}/${customKey}.webp`);
-  const unownForm = entry.dex === 201 ? unownSpriteKey(entry.form) : null;
-  const suffix = unownForm ? `-${unownForm}` : entry.genderVariant === "extra" ? "-female" : "";
-  const filename = `${String(entry.artId).padStart(4, "0")}${suffix}.webp`;
-  return assetUrl(`assets/pokemon/${entry.variant}/${filename}`);
-}
-
-function PokemonArtwork({ entry, owned, displayName, language }: { entry: PlannedEntry; owned: boolean; displayName: string; language: UiLanguage }) {
-  const [failed, setFailed] = useState(false);
-  const url = pokemonArtworkUrl(entry);
-
-  if (!url || failed) return <span className="art-placeholder" aria-label={copy(language, "official_art_pending")} />;
-  return <img className="pokemon-art" src={url} alt={`${copy(language, "official_art")} ${displayName}`} onError={() => setFailed(true)} data-owned={owned} />;
-}
-
+import { buildOwnedProgressCsv, decodeOcrTransferHash, matchCollectionRecords, parseCollectionCsv, parseCompactTransfer, type CollectionRecord, type ImportCatalogEntry } from "./import-export";
+import {
+  BACKUP_VERSION,
+  CATALOG_VERSION,
+  COLLECTIONS,
+  DEFAULT_AVAILABILITY_FILTERS,
+  DEFAULT_COLLECTIONS,
+  DEFAULT_FORM_OPTIONS,
+  DEFAULT_MARKS,
+  GROUP_COLORS,
+  MARK_COLORS,
+  MARKS,
+  STORAGE_KEY,
+  THEME_STORAGE_KEY,
+} from "./app-config";
+import type {
+  Acquisition,
+  AustinAppliedNotice,
+  AvailabilityFilters,
+  CollectionViewMode,
+  CustomBox,
+  Dataset,
+  FormOptions,
+  GenderMode,
+  GlobalTooltip,
+  ImportNotice,
+  LocatedEntry,
+  PlannedBox,
+  PlannedEntry,
+  PokemonEntry,
+  PokemonNames,
+  PokewalkerDataset,
+  ProgressSnapshot,
+  SelectOption,
+  SpecialDataset,
+  ThemeScope,
+  ThemeTab,
+  Variant,
+} from "./app-types";
+import { applyCatalogCorrections, buildBoxes, pokemonArtworkUrl } from "./catalog-planner";
+import { assetUrl, downloadText, normalize, prepareThemeImage } from "./app-utils";
+import { BankBadge, CompactCheckbox, FavoriteButton, GooeyCheckbox, OriginMarkIcon, PokemonArtwork, StyledSelect, originMarkIconUrl } from "./components/ui-controls";
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [specialDataset, setSpecialDataset] = useState<SpecialDataset | null>(null);
