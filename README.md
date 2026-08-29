@@ -19,6 +19,16 @@ Choose a ready-made collection profile or shape the checklist around your own go
 - Share links to a search, a filtered Global view, or a specific box and slot without sharing collection progress.
 - Import collection records and Austin John’s normal HOME Organizer, or create a portable backup whenever you want.
 
+## One interface, three future releases
+
+The current release is a static Vite web app. Its startup, persistence, and file export now go through a small platform boundary, so a future Tauri 2 shell can reuse the same catalog logic, React views, translations, and responsive UI for Windows and Android instead of creating separate copies.
+
+- `npm run release:web` builds the current GitHub Pages release.
+- A future Windows target can package the same `dist/` as an installer `.exe`.
+- A future Android target can package it as an `.apk`.
+
+The implementation plan and platform boundary are documented in [`docs/release-architecture.md`](docs/release-architecture.md). Tauri and Rust dependencies are intentionally not installed until native releases are actually scheduled.
+
 ## Preview
 
 ![A complete Pokémon HOME box organized in Home Checklist](public/assets/home-checklist-social-preview.png)

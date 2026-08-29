@@ -12,6 +12,7 @@
     "check": "npm run build",
     "build": "npm run test && npm run build:app",
     "build:app": "tsc -b && vite build",
+    "release:web": "npm run build",
     "preview": "vite preview",
     "sprites:sync": "node scripts/sync-pokemon-sprites.mjs",
     "species:sync": "node scripts/sync-species-rules.mjs",

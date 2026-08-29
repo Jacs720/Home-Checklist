@@ -1,14 +1,12 @@
+import { getPlatform } from "./platform/runtime";
+
 export const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 export const chunk = <T,>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
 
 export function downloadText(filename: string, text: string, type: string) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([text], { type }));
-  link.download = filename;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(link.href), 1_000);
+  void getPlatform().files.saveText(filename, text, type);
 }
 
 export const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;

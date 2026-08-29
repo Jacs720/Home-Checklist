@@ -9,6 +9,7 @@ import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/
 import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
+import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
 
 const readJson = async <T>(path: string) => JSON.parse(await readFile(resolve(path), "utf8")) as T;
@@ -217,6 +218,32 @@ test("shareable navigation hashes round-trip without progress data", () => {
   assert.deepEqual(parseSharedNavigationHash("#box=87&slot=14"), { kind: "box", boxIndex: 86, slotIndex: 13 });
   assert.equal(parseSharedNavigationHash("#ocr=transfer-payload"), null);
   assert.equal(globalHash.includes("owned"), false);
+});
+
+test("mobile releases preserve both HOME grids as six columns by five rows", async () => {
+  const css = await readFile(resolve("src/styles/mobile.css"), "utf8");
+  assert.match(css, /\.page-grid\s*\{[^}]*grid-template-columns:\s*repeat\(6,/s);
+  assert.match(css, /\.box-grid\s*\{[^}]*grid-template-columns:\s*repeat\(6,/s);
+  assert.match(css, /\.pokemon-slot small,[^}]*display:\s*none/s);
+  assert.match(css, /\.slot-tooltip\s*\{\s*display:\s*none\s*!important;/s);
+});
+
+test("the Tauri adapter keeps native storage and exports outside shared UI code", async () => {
+  const values = new Map<string, string>();
+  const exports: string[] = [];
+  const platform = createTauriPlatform("android", {
+    storage: {
+      async get(key) { return values.get(key) ?? null; },
+      async set(key, value) { values.set(key, value); },
+    },
+    async saveText(filename) { exports.push(filename); },
+  });
+
+  await platform.storage.set("progress", "saved");
+  await platform.files.saveText("backup.json", "{}", "application/json");
+  assert.equal(platform.target, "android");
+  assert.equal(await platform.storage.get("progress"), "saved");
+  assert.deepEqual(exports, ["backup.json"]);
 });
 
 test("required interface copy exists in every available language", async () => {
