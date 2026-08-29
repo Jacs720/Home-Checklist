@@ -220,6 +220,22 @@ test("shareable navigation hashes round-trip without progress data", () => {
   assert.equal(globalHash.includes("owned"), false);
 });
 
+test("search and social metadata consistently reference the collection box preview", async () => {
+  const html = await readFile(resolve("index.html"), "utf8");
+  const previewUrl = "https://jacs720.github.io/Home-Checklist/assets/home-checklist-social-preview.png";
+
+  assert.match(html, /name="robots" content="index, follow, max-image-preview:large"/);
+  assert.match(html, /rel="icon"[^>]+home-checklist-social-preview\.png/);
+  assert.match(html, /rel="image_src"[^>]+home-checklist-social-preview\.png/);
+  assert.doesNotMatch(html, /strange-ball\.png/);
+
+  const structuredData = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(structuredData, "structured search metadata is missing");
+  const schema = JSON.parse(structuredData);
+  assert.equal(schema.image, previewUrl);
+  assert.equal(schema.screenshot, previewUrl);
+});
+
 test("mobile releases preserve both HOME grids as six columns by five rows", async () => {
   const css = await readFile(resolve("src/styles/mobile.css"), "utf8");
   assert.match(css, /\.page-grid\s*\{[^}]*grid-template-columns:\s*repeat\(6,/s);
