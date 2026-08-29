@@ -121,7 +121,11 @@ function expandCollectibleForms(entries: PokemonEntry[]) {
 }
 
 export function applyCatalogCorrections(entries: PokemonEntry[]) {
-  const uniqueFormIds = entries.map((entry) => entry.id === "LZA:hoopa" && entry.form === "Unbound" ? { ...entry, id: "LZA:hoopa-unbound" } : entry);
+  const uniqueFormIds = entries.map((entry) => entry.dex === 720 && entry.form === "Unbound" ? {
+    ...entry,
+    id: entry.id === "LZA:hoopa" ? "LZA:hoopa-unbound" : entry.id,
+    artId: 10086,
+  } : entry);
   let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(uniqueFormIds)));
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {

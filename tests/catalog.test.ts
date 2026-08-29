@@ -228,8 +228,11 @@ test("form profiles omit source-only base placeholders and keep real exclusive f
 
   const eternalFloette = entries.find((entry) => entry.dex === 670 && entry.form === "Eternal Flower" && entry.variant === "normal");
   const originalColorMagearna = entries.find((entry) => entry.dex === 801 && entry.form === "Original Color" && entry.variant === "normal");
+  const normalUnboundHoopa = entries.find((entry) => entry.dex === 720 && entry.form === "Unbound" && entry.variant === "normal");
   assert.match(pokemonArtworkUrl(eternalFloette!) ?? "", /\/normal\/10061\.webp$/);
   assert.match(pokemonArtworkUrl(originalColorMagearna!) ?? "", /\/normal\/10147\.webp$/);
+  assert.match(pokemonArtworkUrl(normalUnboundHoopa!) ?? "", /\/normal\/10086\.webp$/);
+  assert.match(pokemonArtworkUrl({ ...normalUnboundHoopa!, variant: "shiny" }) ?? "", /\/shiny\/10086\.webp$/);
 });
 
 test("all planned entries fit boxes, have unique planIds and deterministic order", () => {
