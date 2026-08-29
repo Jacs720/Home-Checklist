@@ -59,10 +59,50 @@ function markForGames(games) {
   if (/Sword|Shield/i.test(games)) return "SwSh";
   if (/Let's Go/i.test(games)) return "LGPE";
   if (/Ultra Sun|Ultra Moon|\bSun\b|\bMoon\b/i.test(games)) return "USUM";
-  if (/Omega Ruby|Alpha Sapphire|\bX\b|\bY\b/i.test(games)) return "P";
+  if (/Omega\s*Ruby|Alpha\s*Sapphire|\bX\b|\bY\b/i.test(games)) return "P";
   if (/Virtual Console/i.test(games)) return "GB";
   if (/\bHOME\b/i.test(games)) return undefined;
   return "Sin marca";
+}
+
+const EVENT_ICON_MARKS = {
+  za: "LZA",
+  paldea: "SV",
+  sv: "SV",
+  hisui: "LA",
+  legends: "LA",
+  bdsp: "BDSP",
+  galar: "SwSh",
+  letsgo: "LGPE",
+  gba: "GBA",
+  gb: "GB",
+};
+
+function marksFromEventBlock(block) {
+  const iconMarks = [...block.matchAll(/\/events\/([^"/]+)\.png/gi)]
+    .map((match) => EVENT_ICON_MARKS[match[1].toLowerCase()]);
+  if (/&#11039;/.test(block)) iconMarks.push("P");
+  if (/&#10010;/.test(block)) iconMarks.push("USUM");
+  return unique(iconMarks);
+}
+
+function gamesForMark(games, mark) {
+  const patterns = {
+    LZA: /Legends:\s*Z-A/i,
+    SV: /Scarlet|Violet/i,
+    LA: /Legends:\s*Arceus/i,
+    BDSP: /Brilliant Diamond|Shining Pearl/i,
+    SwSh: /Sword|Shield/i,
+    LGPE: /Let's Go/i,
+    USUM: /Ultra Sun|Ultra Moon|\bSun\b|\bMoon\b/i,
+    P: /Omega\s*Ruby|Alpha\s*Sapphire|^X$|^Y$/i,
+    GB: /Virtual Console/i,
+    GBA: /FireRed|LeafGreen/i,
+  };
+  const pattern = patterns[mark];
+  if (!pattern || /\bHOME\b/i.test(games)) return games;
+  const matchingGames = games.split(",").map((game) => game.trim()).filter((game) => pattern.test(game));
+  return matchingGames.length ? matchingGames.join(", ") : games;
 }
 
 function homeGiftOrigin(description, games) {
@@ -75,6 +115,10 @@ function homeGiftOrigin(description, games) {
     [/Complete Pok[eé]Dex for Sword\s*&\s*Shield/i, { mark: "SwSh", game: "Sword, Shield" }],
     [/Complete Pok[eé]Dex for Let's Go, Pikachu\s*&\s*Eevee/i, { mark: "LGPE", game: "Let's Go, Pikachu!, Let's Go, Eevee!" }],
     [/Complete all three Pok[eé]Dexes in Scarlet\s*&\s*Violet/i, { mark: "SV", game: "Scarlet, Violet" }],
+    [/Legends:\s*Z-A Deposit Gift/i, { mark: "LZA", game: "Legends: Z-A" }],
+    [/Deposit from Brilliant Diamond\s*&\s*Shining Pearl/i, { mark: "BDSP", game: "Brilliant Diamond, Shining Pearl" }],
+    [/Deposit from Legends:\s*Arceus/i, { mark: "LA", game: "Legends: Arceus" }],
+    [/Deposit from Scarlet\s*&\s*Violet/i, { mark: "SV", game: "Scarlet, Violet" }],
   ];
   return completionGifts.find(([pattern]) => pattern.test(description))?.[1] ?? null;
 }
@@ -150,7 +194,11 @@ function parseEventPage(html, dex, template, sourceUrl) {
     const games = cleanHtml(block.match(/>Games Available<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/i)?.[1]) || undefined;
     const shiny = /\/Shiny\/|&#9733;|★/i.test(block);
     const homeOrigin = homeGiftOrigin(description, games ?? "");
-    const mark = homeOrigin?.mark ?? markForGames(games ?? "");
+    const inferredMark = homeOrigin?.mark ?? markForGames(games ?? "");
+    const explicitMarks = marksFromEventBlock(block);
+    const originMarks = explicitMarks.length
+      ? [...explicitMarks].sort((left, right) => Number(right === inferredMark) - Number(left === inferredMark))
+      : [inferredMark];
     const originGame = homeOrigin?.game ?? games;
     const ownOt = /^Yours$/i.test(trainerName ?? "");
     const requirements = {
@@ -169,44 +217,52 @@ function parseEventPage(html, dex, template, sourceUrl) {
     const occurrence = (identityOccurrences.get(hash) ?? 0) + 1;
     identityOccurrences.set(hash, occurrence);
 
-    events.push({
-      id: `event-dex:${String(dex).padStart(4, "0")}:${hash}${occurrence > 1 ? `:${occurrence}` : ""}`,
-      collection: "event-dex",
-      name: template.name,
-      dex,
-      form: null,
-      types: template.types,
-      keyword: `event-${String(dex).padStart(4, "0")}-${hash}`,
-      note: [description, year, trainerName ? `OT ${trainerName}` : null, trainerId ? `ID ${trainerId}` : null].filter(Boolean).join(" · "),
-      artId: template.artId ?? dex,
-      shinyEligible: shiny,
-      shinyReview: "verified-correction",
-      availability: isUntransferableClassicEvent(games ?? "") ? "historical" : "standard",
-      normalEligible: !shiny,
-      ownOtNormal: !shiny && ownOt,
-      ownOtShiny: shiny && ownOt,
-      dataStatus: "source-backed",
-      sourceLabel: "Serebii · Event Database",
-      sourceUrl,
-      displayDetail: label && label !== template.name ? `${description} · ${label}` : description,
-      trainerName,
-      trainerId,
-      acquisitionCategory: "event",
-      game: originGame,
-      gender,
-      requirements,
-      level,
-      ball,
-      nature: nature && !/^Any$/i.test(nature) ? nature : undefined,
-      ability,
-      moves: moves.length ? moves : undefined,
-      ribbons: ribbons.length ? ribbons : undefined,
-      eventYear: year,
-      eventLocation,
-      eventType,
-      startDate,
-      endDate,
-      ...(mark ? { mark } : {}),
+    const baseId = `event-dex:${String(dex).padStart(4, "0")}:${hash}${occurrence > 1 ? `:${occurrence}` : ""}`;
+    originMarks.forEach((mark, markIndex) => {
+      const markGame = originMarks.length > 1 ? gamesForMark(originGame ?? "", mark) : originGame;
+      const markRequirements = {
+        ...requirements,
+        ...(markGame ? { originGame: markGame } : {}),
+      };
+      events.push({
+        id: markIndex === 0 ? baseId : `${baseId}:${mark.toLowerCase()}`,
+        collection: "event-dex",
+        name: template.name,
+        dex,
+        form: null,
+        types: template.types,
+        keyword: `event-${String(dex).padStart(4, "0")}-${hash}`,
+        note: [description, year, trainerName ? `OT ${trainerName}` : null, trainerId ? `ID ${trainerId}` : null].filter(Boolean).join(" · "),
+        artId: template.artId ?? dex,
+        shinyEligible: shiny,
+        shinyReview: "verified-correction",
+        availability: isUntransferableClassicEvent(games ?? "") ? "historical" : "standard",
+        normalEligible: !shiny,
+        ownOtNormal: !shiny && ownOt,
+        ownOtShiny: shiny && ownOt,
+        dataStatus: "source-backed",
+        sourceLabel: "Serebii · Event Database",
+        sourceUrl,
+        displayDetail: label && label !== template.name ? `${description} · ${label}` : description,
+        trainerName,
+        trainerId,
+        acquisitionCategory: "event",
+        game: markGame,
+        gender,
+        requirements: markRequirements,
+        level,
+        ball,
+        nature: nature && !/^Any$/i.test(nature) ? nature : undefined,
+        ability,
+        moves: moves.length ? moves : undefined,
+        ribbons: ribbons.length ? ribbons : undefined,
+        eventYear: year,
+        eventLocation,
+        eventType,
+        startDate,
+        endDate,
+        ...(mark ? { mark } : {}),
+      });
     });
   }
   return events;

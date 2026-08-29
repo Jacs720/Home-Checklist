@@ -100,7 +100,7 @@ const EXPECTED_PROFILE_COUNTS: Record<keyof typeof canonicalProfiles, number> = 
   "Shiny Living Form Lite": 1220,
   "Shiny Form Living Dex": 1324,
   "Origin Mark Dex": 5044,
-  "Event Dex": 1880,
+  "Event Dex": 1882,
 };
 
 function profileEntries(profile: CanonicalProfile) {
@@ -155,6 +155,27 @@ test("event source corrections preserve the actual stored forms and origin marks
 
   const eventGimmighoul = correctedRawSpecialEntries.find((entry) => entry.collection === "event-dex" && entry.dex === 999);
   assert.equal(eventGimmighoul?.form, "Chest Form");
+});
+
+test("event distributions preserve every source-backed origin mark", () => {
+  const events = rawSpecialDataset.entries.filter((entry) => entry.collection === "event-dex");
+  const koreanShinyDiancie = events.find((entry) => entry.dex === 719 && entry.trainerName === "올스타" && entry.trainerId === "08136");
+  assert.equal(koreanShinyDiancie?.shinyEligible, true);
+  assert.equal(koreanShinyDiancie?.mark, "P");
+
+  const orasEvents = events.filter((entry) => /Omega\s*Ruby|Alpha\s*Sapphire/i.test(entry.game ?? ""));
+  assert.equal(orasEvents.length, 334);
+  assert.ok(orasEvents.every((entry) => entry.mark === "P"));
+
+  const modernGames = /Omega\s*Ruby|Alpha\s*Sapphire|(^|, )(X|Y)($|,)|Sun|Moon|Let's Go|Sword|Shield|Brilliant Diamond|Shining Pearl|Legends:|Scarlet|Violet|HOME|Virtual Console/i;
+  assert.ok(events.filter((entry) => modernGames.test(entry.game ?? "")).every((entry) => entry.mark && entry.mark !== "Sin marca"));
+
+  for (const [dex, trainerId] of [[35, "220910"], [440, "211101"]] as const) {
+    const marks = events.filter((entry) => entry.dex === dex && entry.trainerId === trainerId).map((entry) => entry.mark);
+    assert.ok(marks.includes("SwSh"), `missing Galar event origin for #${dex}`);
+    assert.ok(marks.includes("BDSP"), `missing BDSP event origin for #${dex}`);
+    assert.ok(marks.includes("LA"), `missing Hisui event origin for #${dex}`);
+  }
 });
 
 test("event-only shiny distributions augment the matching origin catalogs", () => {
