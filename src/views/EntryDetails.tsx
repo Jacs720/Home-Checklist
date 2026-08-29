@@ -56,7 +56,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
               {requiredGender && <div><dt>{t("required_gender")}</dt><dd>{requiredGender}</dd></div>}
-              {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{requirements.originGame}</dd></div>}
+              {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{entry.collection === "battle-bond" ? t("battle_bond_origin") : requirements.originGame}</dd></div>}
               {requirements.originGeneration && <div><dt>{t("origin_generation")}</dt><dd>{t("generation")} {requirements.originGeneration}</dd></div>}
               {requirements.originRegion && <div><dt>{t("origin_region")}</dt><dd>{groupName(language, requirements.originRegion)}</dd></div>}
               {requirements.pokemonLanguage && <div><dt>{t("pokemon_language")}</dt><dd>{requirements.pokemonLanguage}</dd></div>}
@@ -65,7 +65,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               {entry.trainerId && <div><dt>{t("trainer_id")}</dt><dd>{entry.trainerId}</dd></div>}
               {(requirements.ball || entry.ball) && <div><dt>{t("ball")}</dt><dd>{requirements.ball ?? entry.ball}</dd></div>}
               {(requirements.nature || entry.nature) && <div><dt>{t("nature")}</dt><dd>{requirements.nature ?? entry.nature}</dd></div>}
-              {(requirements.ability || entry.ability) && <div><dt>{t("ability")}</dt><dd>{requirements.ability ?? entry.ability}</dd></div>}
+              {(requirements.ability || entry.ability) && <div><dt>{t("ability")}</dt><dd>{(requirements.ability ?? entry.ability) === "Battle Bond" ? t("battle_bond_ability") : requirements.ability ?? entry.ability}</dd></div>}
               {requirements.teraType && <div><dt>{t("tera_type")}</dt><dd>{requirements.teraType}</dd></div>}
               {(requirements.heldItem || entry.heldItem) && <div><dt>{t("held_item")}</dt><dd>{requirements.heldItem ?? entry.heldItem}</dd></div>}
               {requirements.alpha !== undefined && <div><dt>{t("alpha")}</dt><dd>{t(requirements.alpha ? "yes" : "no")}</dd></div>}

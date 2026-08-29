@@ -98,6 +98,56 @@ export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], 
   return expanded;
 }
 
+export function createBattleBondGreninja(catalogEntries: PokemonEntry[]): PokemonEntry {
+  const template = catalogEntries.find((entry) => entry.dex === 658 && entry.mark === "USUM" && !entry.form && entry.normalEligible !== false);
+  if (!template) throw new Error("Missing Alola Greninja catalog entry for the Battle Bond demo specimen");
+
+  const moves = ["Water Shuriken", "Aerial Ace", "Double Team", "Night Slash"];
+  const ribbons = ["Souvenir Ribbon"];
+  return {
+    ...template,
+    id: "battle-bond:greninja",
+    sourceNumber: undefined,
+    collection: "battle-bond",
+    form: null,
+    keyword: "greninja-battle-bond-ash",
+    note: "",
+    sourceLabel: "Pokémon Sun and Moon Special Demo Version",
+    sourceUrl: "https://www.pokemon.com/us/pokemon-news/the-nintendo-3ds-and-wii-u-eshop-closes-on-march-27-2023",
+    displayDetail: undefined,
+    trainerName: "Ash / Satoshi",
+    trainerId: "131017",
+    acquisitionCategory: "event",
+    game: "Sun, Moon",
+    gender: "male",
+    genderDifferenceTier: undefined,
+    genderVariant: undefined,
+    requirements: {
+      originGame: "Pokémon Sun / Moon Special Demo Version",
+      gender: "male",
+      ball: "Poké Ball",
+      ability: "Battle Bond",
+      moves,
+      ribbons,
+    },
+    level: 36,
+    ball: "Poké Ball",
+    ability: "Battle Bond",
+    moves,
+    ribbons,
+    eventYear: 2016,
+    eventType: "In-game gift",
+    startDate: "18 November 2016",
+    endDate: "27 March 2023",
+    shinyEligible: false,
+    shinyReview: "verified-correction",
+    availability: "historical",
+    normalEligible: true,
+    ownOtNormal: false,
+    ownOtShiny: false,
+  };
+}
+
 // These species evolve from non-regional forms in Legends: Arceus, preserving
 // the Galar origin mark carried by the Pokémon obtained in Sword or Shield.
 export const SWSH_HISUIAN_EVOLUTION_DEX = [549, 628, 705, 706, 713, 724] as const;
@@ -184,3 +234,4 @@ export function correctBloodmoonUrsalunaDex<T extends CatalogEntry>(entries: T[]
     ? { ...entry, dex: 901 }
     : entry);
 }
+import type { PokemonEntry } from "./app-types";

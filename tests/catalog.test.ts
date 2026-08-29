@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { DEFAULT_MARKS, MARKS } from "../src/app-config";
 import type { Acquisition, Dataset, FormOptions, GenderMode, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
-import { addGoStorableForms } from "../src/catalog-corrections";
+import { addGoStorableForms, createBattleBondGreninja } from "../src/catalog-corrections";
 import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/catalog-planner";
 import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
@@ -24,7 +24,8 @@ const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = 
 
 const catalogEntries = applyCatalogCorrections(baseDataset.entries);
 const mightiestEntries = buildMightiestRaidEntries(mightiestDataset, catalogEntries);
-const specialEntries = [...addGoStorableForms(rawSpecialDataset.entries, catalogEntries), ...mightiestEntries];
+const battleBondGreninja = createBattleBondGreninja(catalogEntries);
+const specialEntries = [...addGoStorableForms(rawSpecialDataset.entries, catalogEntries), battleBondGreninja, ...mightiestEntries];
 const importEntries = [...catalogEntries, ...specialEntries];
 const speciesRules = new Map(rulesDataset.species.map((rule) => [rule.dex, rule]));
 const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, event: true, external: true };
@@ -110,7 +111,7 @@ test("catalog identities and origin keys are valid", () => {
   const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
   assert.deepEqual(duplicateIds, [], `duplicate raw catalog ids: ${duplicateIds.join(", ")}`);
   const allowedMarks = new Set(MARKS);
-  const allowedCollections = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "events", "mighty", "trades", "go"]);
+  const allowedCollections = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "events", "mighty", "battle-bond", "trades", "go"]);
   for (const entry of importEntries) {
     assert.ok(entry.dex > 0, `${entry.id} has invalid National Dex number ${entry.dex}`);
     if (entry.mark) assert.ok(allowedMarks.has(entry.mark), `${entry.id} has impossible Origin Mark ${entry.mark}`);
@@ -134,6 +135,18 @@ test("Mightiest Mark collection contains only unique eligible raid specimens", (
     assert.equal(entry.ownOtNormal, true);
     assert.equal(entry.requirements?.encounterMark, "Mightiest Mark");
   }
+});
+
+test("Battle Bond Greninja preserves the unique Sun and Moon demo requirements", () => {
+  assert.equal(battleBondGreninja.dex, 658);
+  assert.equal(battleBondGreninja.collection, "battle-bond");
+  assert.equal(battleBondGreninja.mark, "USUM");
+  assert.equal(battleBondGreninja.form, null, "Ash-Greninja is a battle transformation, not a separately stored HOME form");
+  assert.equal(battleBondGreninja.gender, "male");
+  assert.equal(battleBondGreninja.trainerId, "131017");
+  assert.equal(battleBondGreninja.requirements?.ability, "Battle Bond");
+  assert.deepEqual(battleBondGreninja.requirements?.ribbons, ["Souvenir Ribbon"]);
+  assert.equal(battleBondGreninja.shinyEligible, false);
 });
 
 test("own-OT shiny locks remain excluded", () => {
@@ -256,6 +269,12 @@ test("search and social metadata consistently reference the collection box previ
   assert.equal(schema.screenshot, previewUrl);
 });
 
+test("Vite configuration does not require undeclared Node globals in deployment", async () => {
+  const config = await readFile(resolve("vite.config.ts"), "utf8");
+  assert.doesNotMatch(config, /\bprocess\./);
+  assert.match(config, /loadEnv\(mode,\s*["']\.["'],\s*["']["']\)/);
+});
+
 test("mobile releases preserve both HOME grids as six columns by five rows", async () => {
   const css = await readFile(resolve("src/styles/mobile.css"), "utf8");
   assert.match(css, /\.page-grid\s*\{[^}]*grid-template-columns:\s*repeat\(6,/s);
@@ -290,6 +309,7 @@ test("required interface copy exists in every available language", async () => {
     ...COLLECTION_PRESETS.flatMap((preset) => [`profile_${preset}`, `profile_${preset}_desc`]),
     "origin_mode_living_dex",
     "mightiest_mark", "mightiest_source", "method_mightiest_raid", "why_mightiest_raid",
+    "battle_bond_source", "battle_bond_ability", "battle_bond_origin", "method_battle_bond_demo", "why_battle_bond_demo",
     "best_games_to_progress", "obtainable_missing_count", "missing_obtainable", "open_game_planner", "no_game_recommendations",
   ];
   const requiredKeys = [...new Set([...literalKeys, ...dynamicKeys])];
@@ -303,6 +323,10 @@ test("required interface copy exists in every available language", async () => {
   const mightiestKeys = ["mightiest_mark", "mightiest_source", "method_mightiest_raid", "why_mightiest_raid"];
   for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) {
     for (const key of mightiestKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
+  }
+  const battleBondKeys = ["battle_bond_source", "battle_bond_ability", "battle_bond_origin", "method_battle_bond_demo", "why_battle_bond_demo"];
+  for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) {
+    for (const key of battleBondKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
   }
   for (const { code } of LANGUAGE_OPTIONS) assert.match(copy(code, "game_gba"), /Pokémon|ポケットモンスター|포켓몬스터|宝可梦|寶可夢/);
 });

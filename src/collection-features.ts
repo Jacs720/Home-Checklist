@@ -288,7 +288,7 @@ type AccessEntry = {
 };
 
 const BANK_MARKS = new Set(["Sin marca", "GB", "P", "USUM"]);
-const BANK_COLLECTIONS = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd"]);
+const BANK_COLLECTIONS = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "battle-bond"]);
 const LEGACY_GAME = /\b(?:Red|Green|Blue|Yellow|Gold|Silver|Crystal|Ruby|Sapphire|Emerald|FireRed|LeafGreen|Diamond|Pearl|Platinum|HeartGold|SoulSilver|Black|White|X|Y|Sun|Moon|Ultra Sun|Ultra Moon)\b/i;
 
 const ORIGIN_GENERATION: Record<string, number> = {
@@ -390,12 +390,14 @@ export function methodKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "go") return "method_go";
   if (entry.collection === "trades") return "method_trade";
   if (entry.collection === "mighty") return "method_mightiest_raid";
+  if (entry.collection === "battle-bond") return "method_battle_bond_demo";
   if (entry.collection === "cherish" || entry.collection === "event-dex") return "method_event";
   if (entry.availability === "hypothetical") return "method_hypothetical";
   return "method_source_game";
 }
 
 export function reasonKeyForEntry(entry: AccessEntry) {
+  if (entry.collection === "battle-bond") return "why_battle_bond_demo";
   if (entry.collection === "mighty") return "why_mightiest_raid";
   if (isLaterGenerationEvolution(entry)) return "why_transfer_evolution";
   if (entry.collection === "dream") return "why_dream_world";
@@ -404,6 +406,7 @@ export function reasonKeyForEntry(entry: AccessEntry) {
 }
 
 export function transferKeyForEntry(entry: AccessEntry) {
+  if (entry.collection === "battle-bond") return "transfer_bank_home";
   if (entry.availability === "historical") return "transfer_unavailable_historical";
   if (entry.collection === "dream") return "transfer_existing_bank_home";
   if (requiresPokemonBank(entry)) return "transfer_bank_home";

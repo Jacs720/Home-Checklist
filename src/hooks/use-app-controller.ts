@@ -18,7 +18,7 @@ import {
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
-import { addGoStorableForms } from "../catalog-corrections";
+import { addGoStorableForms, createBattleBondGreninja } from "../catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
   AVAILABILITY_STATUSES,
@@ -206,6 +206,7 @@ export function useAppController() {
         const correctedEntries = applyCatalogCorrections(baseValue.entries);
         const correctedSpecialEntries = [
           ...addGoStorableForms(specialValue.entries, correctedEntries),
+          createBattleBondGreninja(correctedEntries),
           ...buildMightiestRaidEntries(mightiestValue, correctedEntries),
         ];
         setDataset({ ...baseValue, entries: correctedEntries });
@@ -226,7 +227,7 @@ export function useAppController() {
     if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
     if (Array.isArray(value.selectedCollections)) {
       const savedCollections = value.selectedCollections.filter((collection: string) => COLLECTIONS.includes(collection));
-      setSelectedCollections(value.catalogVersion >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar"])]);
+      setSelectedCollections(value.catalogVersion >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar", "battle-bond"])]);
     }
     if (value.variants) setVariants({ shiny: Boolean(value.variants.shiny), normal: Boolean(value.variants.normal) });
     if (value.acquisitions) setAcquisitions({
@@ -1026,7 +1027,7 @@ export function useAppController() {
     if (Array.isArray(configuration.selectedMarks)) setSelectedMarks(configuration.selectedMarks.filter((mark): mark is string => typeof mark === "string" && MARKS.includes(mark)));
     if (Array.isArray(configuration.selectedCollections)) {
       const savedCollections = configuration.selectedCollections.filter((collection): collection is string => typeof collection === "string" && COLLECTIONS.includes(collection));
-      setSelectedCollections(Number(value.catalogVersion) >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar"])]);
+      setSelectedCollections(Number(value.catalogVersion) >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar", "battle-bond"])]);
     }
     const savedVariants = configuration.variants as Record<string, unknown> | undefined;
     if (savedVariants) setVariants({ shiny: Boolean(savedVariants.shiny), normal: Boolean(savedVariants.normal) });
