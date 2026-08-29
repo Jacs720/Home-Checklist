@@ -276,7 +276,7 @@ function asGenericSpecimen(entry: PlannedEntry): PlannedEntry {
     genericEntry: true,
   };
 }
-function eventMythicalsForMark(
+function eventExclusiveEntriesForMark(
   mark: string,
   normalEntries: PokemonEntry[],
   specialEntries: PokemonEntry[],
@@ -296,7 +296,7 @@ function eventMythicalsForMark(
     .filter((entry) =>
       entry.collection === "event-dex" &&
       entry.mark === mark &&
-      MYTHICAL_DEX.has(entry.dex)
+      (MYTHICAL_DEX.has(entry.dex) || entry.shinyEligible)
     )
     .filter((entry) => {
       const variant = entry.shinyEligible ? "shiny" : "normal";
@@ -356,7 +356,7 @@ export function buildBoxes(
     entries: [
       ...entries.filter((entry) => entry.mark === key),
       ...(includeEventMythicals
-        ? eventMythicalsForMark(key, entries, specialEntries)
+        ? eventExclusiveEntriesForMark(key, entries, specialEntries)
         : []),
     ].sort((a, b) => {
       if (a.dex !== b.dex) return a.dex - b.dex;
@@ -390,13 +390,13 @@ export function buildBoxes(
           COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
           (ownOt ? "own" : "event");
 
-        const isHistoricalEventMythical =
+        const isEventExclusive =
           entry.id.includes(":historical-event:");
 
         if (
           acquisitions[acquisition] ||
           unifiedProfile ||
-          (includeEventMythicals && isHistoricalEventMythical)
+          (includeEventMythicals && isEventExclusive)
         ) {
           planned.push({
             ...entry,
@@ -416,12 +416,12 @@ export function buildBoxes(
           COLLECTION_ACQUISITIONS[entry.collection ?? ""] ??
           (ownOt ? "own" : "event");
 
-        const isHistoricalEventMythical =
+        const isEventExclusive =
           entry.id.includes(":historical-event:");
 
         if (
           acquisitions[acquisition] ||
-          (includeEventMythicals && isHistoricalEventMythical)
+          (includeEventMythicals && isEventExclusive)
         ) {
           planned.push({
             ...entry,
@@ -452,6 +452,24 @@ export function buildBoxes(
         groupLabel: groupName(language, entry.collection ?? entry.mark ?? "generic"),
         planId: `${entry.id}:normal`,
       }));
+  }
+  if ((unifiedProfile || originIndependentDex) && variants.shiny) {
+    const roamingGimmighoul = specialEntries.find((entry) => (
+      entry.collection === "go"
+      && entry.dex === 999
+      && entry.form === "Roaming Form"
+      && entry.shinyEligible
+    ));
+    if (roamingGimmighoul) {
+      unifiedCandidates.push({
+        ...roamingGimmighoul,
+        variant: "shiny",
+        ownOt: roamingGimmighoul.ownOtShiny,
+        groupKey: "go",
+        groupLabel: groupName(language, "go"),
+        planId: `${roamingGimmighoul.id}:shiny`,
+      });
+    }
   }
   if (hasUnifiedEntries) {
     if (collectionPreset === "original_generation") {
@@ -514,7 +532,6 @@ export function pokemonArtworkUrl(entry: PlannedEntry) {
   if (vivillonIndex !== undefined) customKey = `0666-${String(vivillonIndex).padStart(2, "0")}`;
   if (furfrouIndex !== undefined) customKey = `0676-${String(furfrouIndex).padStart(2, "0")}`;
   if (entry.dex >= 669 && entry.dex <= 671 && flowerIndex !== undefined) customKey = `${String(entry.dex).padStart(4, "0")}-${String(flowerIndex).padStart(2, "0")}`;
-  if (entry.dex === 670 && entry.form === "Eternal Flower" && entry.variant === "normal") customKey = "0670-05";
   if (alcremieCream >= 0 && alcremieSweet >= 0) customKey = entry.variant === "shiny" ? `0869-shiny-${alcremieSweet}` : `0869-${alcremieCream}-${alcremieSweet}`;
   if (entry.dex === 774 && entry.variant === "shiny") customKey = "10136";
   if (customKey) return assetUrl(`assets/pokemon/${entry.variant}/${customKey}.webp`);

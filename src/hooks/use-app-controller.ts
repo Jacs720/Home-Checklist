@@ -18,7 +18,7 @@ import {
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
-import { addGoStorableForms, createBattleBondGreninja } from "../catalog-corrections";
+import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
   AVAILABILITY_STATUSES,
@@ -205,7 +205,7 @@ export function useAppController() {
       .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue, pokewalkerValue, mightiestValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset, PokewalkerDataset, MightiestRaidsDataset]) => {
         const correctedEntries = applyCatalogCorrections(baseValue.entries);
         const correctedSpecialEntries = [
-          ...addGoStorableForms(specialValue.entries, correctedEntries),
+          ...addGoStorableForms(applySpecialCatalogCorrections(specialValue.entries), correctedEntries),
           createBattleBondGreninja(correctedEntries),
           ...buildMightiestRaidEntries(mightiestValue, correctedEntries),
         ];

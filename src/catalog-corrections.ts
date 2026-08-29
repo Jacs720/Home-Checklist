@@ -15,6 +15,7 @@ type CatalogEntry = {
   ownOtNormal: boolean;
   ownOtShiny: boolean;
   acquisitionCategory?: string;
+  game?: string;
   artId?: number | null;
   types?: string[];
   shinyArtStyle?: "home";
@@ -96,6 +97,44 @@ export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], 
     candidates.forEach((candidate, index) => expanded.push(createFormEntry(candidate, !keepsUnnamedBase && index === 0)));
   }
   return expanded;
+}
+
+const GALARIAN_BIRD_ART_IDS: Record<number, number> = {
+  144: 10169,
+  145: 10170,
+  146: 10171,
+};
+
+/**
+ * Repairs form and origin metadata that the event source cannot infer from
+ * its species-only pages. Keeping these corrections at runtime means future
+ * event synchronizations cannot silently reintroduce the visual duplicates.
+ */
+export function applySpecialCatalogCorrections<T extends CatalogEntry>(entries: T[]) {
+  return entries.map((entry) => {
+    if (entry.shinyEligible && entry.mark === "SwSh" && GALARIAN_BIRD_ART_IDS[entry.dex]) {
+      return {
+        ...entry,
+        form: "Galarian",
+        artId: GALARIAN_BIRD_ART_IDS[entry.dex],
+      };
+    }
+    if (entry.dex === 801 && entry.game === "HOME" && entry.normalEligible !== false) {
+      return {
+        ...entry,
+        mark: "SwSh",
+        form: "Original Color",
+        artId: 10147,
+      };
+    }
+    if (entry.dex === 807 && entry.shinyEligible && entry.game === "HOME") {
+      return { ...entry, mark: "SwSh" };
+    }
+    if (entry.dex === 999 && !entry.form && entry.collection !== "go") {
+      return { ...entry, form: "Chest Form", artId: 999 };
+    }
+    return entry;
+  });
 }
 
 export function createBattleBondGreninja(catalogEntries: PokemonEntry[]): PokemonEntry {

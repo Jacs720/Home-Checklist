@@ -58,7 +58,7 @@ export const GROUP_COLORS: Record<string, string> = {
   "shadow-xd": "#6679a9",
   cherish: "#e76d83",
   "event-dex": "#ef718d",
-  mighty: "#f3c857",
+  mighty: "#9b63d9",
   "battle-bond": "#4ca7dd",
   trades: "#e7a65f",
   go: "#57a6e6",

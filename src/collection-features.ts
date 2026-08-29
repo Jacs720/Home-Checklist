@@ -172,7 +172,7 @@ export function selectLivingDexWithRegionalForms<T extends SlotCandidate>(entrie
 
 export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[]) {
   const forms = new Map<string, T[]>();
-  for (const entry of entries) {
+  for (const entry of withoutRedundantUnnamedForms(entries)) {
     if (entry.genderVariant === "extra") continue;
     const key = `${entry.dex}:${entry.form ?? ""}:${entry.variant}`;
     const candidates = forms.get(key) ?? [];
@@ -187,7 +187,7 @@ export function selectLivingFormLiteEntries<T extends SlotCandidate>(entries: T[
 
 export function selectLivingFormEntries<T extends SlotCandidate>(entries: T[]) {
   const forms = new Map<string, T[]>();
-  for (const entry of entries) {
+  for (const entry of withoutRedundantUnnamedForms(entries)) {
     const key = `${entry.dex}:${entry.form ?? ""}:${entry.genderVariant ?? "base"}:${entry.variant}`;
     const candidates = forms.get(key) ?? [];
     candidates.push(entry);
@@ -202,6 +202,24 @@ export function selectLivingFormEntries<T extends SlotCandidate>(entries: T[]) {
       ? { ...entry, requirements: { ...entry.requirements, gender: entry.gender } }
       : entry)
     .sort((left, right) => left.dex - right.dex || (left.form ?? "").localeCompare(right.form ?? "") || (left.requirements?.gender ?? "").localeCompare(right.requirements?.gender ?? ""));
+}
+
+// These species genuinely have an unnamed base specimen in addition to their
+// named forms. For every other species, an unnamed special/event record is
+// source metadata, not a third boxable form.
+const SPECIES_WITH_UNNAMED_BASE_FORM = new Set([128, 647, 676, 720, 901]);
+
+function withoutRedundantUnnamedForms<T extends SlotCandidate>(entries: T[]) {
+  const namedSpecimens = new Set(
+    entries
+      .filter((entry) => Boolean(entry.form))
+      .map((entry) => `${entry.dex}:${entry.genderVariant ?? "base"}:${entry.variant}`),
+  );
+  return entries.filter((entry) => (
+    Boolean(entry.form)
+    || SPECIES_WITH_UNNAMED_BASE_FORM.has(entry.dex)
+    || !namedSpecimens.has(`${entry.dex}:${entry.genderVariant ?? "base"}:${entry.variant}`)
+  ));
 }
 
 export function genericSpecimenKey(entry: Pick<SlotCandidate, "dex" | "form" | "variant" | "requirements">) {

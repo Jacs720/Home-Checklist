@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
-import { DEFAULT_MARKS, MARKS } from "../src/app-config";
+import { DEFAULT_MARKS, GROUP_COLORS, MARKS } from "../src/app-config";
 import type { Acquisition, Dataset, FormOptions, GenderMode, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
-import { addGoStorableForms, createBattleBondGreninja } from "../src/catalog-corrections";
-import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/catalog-planner";
+import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../src/catalog-corrections";
+import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked, pokemonArtworkUrl } from "../src/catalog-planner";
 import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
@@ -25,7 +25,8 @@ const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = 
 const catalogEntries = applyCatalogCorrections(baseDataset.entries);
 const mightiestEntries = buildMightiestRaidEntries(mightiestDataset, catalogEntries);
 const battleBondGreninja = createBattleBondGreninja(catalogEntries);
-const specialEntries = [...addGoStorableForms(rawSpecialDataset.entries, catalogEntries), battleBondGreninja, ...mightiestEntries];
+const correctedRawSpecialEntries = applySpecialCatalogCorrections(rawSpecialDataset.entries);
+const specialEntries = [...addGoStorableForms(correctedRawSpecialEntries, catalogEntries), battleBondGreninja, ...mightiestEntries];
 const importEntries = [...catalogEntries, ...specialEntries];
 const speciesRules = new Map(rulesDataset.species.map((rule) => [rule.dex, rule]));
 const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, event: true, external: true };
@@ -91,13 +92,13 @@ const EXPECTED_PROFILE_COUNTS: Record<keyof typeof canonicalProfiles, number> = 
   "Living Dex": 1025,
   "Final Form Dex": 606,
   "Living Dex + Regional Forms": 1082,
-  "Living Form Lite": 1343,
-  "Living Form Dex": 1447,
+  "Living Form Lite": 1274,
+  "Living Form Dex": 1378,
   "Shiny Living Dex": 981,
   "Shiny Final Form Dex": 563,
   "Shiny Living Dex + Regional Forms": 1035,
-  "Shiny Living Form Lite": 1219,
-  "Shiny Form Living Dex": 1323,
+  "Shiny Living Form Lite": 1220,
+  "Shiny Form Living Dex": 1324,
   "Origin Mark Dex": 5044,
   "Event Dex": 1880,
 };
@@ -121,6 +122,7 @@ test("catalog identities and origin keys are valid", () => {
 });
 
 test("Mightiest Mark collection contains only unique eligible raid specimens", () => {
+  assert.equal(GROUP_COLORS.mighty, "#9b63d9");
   assert.equal(mightiestDataset.meta.specimenCount, 53);
   assert.equal(mightiestEntries.length, 53);
   assert.equal(new Set(mightiestEntries.map((entry) => `${entry.dex}:${entry.form ?? ""}`)).size, 53);
@@ -134,6 +136,42 @@ test("Mightiest Mark collection contains only unique eligible raid specimens", (
     assert.equal(entry.shinyEligible, false);
     assert.equal(entry.ownOtNormal, true);
     assert.equal(entry.requirements?.encounterMark, "Mightiest Mark");
+  }
+});
+
+test("event source corrections preserve the actual stored forms and origin marks", () => {
+  const originalColorMagearna = correctedRawSpecialEntries.filter((entry) => entry.dex === 801 && entry.game === "HOME");
+  assert.ok(originalColorMagearna.length > 0);
+  assert.ok(originalColorMagearna.every((entry) => entry.form === "Original Color" && entry.artId === 10147 && entry.mark === "SwSh"));
+
+  const shinyGalarianBirds = correctedRawSpecialEntries.filter((entry) => entry.collection === "event-dex" && [144, 145, 146].includes(entry.dex) && entry.shinyEligible && entry.mark === "SwSh");
+  assert.equal(shinyGalarianBirds.length, 3);
+  assert.deepEqual(shinyGalarianBirds.map((entry) => entry.form), ["Galarian", "Galarian", "Galarian"]);
+  assert.deepEqual(shinyGalarianBirds.map((entry) => entry.artId), [10169, 10170, 10171]);
+
+  const shinyZeraora = correctedRawSpecialEntries.filter((entry) => entry.dex === 807 && entry.shinyEligible && entry.game === "HOME");
+  assert.ok(shinyZeraora.length > 0);
+  assert.ok(shinyZeraora.every((entry) => entry.mark === "SwSh"));
+
+  const eventGimmighoul = correctedRawSpecialEntries.find((entry) => entry.collection === "event-dex" && entry.dex === 999);
+  assert.equal(eventGimmighoul?.form, "Chest Form");
+});
+
+test("event-only shiny distributions augment the matching origin catalogs", () => {
+  const eventShinies = buildProfile({
+    preset: "custom",
+    marks: ["SwSh", "SV"],
+    variants: { normal: false, shiny: true },
+    acquisitions: allAcquisitions,
+    includeEventMythicals: true,
+    forms: allForms,
+  }).flatMap((box) => box.entries);
+
+  for (const dex of [807, 1001, 1002, 1003, 1004, 1007, 1008]) {
+    assert.ok(eventShinies.some((entry) => entry.dex === dex && entry.variant === "shiny"), `missing event-only shiny #${dex}`);
+  }
+  for (const dex of [144, 145, 146]) {
+    assert.ok(eventShinies.some((entry) => entry.dex === dex && entry.form === "Galarian" && entry.variant === "shiny"), `missing shiny Galarian bird #${dex}`);
   }
 });
 
@@ -166,6 +204,32 @@ test("profiles preserve species coverage and the complete post-Gen-5 Form Dex", 
   for (const dex of new Set(livingDex.map((entry) => entry.dex))) assert.ok(livingFormDex.some((entry) => entry.dex === dex), `Living Form Dex lost #${dex}`);
   for (const dex of [650, 722, 810, 906]) assert.ok(livingFormDex.some((entry) => entry.dex === dex), `Living Form Dex lost generation starter #${dex}`);
   assert.ok(livingFormDex.some((entry) => entry.dex === 901 && entry.form === "Bloodmoon"), "Living Form Dex lost Bloodmoon Ursaluna");
+});
+
+test("form profiles omit source-only base placeholders and keep real exclusive forms", () => {
+  const entries = buildProfile({
+    preset: "forms",
+    variants: { normal: true, shiny: true },
+    acquisitions: allAcquisitions,
+    gender: "all",
+    forms: allForms,
+  }).flatMap((box) => box.entries);
+
+  const formsFor = (dex: number) => entries.filter((entry) => entry.dex === dex).map((entry) => `${entry.variant}:${entry.form ?? "base"}`).sort();
+  assert.deepEqual(formsFor(801), ["normal:Basic", "normal:Original Color"]);
+  assert.deepEqual(formsFor(854), ["normal:Antique Form", "normal:Phony Form", "shiny:Antique Form", "shiny:Phony Form"]);
+  assert.deepEqual(formsFor(999), ["normal:Chest Form", "normal:Roaming Form", "shiny:Chest Form", "shiny:Roaming Form"]);
+  assert.deepEqual(formsFor(1012), ["normal:Artisan", "normal:Counterfeit", "shiny:Artisan", "shiny:Counterfeit"]);
+
+  for (const dex of [128, 647, 676, 720, 901]) {
+    assert.ok(entries.some((entry) => entry.dex === dex && !entry.form && entry.variant === "normal"), `lost real unnamed base form #${dex}`);
+    assert.ok(entries.some((entry) => entry.dex === dex && entry.form), `lost named alternate form #${dex}`);
+  }
+
+  const eternalFloette = entries.find((entry) => entry.dex === 670 && entry.form === "Eternal Flower" && entry.variant === "normal");
+  const originalColorMagearna = entries.find((entry) => entry.dex === 801 && entry.form === "Original Color" && entry.variant === "normal");
+  assert.match(pokemonArtworkUrl(eternalFloette!) ?? "", /\/normal\/10061\.webp$/);
+  assert.match(pokemonArtworkUrl(originalColorMagearna!) ?? "", /\/normal\/10147\.webp$/);
 });
 
 test("all planned entries fit boxes, have unique planIds and deterministic order", () => {
