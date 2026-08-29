@@ -9,19 +9,22 @@ import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked } from "../src/
 import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
+import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../src/mightiest-raids";
 import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
 
 const readJson = async <T>(path: string) => JSON.parse(await readFile(resolve(path), "utf8")) as T;
-const [baseDataset, rawSpecialDataset, names, rulesDataset] = await Promise.all([
+const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = await Promise.all([
   readJson<Dataset>("public/data/pokemon-lite.json"),
   readJson<SpecialDataset>("public/data/special-collections.json"),
   readJson<PokemonNames>("public/data/pokemon-names.json"),
   readJson<SpeciesRulesDataset>("public/data/species-rules.json"),
+  readJson<MightiestRaidsDataset>("public/data/mightiest-raids.json"),
 ]);
 
 const catalogEntries = applyCatalogCorrections(baseDataset.entries);
-const specialEntries = addGoStorableForms(rawSpecialDataset.entries, catalogEntries);
+const mightiestEntries = buildMightiestRaidEntries(mightiestDataset, catalogEntries);
+const specialEntries = [...addGoStorableForms(rawSpecialDataset.entries, catalogEntries), ...mightiestEntries];
 const importEntries = [...catalogEntries, ...specialEntries];
 const speciesRules = new Map(rulesDataset.species.map((rule) => [rule.dex, rule]));
 const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, event: true, external: true };
@@ -107,13 +110,30 @@ test("catalog identities and origin keys are valid", () => {
   const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
   assert.deepEqual(duplicateIds, [], `duplicate raw catalog ids: ${duplicateIds.join(", ")}`);
   const allowedMarks = new Set(MARKS);
-  const allowedCollections = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "events", "trades", "go"]);
+  const allowedCollections = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "events", "mighty", "trades", "go"]);
   for (const entry of importEntries) {
     assert.ok(entry.dex > 0, `${entry.id} has invalid National Dex number ${entry.dex}`);
     if (entry.mark) assert.ok(allowedMarks.has(entry.mark), `${entry.id} has impossible Origin Mark ${entry.mark}`);
     if (entry.collection) assert.ok(allowedCollections.has(entry.collection), `${entry.id} has unknown collection ${entry.collection}`);
   }
   assert.equal(catalogEntries.some((entry) => entry.mark === "GBA" && entry.dex === 983), false, "Kingambit cannot retain a GBA origin");
+});
+
+test("Mightiest Mark collection contains only unique eligible raid specimens", () => {
+  assert.equal(mightiestDataset.meta.specimenCount, 53);
+  assert.equal(mightiestEntries.length, 53);
+  assert.equal(new Set(mightiestEntries.map((entry) => `${entry.dex}:${entry.form ?? ""}`)).size, 53);
+  assert.ok(mightiestEntries.some((entry) => entry.dex === 157 && entry.form === "Original"));
+  assert.ok(mightiestEntries.some((entry) => entry.dex === 157 && entry.form === "Hisuian"));
+  assert.ok(mightiestEntries.some((entry) => entry.dex === 1005));
+  assert.ok(mightiestEntries.some((entry) => entry.dex === 1006));
+  for (const entry of mightiestEntries) {
+    assert.equal(entry.collection, "mighty");
+    assert.equal(entry.mark, "SV");
+    assert.equal(entry.shinyEligible, false);
+    assert.equal(entry.ownOtNormal, true);
+    assert.equal(entry.requirements?.encounterMark, "Mightiest Mark");
+  }
 });
 
 test("own-OT shiny locks remain excluded", () => {
@@ -269,6 +289,7 @@ test("required interface copy exists in every available language", async () => {
     ...GAME_PLANS.map((game) => `game_${game.id}`),
     ...COLLECTION_PRESETS.flatMap((preset) => [`profile_${preset}`, `profile_${preset}_desc`]),
     "origin_mode_living_dex",
+    "mightiest_mark", "mightiest_source", "method_mightiest_raid", "why_mightiest_raid",
     "best_games_to_progress", "obtainable_missing_count", "missing_obtainable", "open_game_planner", "no_game_recommendations",
   ];
   const requiredKeys = [...new Set([...literalKeys, ...dynamicKeys])];
@@ -278,6 +299,10 @@ test("required interface copy exists in every available language", async () => {
   const rankingKeys = ["best_games_to_progress", "obtainable_missing_count", "missing_obtainable", "open_game_planner", "no_game_recommendations"];
   for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) {
     for (const key of rankingKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
+  }
+  const mightiestKeys = ["mightiest_mark", "mightiest_source", "method_mightiest_raid", "why_mightiest_raid"];
+  for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) {
+    for (const key of mightiestKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
   }
   for (const { code } of LANGUAGE_OPTIONS) assert.match(copy(code, "game_gba"), /Pokémon|ポケットモンスター|포켓몬스터|宝可梦|寶可夢/);
 });

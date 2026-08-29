@@ -342,6 +342,7 @@ const FEATURE_EN: Copy = {
   ball: "Ball", nature: "Nature", ability: "Ability", tera_type: "Tera Type", held_item: "Held item", moves: "Moves", ribbons: "Ribbons", trainer_id: "Trainer ID", level: "Level", event_period: "Event period",
   home_challenges: "HOME CHALLENGES", home_challenges_only: "HOME Challenges", home_challenges_source: "HOME Challenges ↗", home_challenges_met: "HOME Challenges this Pokémon can fulfill", home_challenges_met_desc: "The exact challenge conditions are listed below; origin, form, gender, or trade requirements still apply.", historical_event_mythicals: "Event-distributed Mythical Pokémon",
   pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "View filter for the {count} species found through the Pokéwalker · does not add duplicate slots.", pokewalker_source: "Pokéwalker encounters ↗",
+  mightiest_mark: "Mightiest Mark", mightiest_source: "Mightiest Mark raids ↗", method_mightiest_raid: "Defeat and catch it in its seven-star Tera Raid event in Pokémon Scarlet or Violet.", why_mightiest_raid: "This exact species and form was available with the Mightiest Mark in an official seven-star Tera Raid event.",
   origin_mode_living_dex: "Living Dex", generic_specimen: "Generic specimen", no_origin_required: "No specific origin required",
   alpha: "Alpha Pokémon", gmax_factor: "Gigantamax Factor",
 };
@@ -408,6 +409,7 @@ const FEATURE_ES: Copy = {
   ball: "Poké Ball", nature: "Naturaleza", ability: "Habilidad", tera_type: "Teratipo", held_item: "Objeto equipado", moves: "Movimientos", ribbons: "Cintas", trainer_id: "ID de entrenador", level: "Nivel", event_period: "Periodo del evento",
   home_challenges: "RETOS DE HOME", home_challenges_only: "Retos de HOME", home_challenges_source: "Retos de HOME ↗", home_challenges_met: "Retos de HOME que puede cumplir", home_challenges_met_desc: "Se muestran las condiciones exactas de cada reto; siguen aplicando sus requisitos de origen, forma, sexo o intercambio.", historical_event_mythicals: "Pokémon míticos distribuidos por evento",
   pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Filtro visual para las {count} especies encontradas mediante el Pokéwalker · no añade posiciones duplicadas.", pokewalker_source: "Encuentros del Pokéwalker ↗",
+  mightiest_mark: "Emblema Imbatibilidad", mightiest_source: "Teraincursiones Imbatibles ↗", method_mightiest_raid: "Derrota y captura al Pokémon en su teraincursión de siete estrellas de Pokémon Escarlata o Púrpura.", why_mightiest_raid: "Esta especie y forma exactas estuvieron disponibles con el Emblema Imbatibilidad en una teraincursión oficial de siete estrellas.",
   origin_mode_living_dex: "Living Dex", generic_specimen: "Ejemplar genérico", no_origin_required: "No requiere una procedencia específica",
   alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax",
 };
@@ -430,7 +432,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "Arche Noah", profile_noah_desc: "Ein männliches und ein weibliches Exemplar jeder Art, sofern beide Geschlechter existieren.",
     profile_original_generation: "Ursprungsregionen-Dex", profile_original_generation_desc: "Jede Art wird der Region zugeordnet, in der sie erstmals erschien.",
     home_challenges: "HOME-HERAUSFORDERUNGEN", home_challenges_only: "HOME-Herausforderungen", home_challenges_met: "HOME-Herausforderungen für dieses Pokémon", home_challenges_met_desc: "Die genauen Bedingungen stehen unten; Herkunft, Form, Geschlecht oder Tausch bleiben erforderlich.", historical_event_mythicals: "Per Event verteilte Mysteriöse Pokémon",
-    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Ansichtsfilter für die {count} über den Pokéwalker gefundenen Arten · fügt keine doppelten Plätze hinzu.", pokewalker_source: "Pokéwalker-Fundorte ↗",
+    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Ansichtsfilter für die {count} über den Pokéwalker gefundenen Arten · fügt keine doppelten Plätze hinzu.", pokewalker_source: "Pokéwalker-Fundorte ↗", mightiest_mark: "Unbezwingbarkeits-Zeichen", mightiest_source: "Raids mit Unbezwingbarkeits-Zeichen ↗", method_mightiest_raid: "Besiege und fange dieses Pokémon in seinem Sieben-Sterne-Tera-Raid in Pokémon Karmesin oder Purpur.", why_mightiest_raid: "Genau diese Art und Form war in einem offiziellen Sieben-Sterne-Tera-Raid mit dem Unbezwingbarkeits-Zeichen erhältlich.",
     origin_mode_living_dex: "Living Dex", generic_specimen: "Generisches Exemplar", no_origin_required: "Keine bestimmte Herkunft erforderlich",
     form_differences: "FORMEN & UNTERSCHIEDE", alternate_forms: "Alternative Formen", all_alcremie_forms: "Alle 63 Pokusan-Formen", all_minior_forms: "Alle 7 Meteno-Kerne",
     availability_current: "Aktuell verfügbar", availability_legacy: "Über Pokémon Bank", availability_historical: "Früher erhältlich", availability_hypothetical: "Hypothetisches Szenario", bank_required: "Pokémon Bank erforderlich", add_favorite: "Zu Zielen hinzufügen", remove_favorite: "Aus Zielen entfernen", jump_to_box: "Zu einer Box springen…",
@@ -457,7 +459,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "Arche de Noé", profile_noah_desc: "Un mâle et une femelle de chaque espèce lorsque les deux sexes existent.",
     profile_original_generation: "Pokédex des régions d'origine", profile_original_generation_desc: "Chaque espèce est classée dans la région où elle est apparue pour la première fois.",
     home_challenges: "DÉFIS HOME", home_challenges_only: "Défis HOME", home_challenges_met: "Défis HOME réalisables avec ce Pokémon", home_challenges_met_desc: "Les conditions exactes sont indiquées ci-dessous ; les exigences d’origine, de forme, de sexe ou d’échange restent applicables.", historical_event_mythicals: "Pokémon fabuleux distribués par événement",
-    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Filtre d’affichage pour les {count} espèces trouvées via le Pokéwalker · n’ajoute aucun emplacement en double.", pokewalker_source: "Rencontres du Pokéwalker ↗",
+    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Filtre d’affichage pour les {count} espèces trouvées via le Pokéwalker · n’ajoute aucun emplacement en double.", pokewalker_source: "Rencontres du Pokéwalker ↗", mightiest_mark: "Insigne Surpuissant", mightiest_source: "Raids avec Insigne Surpuissant ↗", method_mightiest_raid: "Battez et capturez ce Pokémon dans son raid Téracristal sept étoiles dans Pokémon Écarlate ou Violet.", why_mightiest_raid: "Cette espèce et cette forme précises ont été proposées avec l’Insigne Surpuissant lors d’un raid Téracristal officiel sept étoiles.",
     origin_mode_living_dex: "Living Dex", generic_specimen: "Spécimen générique", no_origin_required: "Aucune provenance précise requise",
     form_differences: "FORMES ET DIFFÉRENCES", alternate_forms: "Formes alternatives", all_alcremie_forms: "Les 63 formes de Charmilly", all_minior_forms: "Les 7 noyaux de Météno",
     availability_current: "Disponible actuellement", availability_legacy: "Via Pokémon Bank", availability_historical: "Obtenable auparavant", availability_hypothetical: "Scénario hypothétique", bank_required: "Pokémon Bank requis", add_favorite: "Ajouter aux objectifs", remove_favorite: "Retirer des objectifs", jump_to_box: "Aller à une boîte…",
@@ -484,7 +486,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "Arca di Noè", profile_noah_desc: "Un maschio e una femmina di ogni specie quando esistono entrambi i sessi.",
     profile_original_generation: "Pokédex delle regioni d'origine", profile_original_generation_desc: "Ogni specie viene archiviata nella regione in cui è apparsa per la prima volta.",
     home_challenges: "SFIDE HOME", home_challenges_only: "Sfide HOME", home_challenges_met: "Sfide HOME completabili con questo Pokémon", home_challenges_met_desc: "Le condizioni esatte sono elencate sotto; restano validi i requisiti di provenienza, forma, sesso o scambio.", historical_event_mythicals: "Pokémon misteriosi distribuiti tramite evento",
-    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Filtro di visualizzazione per le {count} specie trovate tramite il Pokéwalker · non aggiunge slot duplicati.", pokewalker_source: "Incontri del Pokéwalker ↗",
+    pokewalker: "POKÉWALKER", pokewalker_only: "Pokéwalker", pokewalker_only_desc: "Filtro di visualizzazione per le {count} specie trovate tramite il Pokéwalker · non aggiunge slot duplicati.", pokewalker_source: "Incontri del Pokéwalker ↗", mightiest_mark: "Emblema della Forza Assoluta", mightiest_source: "Raid con Emblema della Forza Assoluta ↗", method_mightiest_raid: "Sconfiggi e cattura questo Pokémon nel suo raid Teracristal a sette stelle in Pokémon Scarlatto o Violetto.", why_mightiest_raid: "Questa specie e questa forma esatte erano disponibili con l’Emblema della Forza Assoluta in un raid Teracristal ufficiale a sette stelle.",
     origin_mode_living_dex: "Living Dex", generic_specimen: "Esemplare generico", no_origin_required: "Nessuna provenienza specifica richiesta",
     form_differences: "FORME E DIFFERENZE", alternate_forms: "Forme alternative", all_alcremie_forms: "Tutte le 63 forme di Alcremie", all_minior_forms: "Tutti i 7 nuclei di Minior",
     availability_current: "Disponibile ora", availability_legacy: "Tramite Pokémon Bank", availability_historical: "Ottenibile in passato", availability_hypothetical: "Scenario ipotetico", bank_required: "Richiede Pokémon Bank", add_favorite: "Aggiungi agli obiettivi", remove_favorite: "Rimuovi dagli obiettivi", jump_to_box: "Vai a un box…",
@@ -511,7 +513,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "ノアの方舟", profile_noah_desc: "両方の性別が存在する各種族について、オスとメスを1匹ずつ集めます。",
     profile_original_generation: "初登場地方図鑑", profile_original_generation_desc: "各種族を初登場した地方ごとに分類します。",
     home_challenges: "HOMEチャレンジ", home_challenges_only: "HOMEチャレンジ", home_challenges_met: "このポケモンが対象のHOMEチャレンジ", home_challenges_met_desc: "各チャレンジの正確な条件です。出身・フォルム・性別・交換の条件も満たす必要があります。", historical_event_mythicals: "イベントで配布された幻のポケモン",
-    pokewalker: "ポケウォーカー", pokewalker_only: "ポケウォーカー", pokewalker_only_desc: "ポケウォーカーで見つかる{count}種類だけを表示 · 重複スロットは追加しません。", pokewalker_source: "ポケウォーカーの出現一覧 ↗",
+    pokewalker: "ポケウォーカー", pokewalker_only: "ポケウォーカー", pokewalker_only_desc: "ポケウォーカーで見つかる{count}種類だけを表示 · 重複スロットは追加しません。", pokewalker_source: "ポケウォーカーの出現一覧 ↗", mightiest_mark: "さいきょうのあかし", mightiest_source: "さいきょうのあかしレイド ↗", method_mightiest_raid: "『ポケットモンスター スカーレット・バイオレット』の★7テラレイドバトルで倒して捕まえます。", why_mightiest_raid: "このポケモンの種類とフォルムは、公式の★7テラレイドバトルで「さいきょうのあかし」付きで入手できました。",
     origin_mode_living_dex: "リビング図鑑", generic_specimen: "汎用個体", no_origin_required: "出身指定なし",
     form_differences: "フォルムと違い", alternate_forms: "別フォルム", all_alcremie_forms: "マホイップ全63フォルム", all_minior_forms: "メテノ全7色のコア",
     availability_current: "現在入手可能", availability_legacy: "ポケモンバンク経由", availability_historical: "過去に入手可能", availability_hypothetical: "仮定のシナリオ", bank_required: "ポケモンバンクが必要", add_favorite: "目標に追加", remove_favorite: "目標から削除", jump_to_box: "ボックスへ移動…",
@@ -538,7 +540,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "노아의 방주", profile_noah_desc: "암수가 모두 존재하는 각 종의 수컷과 암컷을 한 마리씩 모읍니다.",
     profile_original_generation: "최초 등장 지방 도감", profile_original_generation_desc: "각 종을 처음 등장한 지방별로 분류합니다.",
     home_challenges: "HOME 챌린지", home_challenges_only: "HOME 챌린지", home_challenges_met: "이 포켓몬으로 달성할 수 있는 HOME 챌린지", home_challenges_met_desc: "각 챌린지의 정확한 조건입니다. 출신·폼·성별·교환 조건도 충족해야 합니다.", historical_event_mythicals: "이벤트로 배포된 환상의 포켓몬",
-    pokewalker: "포켓워커", pokewalker_only: "포켓워커", pokewalker_only_desc: "포켓워커에서 만날 수 있는 {count}종만 표시 · 중복 슬롯은 추가하지 않습니다.", pokewalker_source: "포켓워커 출현 목록 ↗",
+    pokewalker: "포켓워커", pokewalker_only: "포켓워커", pokewalker_only_desc: "포켓워커에서 만날 수 있는 {count}종만 표시 · 중복 슬롯은 추가하지 않습니다.", pokewalker_source: "포켓워커 출현 목록 ↗", mightiest_mark: "최강의증표", mightiest_source: "최강의증표 레이드 ↗", method_mightiest_raid: "포켓몬스터 스칼렛·바이올렛의 7성 테라 레이드배틀에서 쓰러뜨리고 잡습니다.", why_mightiest_raid: "이 포켓몬의 정확한 종류와 폼은 공식 7성 테라 레이드배틀에서 최강의증표와 함께 등장했습니다.",
     origin_mode_living_dex: "리빙 덱스", generic_specimen: "일반 개체", no_origin_required: "특정 출신 조건 없음",
     form_differences: "폼과 차이", alternate_forms: "다른 폼", all_alcremie_forms: "마휘핑 63개 폼", all_minior_forms: "메테노 코어 7종",
     availability_current: "현재 획득 가능", availability_legacy: "포켓몬 뱅크 경유", availability_historical: "과거 획득 가능", availability_hypothetical: "가상 시나리오", bank_required: "포켓몬 뱅크 필요", add_favorite: "목표에 추가", remove_favorite: "목표에서 제거", jump_to_box: "박스로 이동…",
@@ -565,7 +567,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "诺亚方舟", profile_noah_desc: "对于同时存在雌雄的每个种类，各收集一只雄性和一只雌性。",
     profile_original_generation: "初登场地区图鉴", profile_original_generation_desc: "按每个种类首次登场的地区进行分类。",
     home_challenges: "HOME 挑战", home_challenges_only: "HOME 挑战", home_challenges_met: "这只宝可梦可完成的 HOME 挑战", home_challenges_met_desc: "下方列出每项挑战的准确条件；仍须满足来源、形态、性别或交换要求。", historical_event_mythicals: "通过活动配送的幻之宝可梦",
-    pokewalker: "宝可计步器", pokewalker_only: "宝可计步器", pokewalker_only_desc: "仅显示可通过宝可计步器遇到的 {count} 种宝可梦 · 不会添加重复位置。", pokewalker_source: "宝可计步器遭遇列表 ↗",
+    pokewalker: "宝可计步器", pokewalker_only: "宝可计步器", pokewalker_only_desc: "仅显示可通过宝可计步器遇到的 {count} 种宝可梦 · 不会添加重复位置。", pokewalker_source: "宝可计步器遭遇列表 ↗", mightiest_mark: "最强之证", mightiest_source: "最强之证太晶团体战 ↗", method_mightiest_raid: "在《宝可梦 朱／紫》的七星太晶团体战中击败并捕获这只宝可梦。", why_mightiest_raid: "该宝可梦的这一种类和形态曾在官方七星太晶团体战中携带最强之证登场。",
     origin_mode_living_dex: "Living Dex", generic_specimen: "通用个体", no_origin_required: "无特定来源要求",
     form_differences: "形态与差异", alternate_forms: "其他形态", all_alcremie_forms: "霜奶仙全部63种形态", all_minior_forms: "小陨星全部7种核心",
     availability_current: "目前可获得", availability_legacy: "经由 Pokémon Bank", availability_historical: "过去可获得", availability_hypothetical: "假设情景", bank_required: "需要 Pokémon Bank", add_favorite: "添加到目标", remove_favorite: "从目标移除", jump_to_box: "跳转到盒子…",
@@ -592,7 +594,7 @@ const FEATURE_LOCALIZED: Partial<Record<UiLanguage, Copy>> = {
     profile_noah: "諾亞方舟", profile_noah_desc: "對於同時存在雄性與雌性的每個種類，各收集一隻。",
     profile_original_generation: "初次登場地區圖鑑", profile_original_generation_desc: "依每個種類首次登場的地區進行分類。",
     home_challenges: "HOME 挑戰", home_challenges_only: "HOME 挑戰", home_challenges_met: "這隻寶可夢可完成的 HOME 挑戰", home_challenges_met_desc: "下方列出每項挑戰的確切條件；仍須符合來源、形態、性別或交換要求。", historical_event_mythicals: "透過活動配信的幻之寶可夢",
-    pokewalker: "寶可計步器", pokewalker_only: "寶可計步器", pokewalker_only_desc: "僅顯示可透過寶可計步器遇到的 {count} 種寶可夢 · 不會新增重複位置。", pokewalker_source: "寶可計步器遭遇清單 ↗",
+    pokewalker: "寶可計步器", pokewalker_only: "寶可計步器", pokewalker_only_desc: "僅顯示可透過寶可計步器遇到的 {count} 種寶可夢 · 不會新增重複位置。", pokewalker_source: "寶可計步器遭遇清單 ↗", mightiest_mark: "最強之證", mightiest_source: "最強之證太晶團體戰 ↗", method_mightiest_raid: "在《寶可夢 朱／紫》的七星太晶團體戰中擊敗並捕捉這隻寶可夢。", why_mightiest_raid: "該寶可夢的這個種類與形態曾在官方七星太晶團體戰中帶有最強之證登場。",
     origin_mode_living_dex: "Living Dex", generic_specimen: "通用個體", no_origin_required: "無特定來源要求",
     form_differences: "形態與差異", alternate_forms: "其他形態", all_alcremie_forms: "霜奶仙全部63種形態", all_minior_forms: "小隕星全部7種核心",
     availability_current: "目前可獲得", availability_legacy: "經由 Pokémon Bank", availability_historical: "過去可獲得", availability_hypothetical: "假設情境", bank_required: "需要 Pokémon Bank", add_favorite: "加入目標", remove_favorite: "從目標移除", jump_to_box: "跳至盒子…",
@@ -810,6 +812,7 @@ const GROUPS: Record<string, Partial<Record<UiLanguage, string>>> = {
   "shadow-xd": { ENG: "Shadow · XD", DEU: "Crypto · XD", FRA: "Obscur · XD", ITA: "Ombra · XD", JPN: "ダーク · XD", KOR: "다크 · XD", CHS: "黑暗 · XD", CHT: "黑暗 · XD" },
   cherish: { ENG: "Cherish Ball", DEU: "Jubelball", FRA: "Mémoire Ball", ITA: "Pregio Ball", JPN: "プレシャスボール", KOR: "프레셔스볼", CHS: "贵重球", CHT: "貴重球" },
   "event-dex": { "ES-LA": "Event Dex completo", "ES-ES": "Event Dex completo", ENG: "Complete Event Dex", DEU: "Kompletter Event-Dex", FRA: "Event Dex complet", ITA: "Event Dex completo", JPN: "完全イベント図鑑", KOR: "전체 이벤트 도감", CHS: "完整活动图鉴", CHT: "完整活動圖鑑" },
+  mighty: { "ES-LA": "Incursiones con Emblema Imbatibilidad", "ES-ES": "Teraincursiones con Emblema Imbatibilidad", ENG: "Mightiest Mark raids", DEU: "Raids mit Unbezwingbarkeits-Zeichen", FRA: "Raids avec Insigne Surpuissant", ITA: "Raid con Emblema della Forza Assoluta", JPN: "さいきょうのあかしレイド", KOR: "최강의증표 레이드", CHS: "最强之证太晶团体战", CHT: "最強之證太晶團體戰" },
   trades: { ENG: "In-game trades", DEU: "Spielinterner Tausch", FRA: "Échanges internes", ITA: "Scambi nel gioco", JPN: "ゲーム内交換", KOR: "게임 내 교환", CHS: "游戏内交换", CHT: "遊戲內交換" },
   go: { ENG: "Pokémon GO", DEU: "Pokémon GO", FRA: "Pokémon GO", ITA: "Pokémon GO", JPN: "Pokémon GO", KOR: "Pokémon GO", CHS: "Pokémon GO", CHT: "Pokémon GO" },
   "profile-final": { "ES-LA": "Dex de fases finales", "ES-ES": "Pokédex de formas finales", ENG: "Final Form Dex", DEU: "Finalentwicklungs-Dex", FRA: "Pokédex des évolutions finales", ITA: "Pokédex degli stadi finali", JPN: "最終進化形図鑑", KOR: "최종 진화형 도감", CHS: "最终进化形图鉴", CHT: "最終進化型圖鑑" },
@@ -925,5 +928,5 @@ export function hasCopy(language: UiLanguage, key: string) {
 }
 
 export function groupName(language: UiLanguage, key: string) {
-  return GROUPS[key]?.[language] ?? (language.startsWith("ES") ? ({ P: "Pentágono", USUM: "Alola", LGPE: "Let's Go", SwSh: "Galar", LA: "Hisui", BDSP: "Sinnoh", SV: "Escarlata / Púrpura", LZA: "Lumiose", GBA: "GBA", "Sin marca": "Sin marca", GB: "GB", n: "Pokémon de N", dream: "Dream World", radar: "Pokémon Dream Radar", "shadow-colosseum": "Shadow · Colosseum", "shadow-xd": "Shadow · XD", cherish: "Cherish Ball", trades: "Intercambios internos", go: "Pokémon GO" } as Record<string, string>)[key] : undefined) ?? key;
+  return GROUPS[key]?.[language] ?? (language.startsWith("ES") ? ({ P: "Pentágono", USUM: "Alola", LGPE: "Let's Go", SwSh: "Galar", LA: "Hisui", BDSP: "Sinnoh", SV: "Escarlata / Púrpura", LZA: "Lumiose", GBA: "GBA", "Sin marca": "Sin marca", GB: "GB", n: "Pokémon de N", dream: "Dream World", radar: "Pokémon Dream Radar", "shadow-colosseum": "Shadow · Colosseum", "shadow-xd": "Shadow · XD", cherish: "Cherish Ball", mighty: "Incursiones con Emblema Imbatibilidad", trades: "Intercambios internos", go: "Pokémon GO" } as Record<string, string>)[key] : undefined) ?? key;
 }

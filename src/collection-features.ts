@@ -389,12 +389,14 @@ export function methodKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "n") return "method_n_pokemon";
   if (entry.collection === "go") return "method_go";
   if (entry.collection === "trades") return "method_trade";
+  if (entry.collection === "mighty") return "method_mightiest_raid";
   if (entry.collection === "cherish" || entry.collection === "event-dex") return "method_event";
   if (entry.availability === "hypothetical") return "method_hypothetical";
   return "method_source_game";
 }
 
 export function reasonKeyForEntry(entry: AccessEntry) {
+  if (entry.collection === "mighty") return "why_mightiest_raid";
   if (isLaterGenerationEvolution(entry)) return "why_transfer_evolution";
   if (entry.collection === "dream") return "why_dream_world";
   if (entry.availability === "hypothetical") return "why_hypothetical";

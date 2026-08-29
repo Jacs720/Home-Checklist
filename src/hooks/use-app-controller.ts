@@ -17,6 +17,7 @@ import {
 } from "../box-themes";
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
+import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
 import { addGoStorableForms } from "../catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
@@ -196,16 +197,19 @@ export function useAppController() {
   const displayNote = (entry: PokemonEntry) => localizeCatalogText(language, entry.note);
 
   useEffect(() => {
-    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json")), fetch(assetUrl("data/species-rules.json")), fetch(assetUrl("data/home-challenges.json")), fetch(assetUrl("data/pokewalker.json"))])
-      .then(async ([baseResponse, specialResponse, namesResponse, rulesResponse, challengesResponse, pokewalkerResponse]) => {
-        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok || !rulesResponse.ok || !challengesResponse.ok || !pokewalkerResponse.ok) throw new Error("data");
-        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json(), rulesResponse.json(), challengesResponse.json(), pokewalkerResponse.json()]);
+    Promise.all([fetch(assetUrl("data/pokemon-lite.json")), fetch(assetUrl("data/special-collections.json")), fetch(assetUrl("data/pokemon-names.json")), fetch(assetUrl("data/species-rules.json")), fetch(assetUrl("data/home-challenges.json")), fetch(assetUrl("data/pokewalker.json")), fetch(assetUrl("data/mightiest-raids.json"))])
+      .then(async ([baseResponse, specialResponse, namesResponse, rulesResponse, challengesResponse, pokewalkerResponse, mightiestResponse]) => {
+        if (!baseResponse.ok || !specialResponse.ok || !namesResponse.ok || !rulesResponse.ok || !challengesResponse.ok || !pokewalkerResponse.ok || !mightiestResponse.ok) throw new Error("data");
+        return Promise.all([baseResponse.json(), specialResponse.json(), namesResponse.json(), rulesResponse.json(), challengesResponse.json(), pokewalkerResponse.json(), mightiestResponse.json()]);
       })
-      .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue, pokewalkerValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset, PokewalkerDataset]) => {
+      .then(([baseValue, specialValue, namesValue, rulesValue, challengesValue, pokewalkerValue, mightiestValue]: [Dataset, SpecialDataset, PokemonNames, SpeciesRulesDataset, HomeChallengesDataset, PokewalkerDataset, MightiestRaidsDataset]) => {
         const correctedEntries = applyCatalogCorrections(baseValue.entries);
-        const correctedSpecialEntries = addGoStorableForms(specialValue.entries, correctedEntries);
+        const correctedSpecialEntries = [
+          ...addGoStorableForms(specialValue.entries, correctedEntries),
+          ...buildMightiestRaidEntries(mightiestValue, correctedEntries),
+        ];
         setDataset({ ...baseValue, entries: correctedEntries });
-        setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length } }, entries: correctedSpecialEntries });
+        setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length, mighty: correctedSpecialEntries.filter((entry) => entry.collection === "mighty").length } }, entries: correctedSpecialEntries });
         setPokemonNames(namesValue);
         setSpeciesRules(new Map(rulesValue.species.map((rule) => [rule.dex, rule])));
         setHomeChallenges(challengesValue.challenges ?? []);

@@ -60,7 +60,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               {requirements.originGeneration && <div><dt>{t("origin_generation")}</dt><dd>{t("generation")} {requirements.originGeneration}</dd></div>}
               {requirements.originRegion && <div><dt>{t("origin_region")}</dt><dd>{groupName(language, requirements.originRegion)}</dd></div>}
               {requirements.pokemonLanguage && <div><dt>{t("pokemon_language")}</dt><dd>{requirements.pokemonLanguage}</dd></div>}
-              {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{requirements.encounterMark}</dd></div>}
+              {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{requirements.encounterMark === "Mightiest Mark" ? t("mightiest_mark") : requirements.encounterMark}</dd></div>}
               {entry.level && <div><dt>{t("level")}</dt><dd>{entry.level}</dd></div>}
               {entry.trainerId && <div><dt>{t("trainer_id")}</dt><dd>{entry.trainerId}</dd></div>}
               {(requirements.ball || entry.ball) && <div><dt>{t("ball")}</dt><dd>{requirements.ball ?? entry.ball}</dd></div>}

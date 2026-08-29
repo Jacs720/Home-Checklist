@@ -2,8 +2,8 @@ import type { Acquisition, AvailabilityFilters, FormOptions } from "./app-types"
 
 export const MARKS = ["Sin marca", "GB", "P", "USUM", "LGPE", "SwSh", "LA", "BDSP", "SV", "LZA", "GBA"];
 export const DEFAULT_MARKS = MARKS.filter((mark) => mark !== "GBA");
-export const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "trades", "go"];
-export const DEFAULT_COLLECTIONS = COLLECTIONS.filter((collection) => collection !== "event-dex");
+export const COLLECTIONS = ["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "mighty", "trades", "go"];
+export const DEFAULT_COLLECTIONS = COLLECTIONS.filter((collection) => collection !== "event-dex" && collection !== "mighty");
 export const MYTHICAL_DEX = new Set([
   151,  // Mew
   251,  // Celebi
@@ -58,6 +58,7 @@ export const GROUP_COLORS: Record<string, string> = {
   "shadow-xd": "#6679a9",
   cherish: "#e76d83",
   "event-dex": "#ef718d",
+  mighty: "#f3c857",
   trades: "#e7a65f",
   go: "#57a6e6",
   "profile-final": "#d6b466",
@@ -99,6 +100,7 @@ export const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   cherish: "event",
   events: "event",
   "event-dex": "event",
+  mighty: "own",
   dream: "external",
   radar: "external",
   "shadow-colosseum": "external",
