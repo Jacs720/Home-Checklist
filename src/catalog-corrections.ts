@@ -223,6 +223,45 @@ export function addSwShHisuianEvolutionEntries<T extends CatalogEntry>(entries: 
   return correctedEntries;
 }
 
+/**
+ * Completes the Alolan-form combinations that can originate in Sword/Shield.
+ * Alolan Meowth can be obtained from the Diglett Trainer and bred with an
+ * Everstone, while Alolan Persian retains the Galar origin mark on evolution.
+ * The Diglett Trainer's Alolan Exeggutor also has the player's OT, but that
+ * fixed gift cannot be Shiny.
+ */
+export function correctSwShAlolanForms<T extends CatalogEntry>(entries: T[]) {
+  let correctedEntries = entries;
+  for (const [dex, keyword] of [[52, "meowth-1"], [53, "persian-1"]] as const) {
+    const template = entries.find((entry) => entry.dex === dex && entry.form === "Alolan");
+    if (!template) continue;
+    correctedEntries = insertCatalogEntry(correctedEntries, {
+      ...template,
+      id: `SwSh:${keyword}`,
+      sourceNumber: undefined,
+      mark: "SwSh",
+      keyword,
+      note: "SwSh / DLC",
+      shinyEligible: true,
+      shinyReview: "verified-correction",
+      availability: "standard",
+      normalEligible: true,
+      ownOtNormal: true,
+      ownOtShiny: true,
+    });
+  }
+
+  return correctedEntries.map((entry) => entry.mark === "SwSh" && entry.dex === 103 && entry.form === "Alolan"
+    ? {
+        ...entry,
+        shinyEligible: false,
+        shinyReview: "verified-correction",
+        ownOtNormal: true,
+        ownOtShiny: false,
+      }
+    : entry);
+}
+
 export function addStorableShayminSkyForms<T extends CatalogEntry>(entries: T[]) {
   let correctedEntries = entries;
   const landForms = entries.filter((entry) => entry.dex === 492 && entry.form !== "Sky");
