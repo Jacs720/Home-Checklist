@@ -5,6 +5,7 @@ import {
   addStorableShayminSkyForms,
   addSwShHisuianEvolutionEntries,
   correctBloodmoonUrsalunaDex,
+  correctModernAlolanOriginAvailability,
   insertCatalogEntry,
   markLgpeAlolanFormsAsInGameTrades,
   removeInvalidGbaKingambit,
@@ -41,6 +42,7 @@ const OWN_OT_SHINY_LOCKS_BY_MARK: Record<string, ReadonlySet<number>> = {
 
 const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
   "USUM:666:Fancy", "USUM:666:Poké Ball",
+  "SwSh:103:Alolan",
   "SwSh:144:Galarian", "SwSh:145:Galarian", "SwSh:146:Galarian",
   "SV:901:Bloodmoon", "SV:999:Roaming Form",
   "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
@@ -126,7 +128,7 @@ export function applyCatalogCorrections(entries: PokemonEntry[]) {
     id: entry.id === "LZA:hoopa" ? "LZA:hoopa-unbound" : entry.id,
     artId: 10086,
   } : entry);
-  let correctedEntries = correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(uniqueFormIds)));
+  let correctedEntries = correctModernAlolanOriginAvailability(correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(uniqueFormIds))));
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {

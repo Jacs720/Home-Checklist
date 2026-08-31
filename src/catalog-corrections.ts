@@ -223,6 +223,54 @@ export function addSwShHisuianEvolutionEntries<T extends CatalogEntry>(entries: 
   return correctedEntries;
 }
 
+/**
+ * Completes the Alolan-form combinations that can originate in Sword/Shield.
+ * Alolan Meowth can be obtained from the Diglett Trainer and bred with an
+ * Everstone, while Alolan Persian retains the Galar origin mark on evolution.
+ * The Diglett Trainer's Alolan Exeggutor also has the player's OT, but that
+ * fixed gift cannot be Shiny. Scarlet/Violet's Alolan Raichu remains valid
+ * with the player's OT, but was limited to the July 2024 mass-outbreak event.
+ */
+export function correctModernAlolanOriginAvailability<T extends CatalogEntry>(entries: T[]) {
+  let correctedEntries = entries;
+  for (const [dex, keyword] of [[52, "meowth-1"], [53, "persian-1"]] as const) {
+    const template = entries.find((entry) => entry.dex === dex && entry.form === "Alolan");
+    if (!template) continue;
+    correctedEntries = insertCatalogEntry(correctedEntries, {
+      ...template,
+      id: `SwSh:${keyword}`,
+      sourceNumber: undefined,
+      mark: "SwSh",
+      keyword,
+      note: "SwSh / DLC",
+      shinyEligible: true,
+      shinyReview: "verified-correction",
+      availability: "standard",
+      normalEligible: true,
+      ownOtNormal: true,
+      ownOtShiny: true,
+    });
+  }
+
+  return correctedEntries.map((entry) => {
+    if (entry.mark === "SwSh" && entry.dex === 103 && entry.form === "Alolan") return {
+        ...entry,
+        shinyEligible: false,
+        shinyReview: "verified-correction",
+        ownOtNormal: true,
+        ownOtShiny: false,
+      };
+    if (entry.mark === "SV" && entry.dex === 26 && entry.form === "Alolan") return {
+      ...entry,
+      availability: "historical",
+      shinyReview: "verified-correction",
+      ownOtNormal: true,
+      ownOtShiny: true,
+    };
+    return entry;
+  });
+}
+
 export function addStorableShayminSkyForms<T extends CatalogEntry>(entries: T[]) {
   let correctedEntries = entries;
   const landForms = entries.filter((entry) => entry.dex === 492 && entry.form !== "Sky");

@@ -121,6 +121,24 @@ test("catalog identities and origin keys are valid", () => {
   assert.equal(catalogEntries.some((entry) => entry.mark === "GBA" && entry.dex === 983), false, "Kingambit cannot retain a GBA origin");
 });
 
+test("Sword and Shield keeps every valid own-OT Alolan shiny except Exeggutor", () => {
+  const swshAlolan = catalogEntries.filter((entry) => entry.mark === "SwSh" && entry.form === "Alolan");
+  const swshExeggutor = swshAlolan.find((entry) => entry.dex === 103);
+  const svAlolan = catalogEntries.filter((entry) => entry.mark === "SV" && entry.form === "Alolan");
+
+  assert.ok(swshAlolan.some((entry) => entry.dex === 52 && entry.ownOtNormal && entry.ownOtShiny));
+  assert.ok(swshAlolan.some((entry) => entry.dex === 53 && entry.ownOtNormal && entry.ownOtShiny));
+  assert.equal(swshExeggutor?.ownOtNormal, true);
+  assert.equal(swshExeggutor?.ownOtShiny, false);
+  assert.equal(swshExeggutor?.shinyEligible, false);
+  assert.equal(isOwnOtShinyLocked({ mark: "SwSh", dex: 103, form: "Alolan" }), true);
+  assert.ok(swshAlolan.filter((entry) => entry.dex !== 103).every((entry) => entry.ownOtNormal && entry.ownOtShiny && entry.shinyEligible));
+  assert.ok(svAlolan.length > 0);
+  assert.ok(svAlolan.every((entry) => entry.ownOtNormal && entry.ownOtShiny && entry.shinyEligible));
+  assert.ok(svAlolan.filter((entry) => entry.dex === 26).every((entry) => entry.availability === "historical"));
+  assert.equal(svAlolan.find((entry) => entry.dex === 103)?.availability, "standard");
+});
+
 test("Mightiest Mark collection contains only unique eligible raid specimens", () => {
   assert.equal(GROUP_COLORS.mighty, "#9b63d9");
   assert.equal(mightiestDataset.meta.specimenCount, 53);
