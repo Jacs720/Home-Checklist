@@ -909,16 +909,16 @@ const ES_ES_COPY: Copy = {
 };
 
 const BOX_PACKING_COPY: Record<UiLanguage, Copy> = {
-  "ES-LA": { save_space: "Ahorrar espacio", save_space_desc: "Combina el final de una colección con el inicio de la siguiente." },
-  "ES-ES": { save_space: "Ahorrar espacio", save_space_desc: "Combina el final de una colección con el inicio de la siguiente." },
-  ENG: { save_space: "Save space", save_space_desc: "Fills the end of one collection’s last box with the start of the next." },
-  DEU: { save_space: "Platz sparen", save_space_desc: "Füllt freie Plätze der letzten Box mit dem Anfang der nächsten Sammlung." },
-  FRA: { save_space: "Économiser de l’espace", save_space_desc: "Remplit la fin d’une collection avec le début de la suivante." },
-  ITA: { save_space: "Risparmia spazio", save_space_desc: "Riempie la fine di una collezione con l’inizio della successiva." },
-  JPN: { save_space: "ボックスを節約", save_space_desc: "コレクションの最後の空き枠に次のコレクションを続けて入れます。" },
-  KOR: { save_space: "박스 공간 절약", save_space_desc: "컬렉션의 마지막 빈칸에 다음 컬렉션을 이어서 배치합니다." },
-  CHS: { save_space: "节省盒子空间", save_space_desc: "用下一个收藏的开头填满上一个收藏最后盒子的空位。" },
-  CHT: { save_space: "節省盒子空間", save_space_desc: "用下一個收藏的開頭填滿上一個收藏最後盒子的空位。" },
+  "ES-LA": { save_space: "Ahorrar espacio" },
+  "ES-ES": { save_space: "Ahorrar espacio" },
+  ENG: { save_space: "Save space" },
+  DEU: { save_space: "Platz sparen" },
+  FRA: { save_space: "Économiser de l’espace" },
+  ITA: { save_space: "Risparmia spazio" },
+  JPN: { save_space: "ボックスを節約" },
+  KOR: { save_space: "박스 공간 절약" },
+  CHS: { save_space: "节省盒子空间" },
+  CHT: { save_space: "節省盒子空間" },
 };
 
 export function copy(language: UiLanguage, key: string) {
