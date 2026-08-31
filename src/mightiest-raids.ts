@@ -1,6 +1,6 @@
 import type { PokemonEntry } from "./app-types";
 
-export type MightiestRaidSpec = { dex: number; form?: string };
+export type MightiestRaidSpec = { dex: number; form?: string; award?: "mewtwo-battle" };
 
 export type MightiestRaidsDataset = {
   meta: {
@@ -19,6 +19,7 @@ export function buildMightiestRaidEntries(dataset: MightiestRaidsDataset, catalo
   const entries = new Map<string, PokemonEntry>();
 
   for (const specimen of dataset.specimens) {
+    const awardedAfterMewtwoBattle = specimen.award === "mewtwo-battle";
     const matchingForm = (entry: PokemonEntry) => entry.dex === specimen.dex && (entry.form ?? "") === (specimen.form ?? "");
     const template = catalog.find((entry) => (
       matchingForm(entry)
@@ -38,22 +39,22 @@ export function buildMightiestRaidEntries(dataset: MightiestRaidsDataset, catalo
       collection: "mighty",
       note: "",
       sourceLabel: dataset.meta.source,
-      sourceUrl: dataset.meta.sourceUrl,
+      sourceUrl: awardedAfterMewtwoBattle ? "https://www.serebii.net/scarletviolet/teraraidbattles/event-mightymewtwoshowdown.shtml" : dataset.meta.sourceUrl,
       displayDetail: undefined,
       acquisitionCategory: "own",
       requirements: {
-        originGame: "Scarlet, Violet",
+        ...(awardedAfterMewtwoBattle ? {} : { originGame: "Scarlet, Violet" }),
         encounterMark: "Mightiest Mark",
       },
       gender: undefined,
       genderDifferenceTier: undefined,
       genderVariant: undefined,
-      shinyEligible: false,
+      shinyEligible: awardedAfterMewtwoBattle,
       shinyReview: "verified-correction",
       availability: "historical",
       normalEligible: true,
       ownOtNormal: true,
-      ownOtShiny: false,
+      ownOtShiny: awardedAfterMewtwoBattle,
     });
   }
 

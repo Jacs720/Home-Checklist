@@ -3,7 +3,7 @@
     "source": "Serebii · Tera Raid Battle Events",
     "sourceUrl": "https://www.serebii.net/scarletviolet/teraraidbattleevents.shtml",
     "generatedAt": "2026-08-28",
-    "specimenCount": 53,
+    "specimenCount": 54,
     "caveat": "Unique catchable Pokémon and forms from Mighty or Unrivaled seven-star Tera Raid events that award the Mightiest Mark. Repeated runs do not create duplicate specimens."
   },
   "specimens": [
@@ -15,6 +15,7 @@
     { "dex": 133 },
     { "dex": 149 },
     { "dex": 150 },
+    { "dex": 151, "award": "mewtwo-battle" },
     { "dex": 154 },
     { "dex": 157, "form": "Original" },
     { "dex": 157, "form": "Hisuian" },

@@ -162,17 +162,23 @@ test("Sword and Shield keeps every valid own-OT Alolan shiny except Exeggutor", 
 
 test("Mightiest Mark collection contains only unique eligible raid specimens", () => {
   assert.equal(GROUP_COLORS.mighty, "#9b63d9");
-  assert.equal(mightiestDataset.meta.specimenCount, 53);
-  assert.equal(mightiestEntries.length, 53);
-  assert.equal(new Set(mightiestEntries.map((entry) => `${entry.dex}:${entry.form ?? ""}`)).size, 53);
+  assert.equal(mightiestDataset.meta.specimenCount, 54);
+  assert.equal(mightiestEntries.length, 54);
+  assert.equal(new Set(mightiestEntries.map((entry) => `${entry.dex}:${entry.form ?? ""}`)).size, 54);
   assert.ok(mightiestEntries.some((entry) => entry.dex === 157 && entry.form === "Original"));
   assert.ok(mightiestEntries.some((entry) => entry.dex === 157 && entry.form === "Hisuian"));
   assert.ok(mightiestEntries.some((entry) => entry.dex === 1005));
   assert.ok(mightiestEntries.some((entry) => entry.dex === 1006));
+  const markedMew = mightiestEntries.find((entry) => entry.dex === 151);
+  assert.ok(markedMew);
+  assert.equal(markedMew.shinyEligible, true);
+  assert.equal(markedMew.ownOtShiny, true);
+  assert.equal(markedMew.requirements?.originGame, undefined);
+  assert.match(markedMew.sourceUrl ?? "", /event-mightymewtwoshowdown/);
   for (const entry of mightiestEntries) {
     assert.equal(entry.collection, "mighty");
     assert.equal(entry.mark, "SV");
-    assert.equal(entry.shinyEligible, false);
+    assert.equal(entry.shinyEligible, entry.dex === 151);
     assert.equal(entry.ownOtNormal, true);
     assert.equal(entry.requirements?.encounterMark, "Mightiest Mark");
   }
