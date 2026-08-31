@@ -12,6 +12,27 @@ import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigatio
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../src/mightiest-raids";
 import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
+import { packBoxesContinuously } from "../src/box-packing";
+
+test("packs adjacent collection boundaries without changing entry order", () => {
+  const entries = [
+    ...Array.from({ length: 32 }, (_, index) => ({ id: `a-${index}`, groupKey: "a", groupLabel: "Alpha" })),
+    ...Array.from({ length: 31 }, (_, index) => ({ id: `b-${index}`, groupKey: "b", groupLabel: "Beta" })),
+  ];
+  const boxes = [
+    { globalIndex: 0, groupKey: "a", number: 1, label: "Alpha 01", entries: entries.slice(0, 30) },
+    { globalIndex: 1, groupKey: "a", number: 2, label: "Alpha 02", entries: entries.slice(30, 32) },
+    { globalIndex: 2, groupKey: "b", number: 1, label: "Beta 01", entries: entries.slice(32, 62) },
+    { globalIndex: 3, groupKey: "b", number: 2, label: "Beta 02", entries: entries.slice(62) },
+  ];
+
+  assert.strictEqual(packBoxesContinuously(boxes, false), boxes);
+  const packed = packBoxesContinuously(boxes, true);
+  assert.deepEqual(packed.map((box) => box.entries.length), [30, 30, 3]);
+  assert.equal(packed[1].label, "Alpha 02 + Beta 01");
+  assert.equal(packed[2].label, "Beta 02");
+  assert.deepEqual(packed.flatMap((box) => box.entries.map((entry) => entry.id)), entries.map((entry) => entry.id));
+});
 
 const readJson = async <T>(path: string) => JSON.parse(await readFile(resolve(path), "utf8")) as T;
 const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = await Promise.all([
@@ -414,6 +435,7 @@ test("required interface copy exists in every available language", async () => {
     ...GAME_PLANS.map((game) => `game_${game.id}`),
     ...COLLECTION_PRESETS.flatMap((preset) => [`profile_${preset}`, `profile_${preset}_desc`]),
     "origin_mode_living_dex",
+    "save_space", "save_space_desc",
     "mightiest_mark", "mightiest_source", "method_mightiest_raid", "why_mightiest_raid",
     "battle_bond_source", "battle_bond_ability", "battle_bond_origin", "method_battle_bond_demo", "why_battle_bond_demo",
     "best_games_to_progress", "obtainable_missing_count", "missing_obtainable", "open_game_planner", "no_game_recommendations",
@@ -435,4 +457,5 @@ test("required interface copy exists in every available language", async () => {
     for (const key of battleBondKeys) assert.notEqual(copy(code, key), copy("ENG", key), `${code} still falls back to English for ${key}`);
   }
   for (const { code } of LANGUAGE_OPTIONS) assert.match(copy(code, "game_gba"), /Pokémon|ポケットモンスター|포켓몬스터|宝可梦|寶可夢/);
+  for (const { code } of LANGUAGE_OPTIONS.filter(({ code }) => code !== "ENG")) assert.notEqual(copy(code, "save_space_desc"), copy("ENG", "save_space_desc"), `${code} still falls back to English for save_space_desc`);
 });

@@ -113,6 +113,7 @@ export function useAppController() {
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
+  const [saveSpace, setSaveSpace] = useState(false);
   const {
     owned,
     setOwned,
@@ -262,6 +263,7 @@ export function useAppController() {
     if (typeof value.pokewalkerOnly === "boolean") setPokewalkerOnly(value.pokewalkerOnly);
     if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
     if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
+    if (typeof value.saveSpace === "boolean") setSaveSpace(value.saveSpace);
     if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
     if (typeof value.missingOnly === "boolean") setMissingOnly(value.missingOnly);
     if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
@@ -296,6 +298,7 @@ export function useAppController() {
     pokewalkerOnly,
     language,
     capacity,
+    saveSpace,
     viewMode,
     missingOnly,
     selectedGamePlan,
@@ -305,7 +308,7 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
   const { hydrated, lastSavedAt, clock } = usePersistence({
     language,
@@ -322,10 +325,10 @@ export function useAppController() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [austinPreview, themeOpen, detailEntry]);
 
-  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language).map((box) => ({
+  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace).map((box) => ({
     ...box,
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, boxNameOverrides]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace, boxNameOverrides]);
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -423,7 +426,7 @@ export function useAppController() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${originIndependentDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${originIndependentDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}:${saveSpace}`;
 
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
@@ -986,7 +989,7 @@ export function useAppController() {
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
       genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
-      availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, viewMode, missingOnly,
+      availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
     themes: themeConfig,
@@ -1066,6 +1069,7 @@ export function useAppController() {
     if (typeof configuration.pokewalkerOnly === "boolean") setPokewalkerOnly(configuration.pokewalkerOnly);
     if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
     if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
+    if (typeof configuration.saveSpace === "boolean") setSaveSpace(configuration.saveSpace);
     if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
     if (typeof configuration.missingOnly === "boolean") setMissingOnly(configuration.missingOnly);
     if (typeof configuration.selectedGamePlan === "string" && GAME_PLANS.some((game) => game.id === configuration.selectedGamePlan)) setSelectedGamePlan(configuration.selectedGamePlan as GamePlanId);
@@ -1220,6 +1224,8 @@ export function useAppController() {
     setLanguageOpen,
     capacity,
     setCapacity,
+    saveSpace,
+    setSaveSpace,
     owned,
     livingDexOwned,
     favorites,

@@ -29,6 +29,8 @@ export function FilterPanel({ app }: FilterPanelProps) {
     language,
     capacity,
     setCapacity,
+    saveSpace,
+    setSaveSpace,
     owned,
     livingDexOwned,
     homeChallengesOnly,
@@ -233,6 +235,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
 
           <section className="filter-section">
             <p className="panel-label">{t("capacity")}</p>
+            <label className="switch-row" htmlFor="save-space" aria-label={t("save_space")}><span><b>{t("save_space")}</b><small>{t("save_space_desc")}</small></span><GooeyCheckbox id="save-space" checked={saveSpace} onChange={(event) => setSaveSpace(event.target.checked)} /></label>
             <div className="capacity-toggle">
               <button className={capacity === 6000 ? "active" : ""} onClick={() => setCapacity(6000)}>{(6000).toLocaleString(locale)}<small>{t("current")}</small></button>
               <button className={capacity === 8000 ? "active" : ""} onClick={() => setCapacity(8000)}>{(8000).toLocaleString(locale)}<small>{t("future")}</small></button>

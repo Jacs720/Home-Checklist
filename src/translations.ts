@@ -908,6 +908,19 @@ const ES_ES_COPY: Copy = {
   shiny_locked: "Variocolor bloqueado",
 };
 
+const BOX_PACKING_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": { save_space: "Ahorrar espacio", save_space_desc: "Combina el final de una colección con el inicio de la siguiente." },
+  "ES-ES": { save_space: "Ahorrar espacio", save_space_desc: "Combina el final de una colección con el inicio de la siguiente." },
+  ENG: { save_space: "Save space", save_space_desc: "Fills the end of one collection’s last box with the start of the next." },
+  DEU: { save_space: "Platz sparen", save_space_desc: "Füllt freie Plätze der letzten Box mit dem Anfang der nächsten Sammlung." },
+  FRA: { save_space: "Économiser de l’espace", save_space_desc: "Remplit la fin d’une collection avec le début de la suivante." },
+  ITA: { save_space: "Risparmia spazio", save_space_desc: "Riempie la fine di una collezione con l’inizio della successiva." },
+  JPN: { save_space: "ボックスを節約", save_space_desc: "コレクションの最後の空き枠に次のコレクションを続けて入れます。" },
+  KOR: { save_space: "박스 공간 절약", save_space_desc: "컬렉션의 마지막 빈칸에 다음 컬렉션을 이어서 배치합니다." },
+  CHS: { save_space: "节省盒子空间", save_space_desc: "用下一个收藏的开头填满上一个收藏最后盒子的空位。" },
+  CHT: { save_space: "節省盒子空間", save_space_desc: "用下一個收藏的開頭填滿上一個收藏最後盒子的空位。" },
+};
+
 export function copy(language: UiLanguage, key: string) {
   if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
   if (language === "ES-ES" && ES_ES_COPY[key]) return ES_ES_COPY[key];
@@ -917,11 +930,12 @@ export function copy(language: UiLanguage, key: string) {
   if (language === "CHT" && key === "normal_living_dex") return "一般 Living Dex";
   if (language === "CHT" && key === "normal_living_dex_desc") return "每個種類一隻 · 保留篩選";
   if (key === "preset_normal" || key === "preset_normal_desc") return UI_COPY[language][key] ?? ES[key] ?? key;
-  return NAVIGATION_BACKUP_COPY[language]?.[key] ?? AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? SIDEBAR_COPY[language]?.[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
+  return BOX_PACKING_COPY[language]?.[key] ?? NAVIGATION_BACKUP_COPY[language]?.[key] ?? AUSTIN_IMPORT_COPY[language]?.[key] ?? AUSTIN_IMPORT_EN[key] ?? SIDEBAR_COPY[language]?.[key] ?? FEATURE_COPY[language]?.[key] ?? FEATURE_EN[key] ?? GLOBAL_VIEW_COPY[language][key] ?? UI_OVERRIDES[language][key] ?? UI_COPY[language][key] ?? ES[key] ?? key;
 }
 
 export function hasCopy(language: UiLanguage, key: string) {
   if (key === "box") return true;
+  if (Object.hasOwn(BOX_PACKING_COPY[language], key)) return true;
   if (language === "ES-ES" && Object.hasOwn(ES_ES_COPY, key)) return true;
   if (Object.hasOwn(FORM_FILTER_COPY[language], key)) return true;
   if (key === "preset_normal" || key === "preset_normal_desc" || key === "normal_living_dex" || key === "normal_living_dex_desc") return true;

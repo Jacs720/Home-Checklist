@@ -1,6 +1,7 @@
 import { COLLECTIONS, COLLECTION_ACQUISITIONS, DEFAULT_MARKS, MARKS, MYTHICAL_DEX } from "./app-config";
 import type { Acquisition, FormOptions, GenderMode, PlannedBox, PlannedEntry, PokemonEntry, Variant } from "./app-types";
 import { assetUrl, chunk } from "./app-utils";
+import { packBoxesContinuously } from "./box-packing";
 import {
   addStorableShayminSkyForms,
   addSwShHisuianEvolutionEntries,
@@ -348,6 +349,7 @@ export function buildBoxes(
   collectionPreset: CollectionPreset,
   speciesRules: Map<number, SpeciesRule>,
   language: UiLanguage,
+  saveSpace = false,
 ) {
   const boxes: PlannedBox[] = [];
   const unifiedCandidates: PlannedEntry[] = [];
@@ -518,7 +520,7 @@ export function buildBoxes(
       boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
     });
   }
-  return boxes;
+  return packBoxesContinuously(boxes, saveSpace);
 }
 
 function unownSpriteKey(form: string | null) {
