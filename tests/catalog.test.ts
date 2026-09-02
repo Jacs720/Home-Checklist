@@ -512,3 +512,5 @@ test("required interface copy exists in every available language", async () => {
   }
   for (const { code } of LANGUAGE_OPTIONS) assert.match(copy(code, "game_gba"), /Pokémon|ポケットモンスター|포켓몬스터|宝可梦|寶可夢/);
 });
+import "./specimen-traits.test.mjs";
+import "./specimen-trait-controls.test";

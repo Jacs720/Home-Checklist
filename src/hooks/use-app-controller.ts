@@ -1292,7 +1292,6 @@ export function useAppController() {
     pokewalkerOnly,
     setPokewalkerOnly,
     detailEntry,
-    locatedEntries,
     setDetailEntry,
     filtersOpen,
     setFiltersOpen,
