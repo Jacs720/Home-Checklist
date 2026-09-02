@@ -55,6 +55,19 @@ const battleBondGreninja = createBattleBondGreninja(catalogEntries);
 const correctedRawSpecialEntries = applySpecialCatalogCorrections(rawSpecialDataset.entries);
 const specialEntries = [...addGoStorableForms(correctedRawSpecialEntries, catalogEntries), battleBondGreninja, ...mightiestEntries];
 const importEntries = [...catalogEntries, ...specialEntries];
+
+test("every catalog origin and collection routes Shellos/Gastrodon artwork by sea form", () => {
+  const entries = importEntries.filter((entry) => [422, 423].includes(entry.dex) && ["West Sea", "East Sea"].includes(entry.form ?? ""));
+  assert.ok(entries.length >= 28);
+  for (const entry of entries) {
+    for (const variant of ["normal", "shiny"] as const) {
+      const planned: PlannedEntry = { ...entry, planId: `${entry.id}:${variant}`, variant, ownOt: true, groupKey: "test", groupLabel: "Test" };
+      const side = entry.form === "East Sea" ? "east" : "west";
+      assert.ok(pokemonArtworkUrl(planned)?.endsWith(`assets/pokemon/${variant}/0${entry.dex}-${side}.webp`), entry.id);
+      assert.equal(planned.planId, `${entry.id}:${variant}`);
+    }
+  }
+});
 const speciesRules = new Map(rulesDataset.species.map((rule) => [rule.dex, rule]));
 const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, event: true, external: true };
 const ownAcquisition: Record<Acquisition, boolean> = { own: true, trade: false, event: false, external: false };
@@ -559,3 +572,4 @@ test("required interface copy exists in every available language", async () => {
 });
 import "./specimen-traits.test.mjs";
 import "./specimen-trait-controls.test";
+import "./sea-form-sprites.test.mjs";

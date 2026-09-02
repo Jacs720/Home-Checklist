@@ -534,6 +534,8 @@ function unownSpriteKey(form: string | null) {
 
 export function pokemonArtworkUrl(entry: PlannedEntry) {
   if (!entry.artId) return null;
+  const seaFormKey = seaFormSpriteKey(entry);
+  if (seaFormKey) return assetUrl(`assets/pokemon/${entry.variant}/${seaFormKey}.webp`);
   const vivillonIndex = entry.dex === 666 && entry.form ? VIVILLON_FORM_INDEX.get(entry.form) : undefined;
   const furfrouIndex = entry.dex === 676 ? FURFROU_FORM_INDEX.get(entry.form ?? "") : undefined;
   const flowerIndex = entry.form ? FLOWER_COLOR_INDEX.get(entry.form) : undefined;
@@ -551,3 +553,4 @@ export function pokemonArtworkUrl(entry: PlannedEntry) {
   const filename = `${String(entry.artId).padStart(4, "0")}${suffix}.webp`;
   return assetUrl(`assets/pokemon/${entry.variant}/${filename}`);
 }
+import { seaFormSpriteKey } from "./sprite-forms";
