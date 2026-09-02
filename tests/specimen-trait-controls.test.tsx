@@ -6,14 +6,15 @@ import { TraitBadges, TraitSwitch } from "../src/components/specimen-trait-contr
 import { LANGUAGE_OPTIONS, copy } from "../src/translations";
 import { SPECIMEN_TRAITS, TRAIT_LABELS } from "../src/specimen-traits";
 
-test("trait filters render accessible sliding switches with only icon and localized title", () => {
+test("trait filters render accessible checkboxes with only icon and localized title", () => {
   for (const { code } of LANGUAGE_OPTIONS) {
     for (const trait of SPECIMEN_TRAITS) {
       const label = copy(code, TRAIT_LABELS[trait]);
       const html = renderToStaticMarkup(createElement(TraitSwitch, {
         id: `test-${trait}`, trait, label, checked: true, onChange() {},
       }));
-      assert.match(html, /role="switch"/);
+      assert.match(html, /type="checkbox"/);
+      assert.doesNotMatch(html, /role="switch"/);
       assert.match(html, /checked=""/);
       assert.match(html, /class="trait-icon"/);
       assert.ok(html.includes(`<b>${label}</b>`));
