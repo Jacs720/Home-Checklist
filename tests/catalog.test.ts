@@ -18,6 +18,7 @@ import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../src/mi
 import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
 import { packBoxesContinuously } from "../src/box-packing";
+import { traitEligible } from "../src/specimen-traits";
 
 test("packs adjacent collection boundaries without changing entry order", () => {
   const entries = [
@@ -261,6 +262,50 @@ test("Battle Bond Greninja preserves the unique Sun and Moon demo requirements",
 test("own-OT shiny locks remain excluded", () => {
   const invalid = catalogEntries.filter((entry) => isOwnOtShinyLocked(entry) && (entry.shinyEligible || entry.ownOtShiny));
   assert.deepEqual(invalid.map((entry) => entry.id), []);
+});
+
+test("Arceus Alolan Vulpix and Ninetales remain normal-only and cannot be alpha", () => {
+  const planned = buildProfile({
+    preset: "custom", marks: ["LA"], variants: { normal: true, shiny: true },
+    acquisitions: allAcquisitions, forms: allForms,
+  }).flatMap((box) => box.entries);
+
+  for (const dex of [37, 38]) {
+    const entry = catalogEntries.find((entry) => entry.mark === "LA" && entry.dex === dex && entry.form === "Alolan");
+    assert.ok(entry, `missing Arceus Alolan #${dex}`);
+    assert.equal(isOwnOtShinyLocked(entry), true);
+    assert.equal(entry.shinyEligible, false);
+    assert.equal(entry.ownOtShiny, false);
+    assert.equal(entry.normalEligible, true);
+    assert.equal(entry.ownOtNormal, true);
+    assert.equal(traitEligible(entry, "alpha"), false);
+    assert.deepEqual(planned.filter((candidate) => candidate.id === entry.id).map((candidate) => candidate.variant), ["normal"]);
+  }
+});
+
+test("the Arceus Alolan shiny lock preserves Kantonian forms and other origins", () => {
+  const planned = buildProfile({
+    preset: "custom", marks: ["LA", "USUM", "LGPE", "SwSh", "SV"],
+    variants: { normal: false, shiny: true }, acquisitions: allAcquisitions, forms: allForms,
+  }).flatMap((box) => box.entries);
+
+  for (const dex of [37, 38]) {
+    assert.equal(planned.some((entry) => entry.mark === "LA" && entry.dex === dex && entry.form === "Alolan"), false);
+    const kantonian = catalogEntries.find((entry) => entry.mark === "LA" && entry.dex === dex && entry.form !== "Alolan");
+    assert.ok(kantonian);
+    assert.equal(isOwnOtShinyLocked(kantonian), false);
+    assert.equal(kantonian.shinyEligible, true);
+    assert.equal(traitEligible(kantonian, "alpha"), true);
+    assert.ok(planned.some((entry) => entry.id === kantonian.id));
+
+    for (const mark of ["USUM", "LGPE", "SwSh", "SV"]) {
+      const entry = catalogEntries.find((entry) => entry.mark === mark && entry.dex === dex && entry.form === "Alolan");
+      assert.ok(entry, `missing ${mark} Alolan #${dex}`);
+      assert.equal(isOwnOtShinyLocked(entry), false);
+      assert.equal(entry.shinyEligible, true);
+      assert.ok(planned.some((candidate) => candidate.id === entry.id), `${entry.id} lost its shiny variant`);
+    }
+  }
 });
 
 test("canonical profile counts match catalog snapshots", () => {

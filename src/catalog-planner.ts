@@ -45,6 +45,9 @@ const FORM_SPECIFIC_OWN_OT_SHINY_LOCKS = new Set([
   "USUM:666:Fancy", "USUM:666:Poké Ball",
   "SwSh:103:Alolan",
   "SwSh:144:Galarian", "SwSh:145:Galarian", "SwSh:146:Galarian",
+  // Request 83's Alolan Vulpix is shiny-locked; its evolution retains the lock.
+  // https://rotomlabs.net/legends-arceus/shiny-rates#shiny-locks
+  "LA:37:Alolan", "LA:38:Alolan",
   "SV:901:Bloodmoon", "SV:999:Roaming Form",
   "LZA:901:Bloodmoon", "LZA:999:Roaming Form",
 ]);
