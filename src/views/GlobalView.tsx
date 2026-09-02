@@ -88,6 +88,7 @@ export function GlobalView({ app }: GlobalViewProps) {
                       {artworkUrl ? <img src={artworkUrl} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <span className="global-art-placeholder" aria-hidden="true" />}
                       {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="entry-origin-mark" />}
                       {needsBank && <BankBadge label={t("bank_required")} className="global-bank-badge" />}
+                      <TraitBadges requirements={entry.requirements} t={t} />
                     </button>
                     <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="global-favorite" />
                   </div>;
@@ -117,3 +118,4 @@ export function GlobalView({ app }: GlobalViewProps) {
             </>
   );
 }
+import { TraitBadges } from "../components/specimen-trait-controls";

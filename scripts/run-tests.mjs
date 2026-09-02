@@ -10,6 +10,8 @@ try {
   await build({
     configFile: false,
     logLevel: "silent",
+    // UI regression tests run from a temporary directory without node_modules.
+    ssr: { noExternal: ["react", "react-dom"] },
     build: {
       ssr: resolve("tests/catalog.test.ts"),
       outDir: outputDirectory,

@@ -1,4 +1,7 @@
+import { useEffect, useRef } from "react";
 import { groupName, localizeCatalogText } from "../translations";
+import { SPECIMEN_TRAITS, TRAIT_LABELS, traitEligible } from "../specimen-traits";
+import { TraitSwitch } from "../components/specimen-trait-controls";
 import { localizeHomeChallengeTitle } from "../home-challenges";
 import { availabilityForEntry, methodKeyForEntry, reasonKeyForEntry, requiresPokemonBank, transferKeyForEntry } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
@@ -15,6 +18,10 @@ export function EntryDetails({ app }: EntryDetailsProps) {
     favorites,
     detailEntry,
     setDetailEntry,
+    locatedEntries,
+    databaseChoiceByPlanId,
+    traitAvailability,
+    setEntryTrait,
     t,
     displayName,
     displayForm,
@@ -22,8 +29,34 @@ export function EntryDetails({ app }: EntryDetailsProps) {
     homeChallengesByDex,
     toggleFavorite,
   } = app;
+  const dialogRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!detailEntry || !dialog) return;
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.focus();
+    const keepFocusInDetails = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const controls = dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]');
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (!first || !last) { event.preventDefault(); dialog.focus(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    dialog.addEventListener("keydown", keepFocusInDetails);
+    return () => {
+      dialog.removeEventListener("keydown", keepFocusInDetails);
+      if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    };
+  }, [detailEntry]);
   if (!detailEntry || !pokemonNames) return null;
-        const { entry, box, slotIndex } = detailEntry;
+        const located = locatedEntries.find((located) => located.entry.planId === detailEntry.entry.planId);
+        const { box, slotIndex } = located ?? detailEntry;
+        const entry = located?.entry ?? databaseChoiceByPlanId?.get(detailEntry.entry.planId) ?? detailEntry.entry;
         const requirements = entry.requirements ?? {};
         const requiredGender = requirements.gender ? t(requirements.gender === "any" ? "any_gender" : requirements.gender) : null;
         const localizedName = displayName(entry);
@@ -35,7 +68,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
         const matchingHomeChallenges = homeChallengesByDex.get(entry.dex) ?? [];
         return <div className="entry-modal-layer">
           <button className="entry-modal-scrim" aria-label={t("close_details")} onClick={() => setDetailEntry(null)} />
-          <section className="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-dialog-title">
+          <section ref={dialogRef} className="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-dialog-title" tabIndex={-1}>
             <header className="entry-dialog-header">
               <div className="entry-dialog-identity">
                 {artworkUrl && <img className="entry-dialog-art" src={artworkUrl} alt="" />}
@@ -48,6 +81,11 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <span className={`availability-badge ${availability}`}>{t(`availability_${availability}`)}</span>
               {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
               <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
+            </div>
+            <div className="entry-trait-controls">
+              {SPECIMEN_TRAITS.filter((trait) => traitEligible(entry, trait, traitAvailability)).map((trait) =>
+                <TraitSwitch key={trait} id={`detail-${trait}`} trait={trait} label={t(TRAIT_LABELS[trait])} checked={entry.requirements?.[trait] === true} onChange={(checked) => setEntryTrait(entry.planId, trait, checked)} />
+              )}
             </div>
             <dl className="entry-facts">
               <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : entry.groupLabel}</dd></div>
@@ -62,18 +100,17 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               {requirements.pokemonLanguage && <div><dt>{t("pokemon_language")}</dt><dd>{requirements.pokemonLanguage}</dd></div>}
               {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{requirements.encounterMark === "Mightiest Mark" ? t("mightiest_mark") : requirements.encounterMark}</dd></div>}
               {entry.level && <div><dt>{t("level")}</dt><dd>{entry.level}</dd></div>}
+              {entry.trainerName && <div><dt>{t("original_trainer")}</dt><dd>{entry.trainerName}</dd></div>}
               {entry.trainerId && <div><dt>{t("trainer_id")}</dt><dd>{entry.trainerId}</dd></div>}
               {(requirements.ball || entry.ball) && <div><dt>{t("ball")}</dt><dd>{requirements.ball ?? entry.ball}</dd></div>}
               {(requirements.nature || entry.nature) && <div><dt>{t("nature")}</dt><dd>{requirements.nature ?? entry.nature}</dd></div>}
               {(requirements.ability || entry.ability) && <div><dt>{t("ability")}</dt><dd>{(requirements.ability ?? entry.ability) === "Battle Bond" ? t("battle_bond_ability") : requirements.ability ?? entry.ability}</dd></div>}
               {requirements.teraType && <div><dt>{t("tera_type")}</dt><dd>{requirements.teraType}</dd></div>}
               {(requirements.heldItem || entry.heldItem) && <div><dt>{t("held_item")}</dt><dd>{requirements.heldItem ?? entry.heldItem}</dd></div>}
-              {requirements.alpha !== undefined && <div><dt>{t("alpha")}</dt><dd>{t(requirements.alpha ? "yes" : "no")}</dd></div>}
-              {requirements.gmaxFactor !== undefined && <div><dt>{t("gmax_factor")}</dt><dd>{t(requirements.gmaxFactor ? "yes" : "no")}</dd></div>}
               {(requirements.moves?.length || entry.moves?.length) && <div><dt>{t("moves")}</dt><dd>{(requirements.moves ?? entry.moves)?.join(" · ")}</dd></div>}
               {(requirements.ribbons?.length || entry.ribbons?.length) && <div><dt>{t("ribbons")}</dt><dd>{(requirements.ribbons ?? entry.ribbons)?.join(" · ")}</dd></div>}
               {(entry.startDate || entry.endDate) && <div><dt>{t("event_period")}</dt><dd>{[entry.startDate, entry.endDate].filter(Boolean).join(" — ")}</dd></div>}
-              <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>
+              {box && <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>}
             </dl>
             {matchingHomeChallenges.length > 0 && <section className="entry-home-challenges">
               <h3>{t("home_challenges_met")}</h3>
@@ -81,7 +118,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <ul>{matchingHomeChallenges.map((challenge) => <li key={challenge.id}>{localizeHomeChallengeTitle(language, challenge, pokemonNames)}</li>)}</ul>
             </section>}
             <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
-            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3><p>{displayNote(entry)}</p>{entry.sourceLabel && (entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{localizeCatalogText(language, entry.sourceLabel)} ↗</a> : <small>{localizeCatalogText(language, entry.sourceLabel)}</small>)}</section>
+            <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3>{entry.displayDetail && <p><strong>{localizeCatalogText(language, entry.displayDetail)}</strong></p>}<p>{displayNote(entry)}</p>{entry.sourceLabel && (entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{localizeCatalogText(language, entry.sourceLabel)} ↗</a> : <small>{localizeCatalogText(language, entry.sourceLabel)}</small>)}</section>
           </section>
         </div>;
 }

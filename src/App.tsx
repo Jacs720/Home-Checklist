@@ -1,8 +1,8 @@
 import { BOX_THEME_GAMES, CONCEPT_ART_GAMES, boxThemeStyle } from "./box-themes";
 import { LANGUAGE_OPTIONS, groupName } from "./translations";
-import { pokemonArtworkUrl } from "./catalog-planner";
 import { assetUrl } from "./app-utils";
-import { GooeyCheckbox, OriginMarkIcon, StyledSelect, originMarkIconUrl } from "./components/ui-controls";
+import { GooeyCheckbox, StyledSelect } from "./components/ui-controls";
+import { DatabaseChoiceCard } from "./components/DatabaseChoiceCard";
 
 import { useAppController } from "./hooks/use-app-controller";
 import { BoxView } from "./views/BoxView";
@@ -33,6 +33,8 @@ export default function App() {
     setCustomBoxEditorId,
     customBoxQuery,
     setCustomBoxQuery,
+    detailEntry,
+    setDetailEntry,
     locationAnnouncement,
     setGlobalTooltip,
     setGlobalReturnContext,
@@ -226,11 +228,9 @@ export default function App() {
         </div>
       )}
 
-      <EntryDetails app={controller} />
-
       {customBoxEditor && (() => {
         const selectedIds = new Set(customBoxEditor.planIds);
-        return <div className="entry-modal-layer custom-box-modal-layer">
+        return <div className="entry-modal-layer custom-box-modal-layer" inert={Boolean(detailEntry)} aria-hidden={detailEntry ? true : undefined}>
           <button className="entry-modal-scrim" aria-label={t("close_editor")} onClick={() => setCustomBoxEditorId(null)} />
           <section className="custom-box-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-box-dialog-title">
             <header className="custom-box-dialog-header">
@@ -244,18 +244,15 @@ export default function App() {
             </div>
             <div className="database-choice-grid" aria-label={t("choose_pokemon")}>{customBoxSearchResults.map((entry) => {
               const selected = selectedIds.has(entry.planId);
-              const artworkUrl = pokemonArtworkUrl(entry);
-              const originMarkKey = entry.mark ?? entry.groupKey;
-              return <button type="button" className={selected ? "selected" : ""} aria-pressed={selected} key={entry.planId} onClick={() => toggleCustomBoxEntry(customBoxEditor.id, entry.planId)}>
-                <span>{artworkUrl && <img src={artworkUrl} alt="" loading="lazy" />}{entry.variant === "shiny" && <img className="database-shiny" src={assetUrl("assets/shiny.png")} alt="" />}</span>
-                <b>{displayName(entry)}</b><small>{displayForm(entry) ?? `#${String(entry.dex).padStart(4, "0")}`}</small>
-                {originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="database-origin-mark" /> : <em>{entry.groupLabel}</em>}
-              </button>;
+              return <DatabaseChoiceCard key={entry.planId} entry={entry} name={displayName(entry)} form={displayForm(entry)} selected={selected} detailsLabel={t("open_details")}
+                onToggle={() => toggleCustomBoxEntry(customBoxEditor.id, entry.planId)} onDetails={() => setDetailEntry({ entry })} />;
             })}</div>
             <footer className="custom-box-dialog-footer"><span>{customBoxSearchResults.length.toLocaleString(locale)} {t("database_results")}</span><button className="primary-action" onClick={() => setCustomBoxEditorId(null)}>{t("close_editor")}</button></footer>
           </section>
         </div>;
       })()}
+
+      <EntryDetails app={controller} />
 
       <div className="workspace">
         {filtersOpen && <button className="drawer-scrim" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)} />}

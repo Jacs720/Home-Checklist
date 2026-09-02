@@ -921,7 +921,22 @@ const BOX_PACKING_COPY: Record<UiLanguage, Copy> = {
   CHT: { save_space: "節省盒子空間" },
 };
 
+const SPECIMEN_TRAIT_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax" },
+  "ES-ES": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax" },
+  ENG: { alpha: "Alpha Pokémon", gmax_factor: "Gigantamax Factor" },
+  DEU: { alpha: "Elite-Pokémon", gmax_factor: "Gigadynamax-Faktor" },
+  FRA: { alpha: "Pokémon Baron", gmax_factor: "Gène Gigamax" },
+  ITA: { alpha: "Pokémon alfa", gmax_factor: "Fattore Gigamax" },
+  JPN: { alpha: "オヤブン", gmax_factor: "キョダイマックスの素質" },
+  KOR: { alpha: "우두머리 포켓몬", gmax_factor: "거다이맥스인자" },
+  CHS: { alpha: "头目宝可梦", gmax_factor: "超极巨化因子" },
+  CHT: { alpha: "頭目寶可夢", gmax_factor: "超極巨化因子" },
+};
+
+
 export function copy(language: UiLanguage, key: string) {
+  if (SPECIMEN_TRAIT_COPY[language][key]) return SPECIMEN_TRAIT_COPY[language][key];
   if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
   if (language === "ES-ES" && ES_ES_COPY[key]) return ES_ES_COPY[key];
   if (FORM_FILTER_COPY[language][key]) return FORM_FILTER_COPY[language][key];

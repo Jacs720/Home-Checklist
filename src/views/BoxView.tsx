@@ -119,6 +119,7 @@ export function BoxView({ app }: BoxViewProps) {
                         <span className="slot-number">{String(index + 1).padStart(2, "0")}</span>
                         <span className={`variant-badge ${entry.variant}`} aria-label={entry.variant === "shiny" ? t("shiny") : t("normal")} title={entry.variant === "shiny" ? t("shiny") : t("normal")}>{entry.variant === "shiny" ? <img className="shiny-symbol badge" src={assetUrl("assets/shiny.png")} alt="" /> : t("normal")}</span>
                         <PokemonArtwork entry={entry} owned={isOwned} displayName={localizedName} language={language} />
+                        <TraitBadges requirements={entry.requirements} t={t} />
                         <strong>{localizedName}</strong><small>{detail} · {entry.ownOt ? t("your_ot") : t("foreign_ot")}</small>
                         {originMarkIconUrl(originMarkKey) && <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="slot-origin-mark" />}
                         {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="slot-bank-badge" />}
@@ -148,3 +149,4 @@ export function BoxView({ app }: BoxViewProps) {
             </>
           );
 }
+import { TraitBadges } from "../components/specimen-trait-controls";

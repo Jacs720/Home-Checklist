@@ -2,8 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DatabaseChoiceCard } from "../src/components/DatabaseChoiceCard";
+import { EntryDetails } from "../src/views/EntryDetails";
+import type { AppController } from "../src/hooks/use-app-controller";
 import { DEFAULT_MARKS, GROUP_COLORS, MARKS } from "../src/app-config";
-import type { Acquisition, Dataset, FormOptions, GenderMode, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
+import type { Acquisition, Dataset, FormOptions, GenderMode, PlannedEntry, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../src/catalog-corrections";
 import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked, pokemonArtworkUrl } from "../src/catalog-planner";
 import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
@@ -432,6 +437,49 @@ test("the Tauri adapter keeps native storage and exports outside shared UI code"
   assert.equal(platform.target, "android");
   assert.equal(await platform.storage.get("progress"), "saved");
   assert.deepEqual(exports, ["backup.json"]);
+});
+
+test("custom box cards separate artwork, marks and independent information buttons", async () => {
+  const source = specialEntries.find((entry) => entry.dex === 493 && entry.collection === "event-dex" && entry.mark === "P");
+  assert.ok(source);
+  const entry: PlannedEntry = { ...source, planId: `${source.id}:normal`, variant: "normal", ownOt: false, groupKey: "P", groupLabel: "Pentagon" };
+  const html = renderToStaticMarkup(createElement(DatabaseChoiceCard, {
+    entry, name: "Arceus", form: null, selected: true, detailsLabel: "Open details", onToggle() {}, onDetails() {},
+  }));
+  assert.match(html, /class="database-choice-card selected"/);
+  assert.match(html, /class="database-choice-select" aria-pressed="true"/);
+  assert.match(html, /class="database-pokemon-art"/);
+  assert.match(html, /class="origin-mark-icon database-origin-mark"/);
+  assert.match(html, /<\/button><button type="button" class="database-choice-info"/);
+  assert.match(html, /aria-label="Open details: Arceus/);
+  assert.equal((html.match(/<button\b/g) ?? []).length, 2);
+
+  const css = await readFile(resolve("src/styles/controls.css"), "utf8");
+  assert.doesNotMatch(css, /\.database-choice-grid\s*>\s*button\s*>\s*span/);
+  assert.match(css, /\.database-choice-artwork > \.database-pokemon-art\s*\{[^}]*width:\s*72px/);
+  assert.match(css, /\.database-origin-mark\s*\{[^}]*width:\s*18px;\s*height:\s*18px/);
+});
+
+test("database details retain exact event facts without inventing a box location", () => {
+  const source = specialEntries.find((entry) => entry.dex === 493 && entry.collection === "event-dex" && entry.trainerId === "08016");
+  assert.ok(source);
+  const entry: PlannedEntry = { ...source, planId: `${source.id}:normal`, variant: "normal", ownOt: false, groupKey: "P", groupLabel: "Pentagon" };
+  const app = {
+    detailEntry: { entry }, locatedEntries: [], traitAvailability: new Map(), pokemonNames: names, language: "ENG", favorites: new Set(), homeChallengesByDex: new Map(),
+    t: (key: string) => copy("ENG", key), displayName: () => "Arceus", displayForm: () => null, displayNote: (value: PokemonEntry) => value.note,
+    setDetailEntry() {}, toggleFavorite() {},
+  } as unknown as AppController;
+  const html = renderToStaticMarkup(createElement(EntryDetails, { app }));
+  assert.match(html, /Pokémon 20th Anniversary - Gamestop Event/);
+  assert.match(html, /<dt>OT<\/dt><dd>GF<\/dd>/);
+  assert.match(html, /<dt>Trainer ID<\/dt><dd>08016<\/dd>/);
+  assert.match(html, /<dt>Event period<\/dt>/);
+  assert.ok(html.includes(source.sourceUrl!));
+  assert.doesNotMatch(html, /<dt>Location<\/dt>/);
+
+  const box = { globalIndex: 0, groupKey: "P", number: 1, label: "Pentagon 01", entries: [entry] };
+  const locatedHtml = renderToStaticMarkup(createElement(EntryDetails, { app: { ...app, detailEntry: { entry, box, slotIndex: 0 } } }));
+  assert.match(locatedHtml, /<dt>Location<\/dt><dd>BOX 001 · SLOT 01<\/dd>/i);
 });
 
 test("required interface copy exists in every available language", async () => {

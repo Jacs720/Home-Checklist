@@ -1,4 +1,5 @@
 import { type ChangeEvent, type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { applySpecimenTraits, createTraitAvailability, DEFAULT_TRAIT_OPTIONS, parseTraitOptions, parseTraitOverrides, type SpecimenTrait, type TraitOptions, type TraitOverrides } from "../specimen-traits";
 import {
   BOX_THEME_GAMES,
   CONCEPT_ART_GAMES,
@@ -70,6 +71,7 @@ import type {
   GlobalTooltip,
   ImportNotice,
   LocatedEntry,
+  EntryDetail,
   PlannedBox,
   PlannedEntry,
   PokemonEntry,
@@ -114,6 +116,10 @@ export function useAppController() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
   const [saveSpace, setSaveSpace] = useState(false);
+  const [traitOptions, setTraitOptions] = useState<TraitOptions>(DEFAULT_TRAIT_OPTIONS);
+  const [traitOverrides, setTraitOverrides] = useState<TraitOverrides>({});
+  const setEntryTrait = (planId: string, trait: SpecimenTrait, checked: boolean) =>
+    setTraitOverrides((current) => ({ ...current, [planId]: { ...current[planId], [trait]: checked } }));
   const {
     owned,
     setOwned,
@@ -161,7 +167,7 @@ export function useAppController() {
     setPokewalkerOnly,
     matchesSearch: matchesCollectionSearch,
   } = useCollectionSearch();
-  const [detailEntry, setDetailEntry] = useState<LocatedEntry | null>(null);
+  const [detailEntry, setDetailEntry] = useState<EntryDetail | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [themeConfig, setThemeConfig] = useState<BoxThemeConfig>(EMPTY_THEME_CONFIG);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -264,6 +270,8 @@ export function useAppController() {
     if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
     if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
     if (typeof value.saveSpace === "boolean") setSaveSpace(value.saveSpace);
+    setTraitOptions(parseTraitOptions(value.traitOptions));
+    setTraitOverrides(parseTraitOverrides(value.traitOverrides));
     if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
     if (typeof value.missingOnly === "boolean") setMissingOnly(value.missingOnly);
     if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
@@ -299,6 +307,8 @@ export function useAppController() {
     language,
     capacity,
     saveSpace,
+    traitOptions,
+    traitOverrides,
     viewMode,
     missingOnly,
     selectedGamePlan,
@@ -308,7 +318,7 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
   const { hydrated, lastSavedAt, clock } = usePersistence({
     language,
@@ -319,16 +329,24 @@ export function useAppController() {
   });
 
   useEffect(() => {
-    if (!themeOpen && !detailEntry && !austinPreview) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { setThemeOpen(false); setDetailEntry(null); setAustinPreview(null); } };
+    if (!themeOpen && !detailEntry && !austinPreview && !customBoxEditorId) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (detailEntry) { setDetailEntry(null); return; }
+      if (customBoxEditorId) { setCustomBoxEditorId(null); return; }
+      setThemeOpen(false);
+      setAustinPreview(null);
+    };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [austinPreview, themeOpen, detailEntry]);
+  }, [austinPreview, themeOpen, detailEntry, customBoxEditorId]);
 
+  const traitAvailability = useMemo(() => createTraitAvailability([...(dataset?.entries ?? []), ...(specialDataset?.entries ?? [])]), [dataset, specialDataset]);
   const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace).map((box) => ({
     ...box,
+    entries: box.entries.map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)),
     label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace, boxNameOverrides]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace, boxNameOverrides, traitOptions, traitOverrides, traitAvailability]);
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -343,8 +361,8 @@ export function useAppController() {
       if (entry.normalEligible !== false) choices.set(`${entry.id}:normal`, { ...entry, variant: "normal", ownOt: entry.ownOtNormal, groupKey, groupLabel, planId: `${entry.id}:normal` });
       if (entry.shinyEligible) choices.set(`${entry.id}:shiny`, { ...entry, variant: "shiny", ownOt: entry.ownOtShiny, groupKey, groupLabel, planId: `${entry.id}:shiny` });
     });
-    return [...choices.values()].sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
-  }, [dataset, specialDataset, language]);
+    return [...choices.values()].map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)).sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
+  }, [dataset, specialDataset, language, traitOptions, traitOverrides, traitAvailability]);
   const databaseChoiceByPlanId = useMemo(() => new Map(databaseChoices.map((entry) => [entry.planId, entry])), [databaseChoices]);
   const derivedGenericProgress = useMemo(() => {
     const keys = new Set<string>();
@@ -849,7 +867,7 @@ export function useAppController() {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const isTyping = Boolean(target?.matches("input, textarea, select") || target?.isContentEditable);
-      if (isTyping || themeOpen || detailEntry) return;
+      if (isTyping || themeOpen || detailEntry || customBoxEditorId) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         undoOwned();
@@ -882,7 +900,7 @@ export function useAppController() {
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [boxes.length, detailEntry, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
+  }, [boxes.length, detailEntry, customBoxEditorId, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
 
   const openThemeDialog = () => {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -989,7 +1007,7 @@ export function useAppController() {
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
       genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
-      availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, viewMode, missingOnly,
+      availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, traitOptions, traitOverrides, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
     },
     themes: themeConfig,
@@ -1070,6 +1088,8 @@ export function useAppController() {
     if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
     if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
     if (typeof configuration.saveSpace === "boolean") setSaveSpace(configuration.saveSpace);
+    setTraitOptions(parseTraitOptions(configuration.traitOptions));
+    setTraitOverrides(parseTraitOverrides(configuration.traitOverrides));
     if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
     if (typeof configuration.missingOnly === "boolean") setMissingOnly(configuration.missingOnly);
     if (typeof configuration.selectedGamePlan === "string" && GAME_PLANS.some((game) => game.id === configuration.selectedGamePlan)) setSelectedGamePlan(configuration.selectedGamePlan as GamePlanId);
@@ -1226,6 +1246,10 @@ export function useAppController() {
     setCapacity,
     saveSpace,
     setSaveSpace,
+    traitOptions,
+    setTraitOptions,
+    traitAvailability,
+    setEntryTrait,
     owned,
     livingDexOwned,
     favorites,
@@ -1268,6 +1292,7 @@ export function useAppController() {
     pokewalkerOnly,
     setPokewalkerOnly,
     detailEntry,
+    locatedEntries,
     setDetailEntry,
     filtersOpen,
     setFiltersOpen,
@@ -1311,6 +1336,7 @@ export function useAppController() {
     boxes,
     databaseChoiceByPlanId,
     plannedEntries,
+    locatedEntries,
     homeChallengesByDex,
     homeChallengeDexes,
     entryIsOwned,
