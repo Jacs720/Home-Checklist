@@ -8,7 +8,7 @@ export function TraitSwitch({ id, trait, label, checked, onChange }: {
 }) {
   return <label className={`switch-row specimen-trait-switch ${checked ? "active" : ""}`} htmlFor={id}>
     <span className="trait-label"><img className="trait-icon" src={traitIconUrl(trait)} alt="" /><b>{label}</b></span>
-    <input id={id} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <input id={id} type="checkbox" role="switch" checked={checked} onChange={(event) => onChange(event.target.checked)} />
   </label>;
 }
 

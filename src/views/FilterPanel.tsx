@@ -1,6 +1,5 @@
 import { groupName } from "../translations";
-import { SPECIMEN_TRAITS, TRAIT_LABELS } from "../specimen-traits";
-import { TraitSwitch } from "../components/specimen-trait-controls";
+import { SPECIMEN_TRAITS, TRAIT_ICONS, TRAIT_LABELS } from "../specimen-traits";
 import { AVAILABILITY_STATUSES, COLLECTION_PRESETS } from "../collection-features";
 import { COLLECTIONS, GROUP_COLORS, MARKS } from "../app-config";
 import { assetUrl } from "../app-utils";
@@ -97,7 +96,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
 
           <section className="filter-section">
             <p className="panel-label">{t("form_differences")}</p>
-            {SPECIMEN_TRAITS.map((trait) => <TraitSwitch key={trait} id={`filter-${trait}`} trait={trait} label={t(TRAIT_LABELS[trait])} checked={traitOptions[trait]} onChange={(checked) => setTraitOptions((current) => ({ ...current, [trait]: checked }))} />)}
+            {SPECIMEN_TRAITS.map((trait) => <label key={trait} className={`switch-row form-trait-row ${traitOptions[trait] ? "active" : ""}`} htmlFor={`filter-${trait}`}><span><b className="form-trait-label"><img className="trait-icon" src={assetUrl(`assets/${TRAIT_ICONS[trait]}`)} alt="" />{t(TRAIT_LABELS[trait])}</b></span><GooeyCheckbox id={`filter-${trait}`} checked={traitOptions[trait]} onChange={(event) => setTraitOptions((current) => ({ ...current, [trait]: event.target.checked }))} /></label>)}
             <label className="switch-row" htmlFor="alternate-forms" aria-label={t("alternate_forms")}><span><b>{t("alternate_forms")}</b></span><GooeyCheckbox id="alternate-forms" checked={formOptions.alternate} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, alternate: event.target.checked })); }} /></label>
             <label className="switch-row" htmlFor="all-alcremie-forms" aria-label={t("all_alcremie_forms")}><span><b>{t("all_alcremie_forms")}</b></span><GooeyCheckbox id="all-alcremie-forms" checked={formOptions.alcremie} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, alcremie: event.target.checked })); }} /></label>
             <label className="switch-row" htmlFor="all-minior-forms" aria-label={t("all_minior_forms")}><span><b>{t("all_minior_forms")}</b></span><GooeyCheckbox id="all-minior-forms" checked={formOptions.minior} onChange={(event) => { markProfileCustom(); setFormOptions((current) => ({ ...current, minior: event.target.checked })); }} /></label>

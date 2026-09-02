@@ -105,13 +105,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 
 
-/* Alpha / Gigantamax use the shared checkbox styling in the filters. */
+/* Alpha / Gigantamax requirements share the app's flat switch treatment. */
 .switch-row.specimen-trait-switch > .trait-label { flex-direction: row; align-items: center; gap: 8px; min-width: 0; }
 .trait-icon { width: 20px; height: 20px; object-fit: contain; flex: 0 0 auto; }
 .specimen-trait-switch:not(.active) .trait-icon { filter: grayscale(1); opacity: .45; }
+.specimen-trait-switch input { appearance: none; position: relative; width: 32px; height: 20px; flex: 0 0 32px; margin: 0; border: 1px solid #60736f; border-radius: 12px; background: #344541; cursor: pointer; transition: background .15s; }
+.specimen-trait-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #f5f8f7; transition: transform .15s; }
+.specimen-trait-switch input:checked { background: var(--teal); border-color: var(--teal); }
+.specimen-trait-switch input:checked::after { transform: translateX(12px); }
+.specimen-trait-switch input:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 .entry-trait-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 0 20px; }
 .entry-trait-controls:not(:empty) { padding: 12px 0; border-bottom: 1px solid var(--line); }
 .specimen-trait-badges { display: inline-flex; gap: 3px; align-items: center; }
 .pokemon-slot-main > .specimen-trait-badges { position: absolute; top: 29px; left: 7px; }
 .global-pokemon > .specimen-trait-badges { position: absolute; top: 5px; left: 5px; }
 .specimen-trait-badges .trait-icon { width: 15px; height: 15px; }
+@media (prefers-reduced-motion: reduce) {
+  .specimen-trait-switch input, .specimen-trait-switch input::after { transition: none; }
+}
