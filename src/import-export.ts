@@ -1,3 +1,5 @@
+import { correctLegacyTradePlanId } from "./trade-ribbon-corrections";
+
 export type CollectionRecord = {
   planId?: string;
   number?: number;
@@ -334,10 +336,11 @@ export function matchCollectionRecords(
 
   records.slice(0, MAX_TRANSFER_RECORDS).forEach((record) => {
     if (record.planId) {
-      if (!validTargets.has(record.planId)) { unmatched += 1; return; }
+      const targetId = correctLegacyTradePlanId(record.planId);
+      if (!validTargets.has(targetId)) { unmatched += 1; return; }
       matchedRows += 1;
-      if (currentlyOwned.has(record.planId) || added.has(record.planId)) alreadyOwned += 1;
-      else added.add(record.planId);
+      if (currentlyOwned.has(targetId) || added.has(targetId)) alreadyOwned += 1;
+      else added.add(targetId);
       return;
     }
     let dex = record.number;

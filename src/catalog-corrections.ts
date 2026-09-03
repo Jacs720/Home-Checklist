@@ -1,3 +1,5 @@
+import { correctTradeAndRibbons } from "./trade-ribbon-corrections";
+
 type CatalogEntry = {
   id: string;
   name?: string;
@@ -20,6 +22,11 @@ type CatalogEntry = {
   types?: string[];
   shinyArtStyle?: "home";
   gender?: "male" | "female";
+  trainerName?: string;
+  trainerId?: string;
+  partnerRibbon?: boolean;
+  ribbons?: string[];
+  requirements?: PokemonEntry["requirements"];
 };
 
 const GO_SPECIES_WITH_SEPARATE_UNNAMED_BASE = new Set([128, 676, 720, 901]);
@@ -111,7 +118,8 @@ const GALARIAN_BIRD_ART_IDS: Record<number, number> = {
  * event synchronizations cannot silently reintroduce the visual duplicates.
  */
 export function applySpecialCatalogCorrections<T extends CatalogEntry>(entries: T[]) {
-  return entries.map((entry) => {
+  return entries.map((source) => {
+    const entry = correctTradeAndRibbons(source);
     if (entry.shinyEligible && entry.mark === "SwSh" && GALARIAN_BIRD_ART_IDS[entry.dex]) {
       return {
         ...entry,

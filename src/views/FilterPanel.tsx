@@ -5,6 +5,7 @@ import { COLLECTIONS, GROUP_COLORS, MARKS } from "../app-config";
 import { assetUrl } from "../app-utils";
 import { BankBadge, CompactCheckbox, GooeyCheckbox, OriginMarkChip, OriginMarkIcon, StyledSelect, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
+import { VariantSelector } from "../components/variant-selector";
 
 type FilterPanelProps = { app: AppController };
 
@@ -89,8 +90,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
 
           <section className="filter-section">
             <p className="panel-label">{t("variants")}</p>
-            <label className="switch-row" htmlFor="variant-shiny" aria-label={t("shiny_possible")}><span><b className="shiny-label"><img className="shiny-symbol small" src={assetUrl("assets/shiny.png")} alt="" />{t("shiny_possible")}</b></span><GooeyCheckbox id="variant-shiny" checked={variants.shiny} onChange={() => setVariant("shiny")} /></label>
-            <label className="switch-row" htmlFor="variant-normal" aria-label={t("non_shiny")}><span><b>{t("non_shiny")}</b></span><GooeyCheckbox id="variant-normal" checked={variants.normal} onChange={() => setVariant("normal")} /></label>
+            <VariantSelector variants={variants} onToggle={setVariant} t={t} shinyIconUrl={assetUrl("assets/shiny.png")} />
             <label className="switch-row special-normal-row" htmlFor="special-non-shiny" aria-label={t("special_non_shiny")}><span><b>{t("special_non_shiny")}</b></span><GooeyCheckbox id="special-non-shiny" checked={includeNonShinySpecials} onChange={(event) => { markProfileCustom(); setIncludeNonShinySpecials(event.target.checked); }} /></label>
           </section>
 

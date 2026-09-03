@@ -14,12 +14,13 @@ export function TraitSwitch({ id, trait, label, checked, onChange }: {
 }
 
 export function TraitBadges({ requirements, t }: {
-  requirements?: { alpha?: boolean; gmaxFactor?: boolean; encounterMark?: string }; t: (key: string) => string;
+  requirements?: { alpha?: boolean; gmaxFactor?: boolean; encounterMark?: string; ribbons?: string[] }; t: (key: string) => string;
 }) {
   const active = SPECIMEN_TRAITS.filter((trait) => requirements?.[trait]);
   const encounterBadge = ENCOUNTER_MARK_BADGES[requirements?.encounterMark ?? ""];
-  if (!active.length && !encounterBadge) return null;
+  const partnerRibbon = requirements?.ribbons?.includes("Partner Ribbon");
+  if (!active.length && !encounterBadge && !partnerRibbon) return null;
   return <span className="specimen-trait-badges">{active.map((trait) =>
     <img key={trait} className="trait-icon" src={traitIconUrl(trait)} alt={t(TRAIT_LABELS[trait])} title={t(TRAIT_LABELS[trait])} />
-  )}{encounterBadge && <img className="trait-icon encounter-mark-icon" src={assetUrl(`assets/${encounterBadge.icon}`)} alt={t(encounterBadge.labelKey)} title={t(encounterBadge.labelKey)} />}</span>;
+  )}{encounterBadge && <img className="trait-icon encounter-mark-icon" src={assetUrl(`assets/${encounterBadge.icon}`)} alt={t(encounterBadge.labelKey)} title={t(encounterBadge.labelKey)} />}{partnerRibbon && <img className="trait-icon partner-ribbon-icon" src={assetUrl("assets/partner-ribbon.png")} alt={t("partner_ribbon")} title={t("partner_ribbon")} />}</span>;
 }

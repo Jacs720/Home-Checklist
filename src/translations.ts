@@ -924,20 +924,35 @@ const BOX_PACKING_COPY: Record<UiLanguage, Copy> = {
 };
 
 const SPECIMEN_TRAIT_COPY: Record<UiLanguage, Copy> = {
-  "ES-LA": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax" },
-  "ES-ES": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax" },
-  ENG: { alpha: "Alpha Pokémon", gmax_factor: "Gigantamax Factor" },
-  DEU: { alpha: "Elite-Pokémon", gmax_factor: "Gigadynamax-Faktor" },
-  FRA: { alpha: "Pokémon Baron", gmax_factor: "Gène Gigamax" },
-  ITA: { alpha: "Pokémon alfa", gmax_factor: "Fattore Gigamax" },
-  JPN: { alpha: "オヤブン", gmax_factor: "キョダイマックスの素質" },
-  KOR: { alpha: "우두머리 포켓몬", gmax_factor: "거다이맥스인자" },
-  CHS: { alpha: "头目宝可梦", gmax_factor: "超极巨化因子" },
-  CHT: { alpha: "頭目寶可夢", gmax_factor: "超極巨化因子" },
+  "ES-LA": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax", partner_ribbon: "Cinta Camarada", shiny_guaranteed: "Siempre shiny" },
+  "ES-ES": { alpha: "Pokémon alfa", gmax_factor: "Factor Gigamax", partner_ribbon: "Cinta Camarada", shiny_guaranteed: "Siempre variocolor" },
+  ENG: { alpha: "Alpha Pokémon", gmax_factor: "Gigantamax Factor", partner_ribbon: "Partner Ribbon", shiny_guaranteed: "Always shiny" },
+  DEU: { alpha: "Elite-Pokémon", gmax_factor: "Gigadynamax-Faktor", partner_ribbon: "Partnerband", shiny_guaranteed: "Immer schillernd" },
+  FRA: { alpha: "Pokémon Baron", gmax_factor: "Gène Gigamax", partner_ribbon: "Ruban Partenaire", shiny_guaranteed: "Toujours chromatique" },
+  ITA: { alpha: "Pokémon alfa", gmax_factor: "Fattore Gigamax", partner_ribbon: "Fiocco Compagno", shiny_guaranteed: "Sempre cromatico" },
+  JPN: { alpha: "オヤブン", gmax_factor: "キョダイマックスの素質", partner_ribbon: "パートナーリボン", shiny_guaranteed: "必ず色違い" },
+  KOR: { alpha: "우두머리 포켓몬", gmax_factor: "거다이맥스인자", partner_ribbon: "파트너리본", shiny_guaranteed: "항상 색이 다른 포켓몬" },
+  CHS: { alpha: "头目宝可梦", gmax_factor: "超极巨化因子", partner_ribbon: "同伴奖章", shiny_guaranteed: "必定为异色" },
+  CHT: { alpha: "頭目寶可夢", gmax_factor: "超極巨化因子", partner_ribbon: "同伴獎章", shiny_guaranteed: "必定為異色" },
+};
+
+
+const VARIANT_COPY: Record<UiLanguage, Copy> = {
+  "ES-LA": { non_shiny: "Color normal", variant_shiny: "Brillante", special_non_shiny: "Color normal en especiales" },
+  "ES-ES": { non_shiny: "Color normal", variant_shiny: "Variocolor", special_non_shiny: "Color normal en especiales" },
+  ENG: { non_shiny: "Normal color", variant_shiny: "Shiny", special_non_shiny: "Normal-color specials" },
+  DEU: { non_shiny: "Normale Farbe", variant_shiny: "Schillernd", special_non_shiny: "Normale Farbe in Sondersammlungen" },
+  FRA: { non_shiny: "Couleur normale", variant_shiny: "Chromatique", special_non_shiny: "Couleur normale en collections spéciales" },
+  ITA: { non_shiny: "Colore normale", variant_shiny: "Cromatico", special_non_shiny: "Colore normale nelle collezioni speciali" },
+  JPN: { non_shiny: "通常色", variant_shiny: "色違い", special_non_shiny: "特別コレクションの通常色" },
+  KOR: { non_shiny: "일반 색상", variant_shiny: "색이 다른", special_non_shiny: "특별 컬렉션의 일반 색상" },
+  CHS: { non_shiny: "普通颜色", variant_shiny: "异色", special_non_shiny: "特殊收藏中的普通颜色" },
+  CHT: { non_shiny: "一般顏色", variant_shiny: "異色", special_non_shiny: "特殊收藏中的一般顏色" },
 };
 
 
 export function copy(language: UiLanguage, key: string) {
+  if (VARIANT_COPY[language][key]) return VARIANT_COPY[language][key];
   const titan = titanCopy(language, key);
   if (titan) return titan;
   if (SPECIMEN_TRAIT_COPY[language][key]) return SPECIMEN_TRAIT_COPY[language][key];

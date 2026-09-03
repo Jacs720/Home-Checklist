@@ -650,3 +650,5 @@ test("required interface copy exists in every available language", async () => {
 import "./specimen-traits.test.mjs";
 import "./specimen-trait-controls.test";
 import "./sea-form-sprites.test.mjs";
+import "./variant-selector.test";
+import "./trade-ribbon-corrections.test";

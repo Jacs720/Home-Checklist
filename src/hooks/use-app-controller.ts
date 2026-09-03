@@ -21,6 +21,7 @@ import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesData
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
 import { buildTitanEntries } from "../titan-pokemon";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../catalog-corrections";
+import { correctLegacyTradePlanIds } from "../trade-ribbon-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
   AVAILABILITY_STATUSES,
@@ -237,10 +238,10 @@ export function useAppController() {
   }, []);
 
   const hydrateCollection = useCallback((value: any) => {
-    if (Array.isArray(value.owned)) setOwned(new Set(value.owned));
+    if (Array.isArray(value.owned)) setOwned(new Set(correctLegacyTradePlanIds(value.owned)));
     if (Object.hasOwn(value, "livingDexOwned")) livingDexProgressStoredRef.current = true;
     if (Array.isArray(value.livingDexOwned)) setLivingDexOwned(new Set(value.livingDexOwned.filter((dex: unknown) => typeof dex === "number" && Number.isInteger(dex) && dex > 0)));
-    if (Array.isArray(value.favorites)) setFavorites(new Set(value.favorites.filter((id: unknown) => typeof id === "string")));
+    if (Array.isArray(value.favorites)) setFavorites(new Set(correctLegacyTradePlanIds(value.favorites)));
     if (Array.isArray(value.selectedMarks)) setSelectedMarks(value.selectedMarks.filter((mark: string) => MARKS.includes(mark)));
     if (Array.isArray(value.selectedCollections)) {
       const savedCollections = value.selectedCollections.filter((collection: string) => COLLECTIONS.includes(collection));
@@ -286,7 +287,7 @@ export function useAppController() {
     if (typeof value.missingOnly === "boolean") setMissingOnly(value.missingOnly);
     if (GAME_PLANS.some((game) => game.id === value.selectedGamePlan)) setSelectedGamePlan(value.selectedGamePlan);
     if (value.boxNameOverrides && typeof value.boxNameOverrides === "object") setBoxNameOverrides(Object.fromEntries(Object.entries(value.boxNameOverrides).filter(([, name]) => typeof name === "string").map(([key, name]) => [key, (name as string).slice(0, 48)])));
-    if (Array.isArray(value.customBoxes)) setCustomBoxes(value.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: box.planIds.filter((id) => typeof id === "string").slice(0, 30) })));
+    if (Array.isArray(value.customBoxes)) setCustomBoxes(value.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: correctLegacyTradePlanIds(box.planIds).slice(0, 30) })));
     if (typeof value.collectionGoal === "string") setCollectionGoal(value.collectionGoal.slice(0, 8));
     if (typeof value.collectionNotes === "string") setCollectionNotes(value.collectionNotes.slice(0, 2_000));
     if (typeof value.lastExternalBackupAt === "number") setLastExternalBackupAt(value.lastExternalBackupAt);
@@ -1043,7 +1044,7 @@ export function useAppController() {
     const progress = (value.progress && typeof value.progress === "object" ? value.progress : value) as Record<string, unknown>;
     const configuration = (value.configuration && typeof value.configuration === "object" ? value.configuration : value) as Record<string, unknown>;
     if (!Array.isArray(progress.owned)) throw new Error("invalid");
-    const restoredOwned = new Set(progress.owned.filter((id): id is string => typeof id === "string"));
+    const restoredOwned = new Set(correctLegacyTradePlanIds(progress.owned));
     const restoredLivingDexOwned = new Set(Array.isArray(progress.livingDexOwned)
       ? progress.livingDexOwned.filter((dex): dex is number => typeof dex === "number" && Number.isInteger(dex) && dex > 0)
       : configuration.normalLivingDex === true
@@ -1054,7 +1055,7 @@ export function useAppController() {
     livingDexProgressStoredRef.current = true;
     livingDexMigrationCheckedRef.current = true;
     clearProgressHistory();
-    if (Array.isArray(progress.favorites)) setFavorites(new Set(progress.favorites.filter((id): id is string => typeof id === "string")));
+    if (Array.isArray(progress.favorites)) setFavorites(new Set(correctLegacyTradePlanIds(progress.favorites)));
     if (Array.isArray(configuration.selectedMarks)) setSelectedMarks(configuration.selectedMarks.filter((mark): mark is string => typeof mark === "string" && MARKS.includes(mark)));
     if (Array.isArray(configuration.selectedCollections)) {
       const savedCollections = configuration.selectedCollections.filter((collection): collection is string => typeof collection === "string" && COLLECTIONS.includes(collection));
@@ -1106,7 +1107,7 @@ export function useAppController() {
     if (typeof configuration.collectionGoal === "string") setCollectionGoal(configuration.collectionGoal.slice(0, 8));
     if (typeof configuration.collectionNotes === "string") setCollectionNotes(configuration.collectionNotes.slice(0, 2_000));
     if (configuration.boxNameOverrides && typeof configuration.boxNameOverrides === "object") setBoxNameOverrides(Object.fromEntries(Object.entries(configuration.boxNameOverrides).filter(([, name]) => typeof name === "string").map(([key, name]) => [key, (name as string).slice(0, 48)])));
-    if (Array.isArray(configuration.customBoxes)) setCustomBoxes(configuration.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: box.planIds.filter((id) => typeof id === "string").slice(0, 30) })));
+    if (Array.isArray(configuration.customBoxes)) setCustomBoxes(configuration.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: correctLegacyTradePlanIds(box.planIds).slice(0, 30) })));
     const parsedThemes = parseThemeConfig(value.themes);
     if (parsedThemes) setThemeConfig(parsedThemes);
     const exportedAt = typeof value.exportedAt === "string" ? Date.parse(value.exportedAt) : Number.NaN;

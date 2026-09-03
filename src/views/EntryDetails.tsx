@@ -94,7 +94,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : originLabel}</dd></div>
               <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
-              <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
+              <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t(!entry.genericEntry && entry.normalEligible === false ? "shiny_guaranteed" : "yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
               {requiredGender && <div><dt>{t("required_gender")}</dt><dd>{requiredGender}</dd></div>}
               {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{entry.collection === "battle-bond" ? t("battle_bond_origin") : localizeCatalogText(language, requirements.originGame)}</dd></div>}
@@ -111,7 +111,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               {requirements.teraType && <div><dt>{t("tera_type")}</dt><dd>{requirements.teraType}</dd></div>}
               {(requirements.heldItem || entry.heldItem) && <div><dt>{t("held_item")}</dt><dd>{requirements.heldItem ?? entry.heldItem}</dd></div>}
               {(requirements.moves?.length || entry.moves?.length) && <div><dt>{t("moves")}</dt><dd>{(requirements.moves ?? entry.moves)?.join(" · ")}</dd></div>}
-              {(requirements.ribbons?.length || entry.ribbons?.length) && <div><dt>{t("ribbons")}</dt><dd>{(requirements.ribbons ?? entry.ribbons)?.join(" · ")}</dd></div>}
+              {(requirements.ribbons?.length || entry.ribbons?.length) && <div><dt>{t("ribbons")}</dt><dd>{(requirements.ribbons ?? entry.ribbons)?.map((ribbon) => ribbon === "Partner Ribbon" ? t("partner_ribbon") : ribbon).join(" · ")}</dd></div>}
               {(entry.startDate || entry.endDate) && <div><dt>{t("event_period")}</dt><dd>{[entry.startDate, entry.endDate].filter(Boolean).join(" — ")}</dd></div>}
               {box && <div><dt>{t("location")}</dt><dd>{t("box")} {String(box.globalIndex + 1).padStart(3, "0")} · {t("slot")} {String(slotIndex + 1).padStart(2, "0")}</dd></div>}
             </dl>
