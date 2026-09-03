@@ -1,0 +1,33 @@
+.manual-packing-trigger { width: 100%; margin: 5px 0 10px; min-height: 34px; padding: 7px; border: 1px solid var(--line-strong); border-radius: 9px; background: transparent; color: var(--teal); font-size: 10px; }
+.manual-packing-dialog { position: relative; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--line-strong); border-radius: 20px; background: linear-gradient(145deg, #123a33, #0b2723); box-shadow: 0 24px 80px #0008; }
+.manual-packing-dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+.manual-packing-dialog h2 { margin: 0; font-size: 25px; letter-spacing: -.035em; }
+.manual-packing-dialog h3 { margin: 0 0 12px; font-size: 13px; }
+.manual-packing-dialog p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.manual-packing-dialog button { min-height: 36px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 9px; background: rgba(85, 224, 192, .06); color: var(--teal); font-size: 11px; cursor: pointer; }
+.manual-packing-dialog button:disabled { opacity: .4; cursor: not-allowed; }
+.manual-packing-dialog header > button { flex: 0 0 36px; padding: 4px; font-size: 22px; }
+.packing-selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 12px; }
+.packing-selectors label { display: grid; gap: 7px; min-width: 0; color: var(--ink); font-size: 11px; }
+.packing-selectors select { width: 100%; min-height: 42px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 9px; background: #092821; color: var(--ink); font-size: 12px; }
+.packing-selectors select:disabled { opacity: .45; }
+.packing-preview { display: grid; gap: 10px; margin: 12px 0; color: var(--ink); font-size: 13px; }
+.packing-slots { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; max-width: 380px; }
+.packing-slots i { display: block; aspect-ratio: 1; border: 1px solid var(--line-strong); border-radius: 4px; }
+.packing-slots .packing-target { background: var(--teal); }
+.packing-slots .packing-donor { background: #f3c857; }
+.packing-auto-notice { padding: 12px; border: 1px solid #f3c85750; border-radius: 10px; }
+.packing-auto-notice p { margin-top: 0; }
+.packing-saved { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.packing-saved ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.packing-saved li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.packing-saved li > div { min-width: 0; }
+.packing-saved strong, .packing-saved span { display: block; overflow-wrap: anywhere; font-size: 11px; }
+.packing-saved span { margin-top: 6px; color: var(--muted); line-height: 1.5; }
+.packing-saved button { flex: 0 0 auto; }
+.manual-packing-dialog footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 560px) {
+  .manual-packing-dialog { padding: 18px; }
+  .packing-selectors { grid-template-columns: 1fr; }
+  .packing-saved li { align-items: stretch; flex-direction: column; gap: 10px; }
+}

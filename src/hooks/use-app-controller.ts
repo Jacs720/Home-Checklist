@@ -22,6 +22,8 @@ import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mighti
 import { buildTitanEntries } from "../titan-pokemon";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../catalog-corrections";
 import { correctLegacyTradePlanIds } from "../trade-ribbon-corrections";
+import { packBoxesContinuously } from "../box-packing";
+import { applyManualBoxMerges, boxLayoutKey, combineManualBoxes, parseManualBoxMerges, type ManualBoxMerge } from "../manual-box-packing";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
   AVAILABILITY_STATUSES,
@@ -118,6 +120,9 @@ export function useAppController() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [capacity, setCapacity] = useState<6000 | 8000>(6000);
   const [saveSpace, setSaveSpace] = useState(false);
+  const [manualBoxMerges, setManualBoxMerges] = useState<ManualBoxMerge[]>([]);
+  const [manualPackingOpen, setManualPackingOpen] = useState(false);
+  const closeManualPacking = useCallback(() => setManualPackingOpen(false), []);
   const [traitOptions, setTraitOptions] = useState<TraitOptions>(DEFAULT_TRAIT_OPTIONS);
   const [traitOverrides, setTraitOverrides] = useState<TraitOverrides>({});
   const setEntryTrait = (planId: string, trait: SpecimenTrait, checked: boolean) =>
@@ -281,6 +286,7 @@ export function useAppController() {
     if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
     if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
     if (typeof value.saveSpace === "boolean") setSaveSpace(value.saveSpace);
+    setManualBoxMerges(parseManualBoxMerges(value.manualBoxMerges));
     setTraitOptions(parseTraitOptions(value.traitOptions));
     setTraitOverrides(parseTraitOverrides(value.traitOverrides));
     if (value.viewMode === "boxes" || value.viewMode === "global" || value.viewMode === "summary") setViewMode(value.viewMode);
@@ -318,6 +324,7 @@ export function useAppController() {
     language,
     capacity,
     saveSpace,
+    manualBoxMerges,
     traitOptions,
     traitOverrides,
     viewMode,
@@ -329,7 +336,7 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, manualBoxMerges, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
   const { hydrated, lastSavedAt, clock } = usePersistence({
     language,
@@ -353,11 +360,30 @@ export function useAppController() {
   }, [austinPreview, themeOpen, detailEntry, customBoxEditorId]);
 
   const traitAvailability = useMemo(() => createTraitAvailability([...(dataset?.entries ?? []), ...(specialDataset?.entries ?? [])]), [dataset, specialDataset]);
-  const boxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace).map((box) => ({
+  const unpackedBoxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language).map((box) => ({
     ...box,
     entries: box.entries.map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)),
-    label: boxNameOverrides[`${box.groupKey}:${box.number}`] || box.label,
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, saveSpace, boxNameOverrides, traitOptions, traitOverrides, traitAvailability]);
+  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, traitOptions, traitOverrides, traitAvailability]);
+  const namedUnpackedBoxes = useMemo(() => unpackedBoxes.map((box) => ({ ...box, label: boxNameOverrides[boxLayoutKey(box)] || box.label })), [unpackedBoxes, boxNameOverrides]);
+  const manualPacking = useMemo(() => applyManualBoxMerges(namedUnpackedBoxes, manualBoxMerges), [namedUnpackedBoxes, manualBoxMerges]);
+  const boxes = useMemo<PlannedBox[]>(() => (saveSpace ? packBoxesContinuously(unpackedBoxes, true) : manualPacking.boxes).map((box) => ({
+    ...box, label: boxNameOverrides[boxLayoutKey(box)] || box.label,
+  })), [unpackedBoxes, manualPacking, saveSpace, boxNameOverrides]);
+  const combineBoxes = (targetKey: string, donorKey: string) => {
+    if (saveSpace) return false;
+    const id = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `merge-${Date.now()}`;
+    const next = combineManualBoxes(namedUnpackedBoxes, manualBoxMerges, targetKey, donorKey, id);
+    if (!next) return false;
+    setManualBoxMerges(next);
+    setSelectedBoxIndex(null);
+    setChangesSinceBackup((count) => count + 1);
+    return true;
+  };
+  const separateBoxes = (id: string) => {
+    setManualBoxMerges((current) => current.filter((merge) => merge.id !== id));
+    setSelectedBoxIndex(null);
+    setChangesSinceBackup((count) => count + 1);
+  };
   useEffect(() => setRenameBoxIndex((current) => Math.min(current, Math.max(0, boxes.length - 1))), [boxes.length]);
   const allImportEntries = useMemo<ImportCatalogEntry[]>(() => [
     ...(dataset?.entries ?? []),
@@ -766,7 +792,7 @@ export function useAppController() {
   };
 
   const renamePlannedBox = (box: PlannedBox, name: string) => setBoxNameOverrides((current) => {
-    const key = `${box.groupKey}:${box.number}`;
+    const key = boxLayoutKey(box);
     const next = { ...current };
     const trimmed = name.slice(0, 48);
     if (trimmed) next[key] = trimmed; else delete next[key];
@@ -878,7 +904,7 @@ export function useAppController() {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const isTyping = Boolean(target?.matches("input, textarea, select") || target?.isContentEditable);
-      if (isTyping || themeOpen || detailEntry || customBoxEditorId) return;
+      if (isTyping || themeOpen || detailEntry || customBoxEditorId || manualPackingOpen) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         undoOwned();
@@ -911,7 +937,7 @@ export function useAppController() {
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [boxes.length, detailEntry, customBoxEditorId, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
+  }, [boxes.length, detailEntry, customBoxEditorId, manualPackingOpen, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
 
   const openThemeDialog = () => {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -1019,7 +1045,7 @@ export function useAppController() {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
       genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
       availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, traitOptions, traitOverrides, viewMode, missingOnly,
-      selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes,
+      selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, manualBoxMerges,
     },
     themes: themeConfig,
   });
@@ -1099,6 +1125,7 @@ export function useAppController() {
     if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
     if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
     if (typeof configuration.saveSpace === "boolean") setSaveSpace(configuration.saveSpace);
+    setManualBoxMerges(parseManualBoxMerges(configuration.manualBoxMerges));
     setTraitOptions(parseTraitOptions(configuration.traitOptions));
     setTraitOverrides(parseTraitOverrides(configuration.traitOverrides));
     if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
@@ -1258,6 +1285,13 @@ export function useAppController() {
     setCapacity,
     saveSpace,
     setSaveSpace,
+    manualBoxMerges,
+    manualPacking,
+    manualPackingOpen,
+    setManualPackingOpen,
+    closeManualPacking,
+    combineBoxes,
+    separateBoxes,
     traitOptions,
     setTraitOptions,
     traitAvailability,

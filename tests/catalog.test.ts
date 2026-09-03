@@ -652,3 +652,4 @@ import "./specimen-trait-controls.test";
 import "./sea-form-sprites.test.mjs";
 import "./variant-selector.test";
 import "./trade-ribbon-corrections.test";
+import "./manual-box-packing.test";

@@ -3,6 +3,7 @@ import { LANGUAGE_OPTIONS, groupName } from "./translations";
 import { assetUrl } from "./app-utils";
 import { GooeyCheckbox, StyledSelect } from "./components/ui-controls";
 import { DatabaseChoiceCard } from "./components/DatabaseChoiceCard";
+import { ManualBoxPacking } from "./components/ManualBoxPacking";
 
 import { useAppController } from "./hooks/use-app-controller";
 import { BoxView } from "./views/BoxView";
@@ -253,6 +254,7 @@ export default function App() {
       })()}
 
       <EntryDetails app={controller} />
+      {controller.manualPackingOpen && <ManualBoxPacking boxes={controller.manualPacking.boxes} merges={controller.manualBoxMerges} activeIds={controller.manualPacking.activeIds} automatic={controller.saveSpace} onUseManual={() => controller.setSaveSpace(false)} onCombine={controller.combineBoxes} onSeparate={controller.separateBoxes} onClose={controller.closeManualPacking} t={t} />}
 
       <div className="workspace">
         {filtersOpen && <button className="drawer-scrim" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)} />}

@@ -1,0 +1,100 @@
+import type { UiLanguage } from "./translations";
+
+const ES = {
+  save_space_auto: "Ahorrar espacio automáticamente", manual_packing: "Combinar cajas manualmente",
+  packing_intro: "Elige dos cajas que sumen hasta 30 Pokémon. La segunda se añadirá al final de la primera; las demás no se mezclarán.",
+  packing_destination: "Caja de destino", packing_source: "Caja para combinar", packing_choose: "Elegir caja…",
+  packing_combine: "Combinar estas cajas", packing_separate: "Separar cajas", packing_saved: "Combinaciones guardadas",
+  packing_empty: "Todavía no has combinado cajas.", packing_no_pairs: "No hay dos cajas con espacio suficiente para combinarlas.",
+  packing_no_match: "Ninguna otra caja cabe en este espacio.", packing_auto_paused: "El ahorro automático está activo. Tus combinaciones manuales se conservan en pausa.",
+  packing_use_manual: "Usar modo manual", packing_filter_paused: "En pausa: cambiaron las cajas o los filtros", packing_active: "Activa",
+  packing_close: "Cerrar combinaciones", packing_success: "Cajas combinadas. El progreso se conserva.", packing_failure: "No se pudieron combinar estas cajas. Revisa la selección.",
+};
+type PackingCopy = Record<keyof typeof ES, string>;
+export const MANUAL_PACKING_COPY: Record<UiLanguage, PackingCopy> = {
+  "ES-LA": ES, "ES-ES": ES,
+  ENG: {
+    save_space_auto: "Save space automatically", manual_packing: "Combine boxes manually",
+    packing_intro: "Choose two boxes with up to 30 Pokémon in total. The second is appended to the first; other boxes stay separate.",
+    packing_destination: "Destination box", packing_source: "Box to combine", packing_choose: "Choose a box…",
+    packing_combine: "Combine these boxes", packing_separate: "Separate boxes", packing_saved: "Saved combinations",
+    packing_empty: "You have not combined any boxes yet.", packing_no_pairs: "No two boxes have enough space to combine.",
+    packing_no_match: "No other box fits in this space.", packing_auto_paused: "Automatic packing is active. Your manual combinations are saved but paused.",
+    packing_use_manual: "Use manual mode", packing_filter_paused: "Paused: boxes or filters changed", packing_active: "Active",
+    packing_close: "Close combinations", packing_success: "Boxes combined. Progress is preserved.", packing_failure: "These boxes could not be combined. Check your selection.",
+  },
+  DEU: {
+    save_space_auto: "Automatisch Platz sparen", manual_packing: "Boxen manuell kombinieren",
+    packing_intro: "Wähle zwei Boxen mit insgesamt höchstens 30 Pokémon. Die zweite wird an die erste angehängt; andere Boxen bleiben getrennt.",
+    packing_destination: "Zielbox", packing_source: "Zu kombinierende Box", packing_choose: "Box auswählen…",
+    packing_combine: "Diese Boxen kombinieren", packing_separate: "Boxen trennen", packing_saved: "Gespeicherte Kombinationen",
+    packing_empty: "Du hast noch keine Boxen kombiniert.", packing_no_pairs: "Keine zwei Boxen haben genügend Platz zum Kombinieren.",
+    packing_no_match: "Keine andere Box passt in diesen Platz.", packing_auto_paused: "Automatisches Zusammenpacken ist aktiv. Deine manuellen Kombinationen bleiben gespeichert und pausiert.",
+    packing_use_manual: "Manuellen Modus verwenden", packing_filter_paused: "Pausiert: Boxen oder Filter geändert", packing_active: "Aktiv",
+    packing_close: "Kombinationen schließen", packing_success: "Boxen kombiniert. Der Fortschritt bleibt erhalten.", packing_failure: "Diese Boxen konnten nicht kombiniert werden. Prüfe deine Auswahl.",
+  },
+  FRA: {
+    save_space_auto: "Économiser l’espace automatiquement", manual_packing: "Combiner des boîtes manuellement",
+    packing_intro: "Choisis deux boîtes contenant au maximum 30 Pokémon au total. La seconde est ajoutée à la fin de la première ; les autres restent séparées.",
+    packing_destination: "Boîte de destination", packing_source: "Boîte à combiner", packing_choose: "Choisir une boîte…",
+    packing_combine: "Combiner ces boîtes", packing_separate: "Séparer les boîtes", packing_saved: "Combinaisons enregistrées",
+    packing_empty: "Tu n’as pas encore combiné de boîtes.", packing_no_pairs: "Aucune paire de boîtes ne dispose d’assez de place pour être combinée.",
+    packing_no_match: "Aucune autre boîte ne tient dans cet espace.", packing_auto_paused: "Le regroupement automatique est actif. Tes combinaisons manuelles sont conservées en pause.",
+    packing_use_manual: "Passer en mode manuel", packing_filter_paused: "En pause : boîtes ou filtres modifiés", packing_active: "Active",
+    packing_close: "Fermer les combinaisons", packing_success: "Boîtes combinées. La progression est conservée.", packing_failure: "Impossible de combiner ces boîtes. Vérifie ta sélection.",
+  },
+  ITA: {
+    save_space_auto: "Risparmia spazio automaticamente", manual_packing: "Combina i box manualmente",
+    packing_intro: "Scegli due box con un massimo di 30 Pokémon in totale. Il secondo viene aggiunto in fondo al primo; gli altri restano separati.",
+    packing_destination: "Box di destinazione", packing_source: "Box da combinare", packing_choose: "Scegli un box…",
+    packing_combine: "Combina questi box", packing_separate: "Separa i box", packing_saved: "Combinazioni salvate",
+    packing_empty: "Non hai ancora combinato alcun box.", packing_no_pairs: "Nessuna coppia di box ha abbastanza spazio per essere combinata.",
+    packing_no_match: "Nessun altro box entra in questo spazio.", packing_auto_paused: "Il raggruppamento automatico è attivo. Le combinazioni manuali sono salvate ma in pausa.",
+    packing_use_manual: "Usa la modalità manuale", packing_filter_paused: "In pausa: box o filtri modificati", packing_active: "Attiva",
+    packing_close: "Chiudi le combinazioni", packing_success: "Box combinati. I progressi sono conservati.", packing_failure: "Impossibile combinare questi box. Controlla la selezione.",
+  },
+  JPN: {
+    save_space_auto: "自動でボックスを節約", manual_packing: "手動でボックスをまとめる",
+    packing_intro: "合計30匹以内のボックスを2つ選びます。2つ目の中身を1つ目の末尾に追加し、ほかのボックスはまとめません。",
+    packing_destination: "まとめ先のボックス", packing_source: "追加するボックス", packing_choose: "ボックスを選択…",
+    packing_combine: "このボックスをまとめる", packing_separate: "ボックスを分ける", packing_saved: "保存済みの組み合わせ",
+    packing_empty: "まだボックスをまとめていません。", packing_no_pairs: "まとめられる空きのあるボックスが2つありません。",
+    packing_no_match: "この空きに収まるほかのボックスはありません。", packing_auto_paused: "自動整理が有効です。手動の組み合わせは保存されていますが、一時停止中です。",
+    packing_use_manual: "手動モードに切り替える", packing_filter_paused: "一時停止：ボックスまたはフィルターが変更されました", packing_active: "有効",
+    packing_close: "組み合わせを閉じる", packing_success: "ボックスをまとめました。進捗は保持されています。", packing_failure: "ボックスをまとめられませんでした。選択内容を確認してください。",
+  },
+  KOR: {
+    save_space_auto: "자동으로 박스 공간 절약", manual_packing: "수동으로 박스 합치기",
+    packing_intro: "포켓몬이 합계 30마리 이하인 박스 두 개를 선택하세요. 두 번째 박스가 첫 번째 박스 끝에 추가되며 다른 박스는 합쳐지지 않습니다.",
+    packing_destination: "대상 박스", packing_source: "합칠 박스", packing_choose: "박스 선택…",
+    packing_combine: "이 박스 합치기", packing_separate: "박스 분리", packing_saved: "저장된 조합",
+    packing_empty: "아직 합친 박스가 없습니다.", packing_no_pairs: "합칠 공간이 충분한 박스 두 개가 없습니다.",
+    packing_no_match: "이 공간에 들어갈 다른 박스가 없습니다.", packing_auto_paused: "자동 정리가 활성화되어 있습니다. 수동 조합은 저장되어 있지만 일시 중지됩니다.",
+    packing_use_manual: "수동 모드 사용", packing_filter_paused: "일시 중지: 박스 또는 필터 변경", packing_active: "활성",
+    packing_close: "조합 닫기", packing_success: "박스를 합쳤습니다. 진행 상황은 유지됩니다.", packing_failure: "이 박스를 합칠 수 없습니다. 선택을 확인하세요.",
+  },
+  CHS: {
+    save_space_auto: "自动节省盒子空间", manual_packing: "手动合并盒子",
+    packing_intro: "选择两个总计不超过30只宝可梦的盒子。第二个盒子的内容将添加到第一个末尾，其他盒子保持独立。",
+    packing_destination: "目标盒子", packing_source: "要合并的盒子", packing_choose: "选择盒子…",
+    packing_combine: "合并这些盒子", packing_separate: "分开盒子", packing_saved: "已保存的组合",
+    packing_empty: "你还没有合并任何盒子。", packing_no_pairs: "没有两个空间足够的盒子可供合并。",
+    packing_no_match: "没有其他盒子能放入剩余空间。", packing_auto_paused: "自动整理已启用。手动组合已保存，但暂时停用。",
+    packing_use_manual: "使用手动模式", packing_filter_paused: "已暂停：盒子或筛选条件已更改", packing_active: "已启用",
+    packing_close: "关闭组合", packing_success: "盒子已合并，进度已保留。", packing_failure: "无法合并这些盒子，请检查选择。",
+  },
+  CHT: {
+    save_space_auto: "自動節省盒子空間", manual_packing: "手動合併盒子",
+    packing_intro: "選擇兩個總計不超過30隻寶可夢的盒子。第二個盒子的內容將加到第一個末尾，其他盒子保持獨立。",
+    packing_destination: "目標盒子", packing_source: "要合併的盒子", packing_choose: "選擇盒子…",
+    packing_combine: "合併這些盒子", packing_separate: "分開盒子", packing_saved: "已儲存的組合",
+    packing_empty: "你還沒有合併任何盒子。", packing_no_pairs: "沒有兩個空間足夠的盒子可供合併。",
+    packing_no_match: "沒有其他盒子能放入剩餘空間。", packing_auto_paused: "自動整理已啟用。手動組合已儲存，但暫時停用。",
+    packing_use_manual: "使用手動模式", packing_filter_paused: "已暫停：盒子或篩選條件已變更", packing_active: "已啟用",
+    packing_close: "關閉組合", packing_success: "盒子已合併，進度已保留。", packing_failure: "無法合併這些盒子，請檢查選擇。",
+  },
+};
+
+export function manualPackingCopy(language: UiLanguage, key: string) {
+  return (MANUAL_PACKING_COPY[language] as Record<string, string>)[key];
+}

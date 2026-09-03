@@ -1,4 +1,5 @@
 import { titanCopy } from "./titan-translations";
+import { manualPackingCopy } from "./manual-packing-translations";
 
 export type UiLanguage = "CHS" | "CHT" | "DEU" | "ENG" | "ES-ES" | "ES-LA" | "FRA" | "ITA" | "JPN" | "KOR";
 
@@ -952,6 +953,8 @@ const VARIANT_COPY: Record<UiLanguage, Copy> = {
 
 
 export function copy(language: UiLanguage, key: string) {
+  const packing = manualPackingCopy(language, key);
+  if (packing) return packing;
   if (VARIANT_COPY[language][key]) return VARIANT_COPY[language][key];
   const titan = titanCopy(language, key);
   if (titan) return titan;

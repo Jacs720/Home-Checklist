@@ -3,6 +3,7 @@ import { GROUP_COLORS } from "../app-config";
 import { availabilityForEntry, requiresPokemonBank } from "../collection-features";
 import { groupName } from "../translations";
 import { pokemonArtworkUrl } from "../catalog-planner";
+import { boxLayoutKey } from "../manual-box-packing";
 import { assetUrl } from "../app-utils";
 import { BankBadge, FavoriteButton, OriginMarkIcon, PokemonArtwork, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
@@ -72,7 +73,7 @@ export function BoxView({ app }: BoxViewProps) {
                   const previewLabel = box.entries.map((entry) => `${displayName(entry)}${displayForm(entry) ? ` ${displayForm(entry)}` : ""}`).join(", ");
                   const tileTheme = resolveBoxTheme(themeConfig, box.groupKey, box.number);
                   return (
-                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || pokewalkerOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={box.label} onClick={() => { setSelectedBoxIndex(globalIndex); setKeyboardSlotIndex(0); setGlobalReturnContext(null); }} style={boxThemeStyle(tileTheme)}>
+                    <button aria-label={`${box.label}: ${previewLabel}`} className={`box-tile ${tileTheme.kind === "default" ? "" : "themed-box-tile"} ${beyondCapacity ? "overflow" : ""} ${(query || missingOnly || favoritesOnly || homeChallengesOnly || pokewalkerOnly || availabilityFiltering) && !matchCount ? "filtered-out" : ""}`} key={boxLayoutKey(box)} onClick={() => { setSelectedBoxIndex(globalIndex); setKeyboardSlotIndex(0); setGlobalReturnContext(null); }} style={boxThemeStyle(tileTheme)}>
                       <span className="box-position">{String(offset + 1).padStart(2, "0")}</span>
                       {originMarkIconUrl(box.groupKey) ? <OriginMarkIcon mark={box.groupKey} label={groupName(language, box.groupKey)} className="box-origin-mark" /> : <span className="mark-accent" style={{ background: GROUP_COLORS[box.groupKey] }} />}
                       <strong>{box.label}</strong><small>{boxOwned.toLocaleString(locale)} / {box.entries.length.toLocaleString(locale)} {t("obtained")}</small>
