@@ -119,7 +119,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .specimen-trait-badges { display: inline-flex; gap: 3px; align-items: center; }
 .pokemon-slot-main > .specimen-trait-badges { position: absolute; top: 29px; left: 7px; }
 .global-pokemon > .specimen-trait-badges { position: absolute; top: 5px; left: 5px; }
+.database-choice-artwork > .specimen-trait-badges { position: absolute; top: 3px; left: 3px; }
 .specimen-trait-badges .trait-icon { width: 15px; height: 15px; }
+.entry-badges .specimen-trait-badges .trait-icon { width: 24px; height: 24px; }
 @media (prefers-reduced-motion: reduce) {
   .specimen-trait-switch input, .specimen-trait-switch input::after { transition: none; }
 }

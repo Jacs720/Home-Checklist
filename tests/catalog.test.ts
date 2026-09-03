@@ -7,16 +7,18 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { DatabaseChoiceCard } from "../src/components/DatabaseChoiceCard";
 import { EntryDetails } from "../src/views/EntryDetails";
 import type { AppController } from "../src/hooks/use-app-controller";
-import { DEFAULT_MARKS, GROUP_COLORS, MARKS } from "../src/app-config";
+import { COLLECTIONS, DEFAULT_COLLECTIONS, DEFAULT_MARKS, GROUP_COLORS, MARKS } from "../src/app-config";
 import type { Acquisition, Dataset, FormOptions, GenderMode, PlannedEntry, PokemonNames, PokemonEntry, SpecialDataset, Variant } from "../src/app-types";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../src/catalog-corrections";
 import { applyCatalogCorrections, buildBoxes, isOwnOtShinyLocked, pokemonArtworkUrl } from "../src/catalog-planner";
-import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
+import { COLLECTION_PRESETS, GAME_PLANS, UNIFIED_COLLECTION_PRESETS, availabilityForEntry, methodKeyForEntry, reasonKeyForEntry, requiresPokemonBank, rankGamePlans, type CollectionPreset, type SpeciesRulesDataset } from "../src/collection-features";
 import { buildOwnedProgressCsv, matchCollectionRecords, parseCollectionCsv } from "../src/import-export";
 import { buildBoxNavigationHash, buildGlobalNavigationHash, parseSharedNavigationHash } from "../src/navigation-url";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../src/mightiest-raids";
+import { buildTitanEntries } from "../src/titan-pokemon";
 import { createTauriPlatform } from "../src/platform/tauri";
-import { LANGUAGE_OPTIONS, copy, hasCopy } from "../src/translations";
+import { LANGUAGE_OPTIONS, copy, groupName, hasCopy } from "../src/translations";
+import { TITAN_COPY } from "../src/titan-translations";
 import { packBoxesContinuously } from "../src/box-packing";
 import { traitEligible } from "../src/specimen-traits";
 
@@ -51,9 +53,10 @@ const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = 
 
 const catalogEntries = applyCatalogCorrections(baseDataset.entries);
 const mightiestEntries = buildMightiestRaidEntries(mightiestDataset, catalogEntries);
+const titanEntries = buildTitanEntries(catalogEntries);
 const battleBondGreninja = createBattleBondGreninja(catalogEntries);
 const correctedRawSpecialEntries = applySpecialCatalogCorrections(rawSpecialDataset.entries);
-const specialEntries = [...addGoStorableForms(correctedRawSpecialEntries, catalogEntries), battleBondGreninja, ...mightiestEntries];
+const specialEntries = [...addGoStorableForms(correctedRawSpecialEntries, catalogEntries), battleBondGreninja, ...mightiestEntries, ...titanEntries];
 const importEntries = [...catalogEntries, ...specialEntries];
 
 test("every catalog origin and collection routes Shellos/Gastrodon artwork by sea form", () => {
@@ -152,7 +155,7 @@ test("catalog identities and origin keys are valid", () => {
   const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
   assert.deepEqual(duplicateIds, [], `duplicate raw catalog ids: ${duplicateIds.join(", ")}`);
   const allowedMarks = new Set(MARKS);
-  const allowedCollections = new Set(["n", "dream", "radar", "shadow-colosseum", "shadow-xd", "cherish", "event-dex", "events", "mighty", "battle-bond", "trades", "go"]);
+  const allowedCollections = new Set([...COLLECTIONS, "events"]);
   for (const entry of importEntries) {
     assert.ok(entry.dex > 0, `${entry.id} has invalid National Dex number ${entry.dex}`);
     if (entry.mark) assert.ok(allowedMarks.has(entry.mark), `${entry.id} has impossible Origin Mark ${entry.mark}`);
@@ -200,6 +203,80 @@ test("Mightiest Mark collection contains only unique eligible raid specimens", (
     assert.equal(entry.shinyEligible, entry.dex === 151);
     assert.equal(entry.ownOtNormal, true);
     assert.equal(entry.requirements?.encounterMark, "Mightiest Mark");
+  }
+});
+
+test("Titan collection contains exactly the six catchable, non-shiny former Titans", () => {
+  assert.deepEqual(titanEntries.map((entry) => entry.dex), [950, 962, 968, 978, 984, 990]);
+  assert.equal(DEFAULT_COLLECTIONS.includes("titan"), false);
+  assert.equal(titanEntries.find((entry) => entry.dex === 978)?.form, "Curly");
+  assert.equal(titanEntries.find((entry) => entry.dex === 984)?.requirements?.originGame, "Scarlet");
+  assert.equal(titanEntries.find((entry) => entry.dex === 990)?.requirements?.originGame, "Violet");
+  for (const entry of titanEntries) {
+    assert.equal(entry.collection, "titan");
+    assert.equal(entry.mark, "SV");
+    assert.equal(entry.requirements?.encounterMark, "Titan Mark");
+    assert.equal(entry.shinyEligible, false);
+    assert.equal(entry.ownOtShiny, false);
+    assert.equal(entry.ownOtNormal, true);
+    assert.equal(requiresPokemonBank(entry), false);
+    assert.equal(availabilityForEntry(entry), "current");
+    assert.equal(methodKeyForEntry(entry), "method_titan");
+    assert.equal(reasonKeyForEntry(entry), "why_titan");
+    const ordinary = catalogEntries.find((candidate) => candidate.dex === entry.dex && candidate.form === entry.form && candidate.mark === "SV");
+    assert.equal(ordinary?.shinyEligible, true, "Titan shiny locks must not affect ordinary specimens");
+    assert.equal(ordinary?.requirements?.encounterMark, undefined);
+  }
+  assert.throws(() => buildTitanEntries([]), /Missing Scarlet\/Violet catalog entry for Titan/);
+});
+
+test("Titan filter preserves separate slots and progress alongside the origin-independent Living Dex", () => {
+  const options: ProfileOptions = { preset: "custom", marks: [], collections: ["titan"], variants: { normal: true, shiny: true } };
+  const titanOnly = buildProfile(options).flatMap((box) => box.entries);
+  assert.equal(titanOnly.length, 6);
+  assert.ok(titanOnly.every((entry) => entry.variant === "normal" && !entry.genericEntry));
+  assert.deepEqual(buildProfile({ ...options, variants: { normal: false, shiny: true } }), []);
+  assert.equal(buildProfile({ ...options, variants: { normal: false, shiny: true }, includeNonShinySpecials: true }).flatMap((box) => box.entries).length, 6);
+  const combined = buildProfile({ ...options, originIndependentDex: true }).flatMap((box) => box.entries);
+  for (const titan of titanOnly) {
+    assert.ok(combined.some((entry) => entry.planId === titan.planId));
+    assert.ok(combined.some((entry) => entry.dex === titan.dex && entry.genericEntry && !entry.requirements?.encounterMark));
+  }
+  assert.deepEqual(buildProfile(options).flatMap((box) => box.entries), titanOnly);
+  const owned = new Set(titanOnly.map((entry) => entry.planId));
+  const csv = buildOwnedProgressCsv(owned, importEntries);
+  const records = parseCollectionCsv(csv);
+  const restored = matchCollectionRecords(records, importEntries, names, new Set());
+  assert.deepEqual(new Set(restored.newPlanIds), owned);
+});
+
+test("Titan labels and details are localized in every supported language", () => {
+  for (const { code } of LANGUAGE_OPTIONS) {
+    for (const key of ["titan_collection", "titan_mark", "method_titan", "why_titan"] as const) {
+      assert.ok(TITAN_COPY[code][key]);
+      assert.equal(copy(code, key), TITAN_COPY[code][key]);
+      if (code !== "ENG") assert.notEqual(copy(code, key), TITAN_COPY.ENG[key]);
+    }
+    assert.equal(groupName(code, "titan"), TITAN_COPY[code].titan_collection);
+  }
+});
+
+test("marked specimen details show the encounter badge separately from the Paldea origin", () => {
+  for (const source of [titanEntries[0], mightiestEntries[0]]) {
+    for (const { code } of LANGUAGE_OPTIONS) {
+      const entry: PlannedEntry = { ...source, planId: `${source.id}:normal`, variant: "normal", ownOt: true, groupKey: source.collection!, groupLabel: groupName(code, source.collection!) };
+      const app = {
+        detailEntry: { entry }, locatedEntries: [], traitAvailability: new Map(), pokemonNames: names, language: code, favorites: new Set(), homeChallengesByDex: new Map(),
+        t: (key: string) => copy(code, key), displayName: () => entry.name, displayForm: () => entry.form, displayNote: () => "",
+        setDetailEntry() {}, toggleFavorite() {},
+      } as unknown as AppController;
+      const html = renderToStaticMarkup(createElement(EntryDetails, { app }));
+      const label = copy(code, source.collection === "titan" ? "titan_mark" : "mightiest_mark");
+      assert.ok(html.includes(`alt="${label}"`));
+      assert.ok(html.includes(`<dd>${label}</dd>`));
+      assert.ok(html.includes(`<dd>${groupName(code, "SV")}</dd>`));
+      assert.match(html, /Paldea_icon_HOME\.png/);
+    }
   }
 });
 
@@ -502,7 +579,7 @@ test("custom box cards separate artwork, marks and independent information butto
   assert.ok(source);
   const entry: PlannedEntry = { ...source, planId: `${source.id}:normal`, variant: "normal", ownOt: false, groupKey: "P", groupLabel: "Pentagon" };
   const html = renderToStaticMarkup(createElement(DatabaseChoiceCard, {
-    entry, name: "Arceus", form: null, selected: true, detailsLabel: "Open details", onToggle() {}, onDetails() {},
+    entry, name: "Arceus", form: null, selected: true, detailsLabel: "Open details", t: (key) => copy("ENG", key), onToggle() {}, onDetails() {},
   }));
   assert.match(html, /class="database-choice-card selected"/);
   assert.match(html, /class="database-choice-select" aria-pressed="true"/);

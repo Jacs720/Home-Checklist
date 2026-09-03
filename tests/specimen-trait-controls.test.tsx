@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { TraitBadges, TraitSwitch } from "../src/components/specimen-trait-controls";
 import { LANGUAGE_OPTIONS, copy } from "../src/translations";
 import { SPECIMEN_TRAITS, TRAIT_LABELS } from "../src/specimen-traits";
+import { ENCOUNTER_MARK_BADGES } from "../src/encounter-marks";
 
 test("individual trait details retain their accessible sliding switches", () => {
   for (const { code } of LANGUAGE_OPTIONS) {
@@ -36,4 +37,20 @@ test("trait badges only show enabled requirements", () => {
   const html = renderToStaticMarkup(createElement(TraitBadges, { requirements: { alpha: true, gmaxFactor: true }, t }));
   assert.match(html, /alt="Alpha Pokémon"/);
   assert.match(html, /alt="Gigantamax Factor"/);
+});
+
+test("Mightiest and Titan icons are localized specimen badges, not origin marks", () => {
+  for (const [mark, badge] of Object.entries(ENCOUNTER_MARK_BADGES)) {
+    const png = readFileSync(`public/assets/${badge.icon}`);
+    assert.equal(png.subarray(1, 4).toString(), "PNG");
+    for (const { code } of LANGUAGE_OPTIONS) {
+      const t = (key: string) => copy(code, key);
+      const html = renderToStaticMarkup(createElement(TraitBadges, { requirements: { encounterMark: mark }, t }));
+      assert.ok(html.includes(`assets/${badge.icon}`));
+      assert.ok(html.includes(`alt="${t(badge.labelKey)}"`));
+      assert.ok(html.includes(`title="${t(badge.labelKey)}"`));
+      assert.doesNotMatch(html, /origin-mark-icon|alpha\.png|gigantamax\.png/);
+    }
+  }
+  assert.equal(renderToStaticMarkup(createElement(TraitBadges, { requirements: {}, t: (key) => key })), "");
 });

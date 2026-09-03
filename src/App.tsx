@@ -244,7 +244,7 @@ export default function App() {
             </div>
             <div className="database-choice-grid" aria-label={t("choose_pokemon")}>{customBoxSearchResults.map((entry) => {
               const selected = selectedIds.has(entry.planId);
-              return <DatabaseChoiceCard key={entry.planId} entry={entry} name={displayName(entry)} form={displayForm(entry)} selected={selected} detailsLabel={t("open_details")}
+              return <DatabaseChoiceCard key={entry.planId} entry={entry} name={displayName(entry)} form={displayForm(entry)} selected={selected} detailsLabel={t("open_details")} t={t}
                 onToggle={() => toggleCustomBoxEntry(customBoxEditor.id, entry.planId)} onDetails={() => setDetailEntry({ entry })} />;
             })}</div>
             <footer className="custom-box-dialog-footer"><span>{customBoxSearchResults.length.toLocaleString(locale)} {t("database_results")}</span><button className="primary-action" onClick={() => setCustomBoxEditorId(null)}>{t("close_editor")}</button></footer>

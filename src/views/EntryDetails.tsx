@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { groupName, localizeCatalogText } from "../translations";
 import { SPECIMEN_TRAITS, TRAIT_LABELS, traitEligible } from "../specimen-traits";
-import { TraitSwitch } from "../components/specimen-trait-controls";
+import { TraitBadges, TraitSwitch } from "../components/specimen-trait-controls";
+import { encounterMarkLabel } from "../encounter-marks";
 import { localizeHomeChallengeTitle } from "../home-challenges";
 import { availabilityForEntry, methodKeyForEntry, reasonKeyForEntry, requiresPokemonBank, transferKeyForEntry } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
@@ -63,6 +64,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
         const localizedForm = displayForm(entry);
         const artworkUrl = pokemonArtworkUrl(entry);
         const originMarkKey = entry.mark ?? entry.groupKey;
+        const originLabel = entry.mark ? groupName(language, entry.mark) : entry.groupLabel;
         const availability = availabilityForEntry(entry);
         const favorite = favorites.has(entry.planId);
         const matchingHomeChallenges = homeChallengesByDex.get(entry.dex) ?? [];
@@ -77,7 +79,8 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <div className="entry-dialog-actions"><FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} /><button className="entry-dialog-close" aria-label={t("close_details")} onClick={() => setDetailEntry(null)}>×</button></div>
             </header>
             <div className="entry-badges">
-              {entry.genericEntry ? <span className="entry-origin-chip">{t("generic_specimen")}</span> : originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="detail-origin-mark" />{entry.groupLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
+              <TraitBadges requirements={entry.requirements} t={t} />
+              {entry.genericEntry ? <span className="entry-origin-chip">{t("generic_specimen")}</span> : originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={originLabel} className="detail-origin-mark" />{originLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
               <span className={`availability-badge ${availability}`}>{t(`availability_${availability}`)}</span>
               {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
               <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
@@ -88,17 +91,17 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               )}
             </div>
             <dl className="entry-facts">
-              <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : entry.groupLabel}</dd></div>
+              <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : originLabel}</dd></div>
               <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
               <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t("yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
               {requiredGender && <div><dt>{t("required_gender")}</dt><dd>{requiredGender}</dd></div>}
-              {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{entry.collection === "battle-bond" ? t("battle_bond_origin") : requirements.originGame}</dd></div>}
+              {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{entry.collection === "battle-bond" ? t("battle_bond_origin") : localizeCatalogText(language, requirements.originGame)}</dd></div>}
               {requirements.originGeneration && <div><dt>{t("origin_generation")}</dt><dd>{t("generation")} {requirements.originGeneration}</dd></div>}
               {requirements.originRegion && <div><dt>{t("origin_region")}</dt><dd>{groupName(language, requirements.originRegion)}</dd></div>}
               {requirements.pokemonLanguage && <div><dt>{t("pokemon_language")}</dt><dd>{requirements.pokemonLanguage}</dd></div>}
-              {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{requirements.encounterMark === "Mightiest Mark" ? t("mightiest_mark") : requirements.encounterMark}</dd></div>}
+              {requirements.encounterMark && <div><dt>{t("encounter_mark")}</dt><dd>{encounterMarkLabel(requirements.encounterMark, t)}</dd></div>}
               {entry.level && <div><dt>{t("level")}</dt><dd>{entry.level}</dd></div>}
               {entry.trainerName && <div><dt>{t("original_trainer")}</dt><dd>{entry.trainerName}</dd></div>}
               {entry.trainerId && <div><dt>{t("trainer_id")}</dt><dd>{entry.trainerId}</dd></div>}

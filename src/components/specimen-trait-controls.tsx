@@ -1,6 +1,7 @@
 import { SPECIMEN_TRAITS, TRAIT_ICONS, TRAIT_LABELS, type SpecimenTrait } from "../specimen-traits";
 
 import { assetUrl } from "../app-utils";
+import { ENCOUNTER_MARK_BADGES } from "../encounter-marks";
 const traitIconUrl = (trait: SpecimenTrait) => assetUrl(`assets/${TRAIT_ICONS[trait]}`);
 
 export function TraitSwitch({ id, trait, label, checked, onChange }: {
@@ -13,11 +14,12 @@ export function TraitSwitch({ id, trait, label, checked, onChange }: {
 }
 
 export function TraitBadges({ requirements, t }: {
-  requirements?: { alpha?: boolean; gmaxFactor?: boolean }; t: (key: string) => string;
+  requirements?: { alpha?: boolean; gmaxFactor?: boolean; encounterMark?: string }; t: (key: string) => string;
 }) {
   const active = SPECIMEN_TRAITS.filter((trait) => requirements?.[trait]);
-  if (!active.length) return null;
+  const encounterBadge = ENCOUNTER_MARK_BADGES[requirements?.encounterMark ?? ""];
+  if (!active.length && !encounterBadge) return null;
   return <span className="specimen-trait-badges">{active.map((trait) =>
     <img key={trait} className="trait-icon" src={traitIconUrl(trait)} alt={t(TRAIT_LABELS[trait])} title={t(TRAIT_LABELS[trait])} />
-  )}</span>;
+  )}{encounterBadge && <img className="trait-icon encounter-mark-icon" src={assetUrl(`assets/${encounterBadge.icon}`)} alt={t(encounterBadge.labelKey)} title={t(encounterBadge.labelKey)} />}</span>;
 }

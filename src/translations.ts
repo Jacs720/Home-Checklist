@@ -1,3 +1,5 @@
+import { titanCopy } from "./titan-translations";
+
 export type UiLanguage = "CHS" | "CHT" | "DEU" | "ENG" | "ES-ES" | "ES-LA" | "FRA" | "ITA" | "JPN" | "KOR";
 
 export const LANGUAGE_OPTIONS: { code: UiLanguage; label: string; locale: string }[] = [
@@ -936,6 +938,8 @@ const SPECIMEN_TRAIT_COPY: Record<UiLanguage, Copy> = {
 
 
 export function copy(language: UiLanguage, key: string) {
+  const titan = titanCopy(language, key);
+  if (titan) return titan;
   if (SPECIMEN_TRAIT_COPY[language][key]) return SPECIMEN_TRAIT_COPY[language][key];
   if (key === "box") return ({ "ES-LA": "CAJA", "ES-ES": "CAJA", ENG: "BOX", DEU: "BOX", FRA: "BOÎTE", ITA: "BOX", JPN: "ボックス", KOR: "박스", CHS: "盒子", CHT: "盒子" } as Record<UiLanguage, string>)[language];
   if (language === "ES-ES" && ES_ES_COPY[key]) return ES_ES_COPY[key];
@@ -960,5 +964,6 @@ export function hasCopy(language: UiLanguage, key: string) {
 }
 
 export function groupName(language: UiLanguage, key: string) {
+  if (key === "titan") return copy(language, "titan_collection");
   return GROUPS[key]?.[language] ?? (language.startsWith("ES") ? ({ P: "Pentágono", USUM: "Alola", LGPE: "Let's Go", SwSh: "Galar", LA: "Hisui", BDSP: "Sinnoh", SV: "Escarlata / Púrpura", LZA: "Lumiose", GBA: "GBA", "Sin marca": "Sin marca", GB: "GB", n: "Pokémon de N", dream: "Dream World", radar: "Pokémon Dream Radar", "shadow-colosseum": "Shadow · Colosseum", "shadow-xd": "Shadow · XD", cherish: "Cherish Ball", mighty: "Incursiones con Emblema Imbatibilidad", trades: "Intercambios internos", go: "Pokémon GO" } as Record<string, string>)[key] : undefined) ?? key;
 }

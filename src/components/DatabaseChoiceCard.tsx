@@ -2,6 +2,7 @@ import type { PlannedEntry } from "../app-types";
 import { assetUrl } from "../app-utils";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { OriginMarkIcon, originMarkIconUrl } from "./ui-controls";
+import { TraitBadges } from "./specimen-trait-controls";
 
 type DatabaseChoiceCardProps = {
   entry: PlannedEntry;
@@ -9,11 +10,12 @@ type DatabaseChoiceCardProps = {
   form: string | null;
   selected: boolean;
   detailsLabel: string;
+  t: (key: string) => string;
   onToggle: () => void;
   onDetails: () => void;
 };
 
-export function DatabaseChoiceCard({ entry, name, form, selected, detailsLabel, onToggle, onDetails }: DatabaseChoiceCardProps) {
+export function DatabaseChoiceCard({ entry, name, form, selected, detailsLabel, t, onToggle, onDetails }: DatabaseChoiceCardProps) {
   const artworkUrl = pokemonArtworkUrl(entry);
   const originMarkKey = entry.mark ?? entry.groupKey;
 
@@ -22,6 +24,7 @@ export function DatabaseChoiceCard({ entry, name, form, selected, detailsLabel, 
       <span className="database-choice-artwork">
         {artworkUrl && <img className="database-pokemon-art" src={artworkUrl} alt="" loading="lazy" />}
         {entry.variant === "shiny" && <img className="database-shiny" src={assetUrl("assets/shiny.png")} alt="" />}
+        <TraitBadges requirements={entry.requirements} t={t} />
       </span>
       <b>{name}</b><small>{form ?? `#${String(entry.dex).padStart(4, "0")}`}</small>
       {originMarkIconUrl(originMarkKey)

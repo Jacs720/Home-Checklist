@@ -19,6 +19,7 @@ import {
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
+import { buildTitanEntries } from "../titan-pokemon";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../catalog-corrections";
 import { AustinJohnImportError, buildAustinJohnPreview, parseAustinJohnWorkbook, type AustinJohnPreview } from "../austin-john-import";
 import {
@@ -215,9 +216,18 @@ export function useAppController() {
           ...addGoStorableForms(applySpecialCatalogCorrections(specialValue.entries), correctedEntries),
           createBattleBondGreninja(correctedEntries),
           ...buildMightiestRaidEntries(mightiestValue, correctedEntries),
+          ...buildTitanEntries(correctedEntries),
         ];
         setDataset({ ...baseValue, entries: correctedEntries });
-        setSpecialDataset({ ...specialValue, meta: { ...specialValue.meta, entryCount: correctedSpecialEntries.length, counts: { ...specialValue.meta.counts, go: correctedSpecialEntries.filter((entry) => entry.collection === "go").length, mighty: correctedSpecialEntries.filter((entry) => entry.collection === "mighty").length } }, entries: correctedSpecialEntries });
+        setSpecialDataset({
+          ...specialValue,
+          meta: {
+            ...specialValue.meta,
+            entryCount: correctedSpecialEntries.length,
+            counts: { ...specialValue.meta.counts, ...Object.fromEntries(COLLECTIONS.map((collection) => [collection, correctedSpecialEntries.filter((entry) => entry.collection === collection).length])) },
+          },
+          entries: correctedSpecialEntries,
+        });
         setPokemonNames(namesValue);
         setSpeciesRules(new Map(rulesValue.species.map((rule) => [rule.dex, rule])));
         setHomeChallenges(challengesValue.challenges ?? []);
@@ -1180,7 +1190,8 @@ export function useAppController() {
     return [mark, entriesForMark.length];
   })) : {};
   const collectionCounts: Record<string, number> = dataset && specialDataset ? Object.fromEntries(COLLECTIONS.map((collection) => {
-    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    // Count only this collection, not the entire unified profile it may augment.
+    const entriesForCollection = buildBoxes([], specialDataset.entries, [], [collection], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, false, false, false, "custom", speciesRules, language).flatMap((box) => box.entries);
     return [collection, entriesForCollection.length];
   })) : {};
   const originIndependentCount = originIndependentSelected

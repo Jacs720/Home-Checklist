@@ -409,6 +409,7 @@ export function methodKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "trades") return "method_trade";
   if (entry.collection === "mighty" && entry.dex === 151) return "method_mightiest_mew";
   if (entry.collection === "mighty") return "method_mightiest_raid";
+  if (entry.collection === "titan") return "method_titan";
   if (entry.collection === "battle-bond") return "method_battle_bond_demo";
   if (entry.collection === "cherish" || entry.collection === "event-dex") return "method_event";
   if (entry.availability === "hypothetical") return "method_hypothetical";
@@ -419,6 +420,7 @@ export function reasonKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "battle-bond") return "why_battle_bond_demo";
   if (entry.collection === "mighty" && entry.dex === 151) return "why_mightiest_mew";
   if (entry.collection === "mighty") return "why_mightiest_raid";
+  if (entry.collection === "titan") return "why_titan";
   if (isLaterGenerationEvolution(entry)) return "why_transfer_evolution";
   if (entry.collection === "dream") return "why_dream_world";
   if (entry.availability === "hypothetical") return "why_hypothetical";
