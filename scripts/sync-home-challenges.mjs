@@ -45,24 +45,29 @@ async function sourceHtml() {
 }
 
 const html = await sourceHtml();
+const body = html.slice(html.indexOf('id="List_of_Challenges"'), html.indexOf('id="Trivia"'));
+const previous = JSON.parse(await readFile(OUTPUT_PATH, "utf8"));
+const previousIds = new Map((previous.challenges ?? []).map((challenge) => [challenge.title, challenge.id]));
 const challenges = [];
-for (const row of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
-  const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((cell) => cell[1]);
-  if (cells.length < 2) continue;
-  const title = cleanHtml(cells[0]);
-  const rowDexes = [...new Set([...cells[1].matchAll(/HOME(\d{4})[^/"']*\.png/gi)].map((match) => Number(match[1])))]
-    .filter((dex) => dex >= 1 && dex <= 1025)
-    .sort((left, right) => left - right);
-  if (!title || !rowDexes.length) continue;
-  challenges.push({ id: challengeId(title, challenges.length), title, dexes: rowDexes });
+for (const [tableIndex, table] of [...body.matchAll(/<table[^>]*>([\s\S]*?)<\/table>/gi)].entries()) {
+  for (const row of table[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((cell) => cell[1]);
+    if (cells.length < 4) continue;
+    const title = cleanHtml(cells[0]);
+    if (!title) continue;
+    const dexes = [...new Set([...cells[1].matchAll(/HOME(\d{4})[^/"']*\.png/gi)].map((match) => Number(match[1])))].filter((dex) => dex >= 1 && dex <= 1025).sort((a, b) => a - b);
+    const tiers = cells.slice(-3).map((cell) => cleanHtml(cell).replace(/,/g, "")).filter((value) => /^\d+$/.test(value)).map(Number);
+    challenges.push({
+      id: previousIds.get(title) ?? challengeId(title, challenges.length),
+      title, dexes,
+      category: tableIndex === 0 ? "pokemon" : tableIndex === 1 ? "trade" : "other",
+      tiers,
+      requirementText: cleanHtml(cells[1]),
+    });
+  }
 }
-
-const dexes = [...new Set(challenges.flatMap((challenge) => challenge.dexes))]
-  .filter((dex) => dex >= 1 && dex <= 1025)
-  .sort((left, right) => left - right);
-
-if (!challenges.length || !dexes.length) throw new Error("No Pokémon-specific HOME Challenges were found on the source page.");
-
+if (challenges.length < 200) throw new Error("The full HOME Challenge catalog could not be parsed.");
+const dexes = [...new Set(challenges.flatMap((challenge) => challenge.dexes))].sort((a, b) => a - b);
 const output = {
   meta: {
     source: "Bulbapedia · Challenge (HOME)",
@@ -70,11 +75,10 @@ const output = {
     generatedAt: new Date().toISOString().slice(0, 10),
     speciesCount: dexes.length,
     challengeCount: challenges.length,
-    caveat: "Pokémon-specific challenge lookup. It does not model generic nature, type, Ball, trade, or activity requirements.",
+    tierCount: challenges.reduce((sum, challenge) => sum + Math.max(1, challenge.tiers.length), 0),
+    caveat: "Local collection evidence only; HOME activity and unrecorded specimen details require verification. Tiers are counted individually.",
   },
-  dexes,
-  challenges,
+  dexes, challenges,
 };
-
-await writeFile(OUTPUT_PATH, `${JSON.stringify(output)}\n`, "utf8");
-console.log(`Wrote ${challenges.length} Pokémon-specific HOME Challenges covering ${dexes.length} species to ${OUTPUT_PATH.pathname}`);
+await writeFile(OUTPUT_PATH, JSON.stringify(output) + "\n", "utf8");
+console.log("Wrote " + challenges.length + " HOME Challenge rows (" + output.meta.tierCount + " levels).");

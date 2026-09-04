@@ -3,6 +3,7 @@ import { GAME_PLANS } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { OriginMarkIcon, StyledSelect, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
+import { HomeChallengeSummary } from "../HomeChallengeSummary";
 
 type SummaryViewProps = { app: AppController };
 
@@ -37,6 +38,8 @@ export function SummaryView({ app }: SummaryViewProps) {
     createCustomBox,
     deleteCustomBox,
     boxBeingRenamed,
+    homeChallengeProgress,
+    pokemonNames,
   } = app;
   return (
 <section className="summary-view" aria-labelledby="collection-summary-title">
@@ -54,6 +57,14 @@ export function SummaryView({ app }: SummaryViewProps) {
               </header>
 
               <div className="summary-grid">
+                <HomeChallengeSummary
+                  language={language}
+                  locale={locale}
+                  progress={homeChallengeProgress}
+                  pokemonNames={pokemonNames ?? {}}
+                  formLabel={(dex, form) => app.displayForm({ dex, form } as Parameters<typeof app.displayForm>[0])}
+                  sourceUrl="https://bulbapedia.bulbagarden.net/wiki/Challenge_(HOME)"
+                />
                 <section className="summary-panel">
                   <div className="summary-panel-heading"><span>{t("by_generation")}</span><b>{t("completion")}</b></div>
                   <div className="progress-list">{generationSummary.map((item) => <div className="progress-row" key={item.generation}>

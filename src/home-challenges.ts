@@ -1,8 +1,8 @@
 import type { UiLanguage } from "./translations";
 
-export type HomeChallenge = { id: string; title: string; dexes: number[] };
+export type HomeChallenge = { id: string; title: string; dexes: number[]; category?: "pokemon" | "trade" | "other"; tiers?: number[]; requirementText?: string };
 export type HomeChallengesDataset = {
-  meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; challengeCount: number; caveat: string };
+  meta: { source: string; sourceUrl: string; generatedAt: string; speciesCount: number; challengeCount: number; tierCount?: number; caveat: string };
   dexes: number[];
   challenges: HomeChallenge[];
 };
@@ -191,6 +191,8 @@ export function localizeHomeChallengeTitle(language: UiLanguage, challenge: Home
   else if (register) { action = "register"; subject = register[1]; }
   else if (trade) { action = "trade"; subject = trade[1]; }
   else if (withdraw) { action = "withdraw"; subject = withdraw[1]; }
+  else if (source.startsWith("Deposit ")) { action = "deposit"; subject = source.slice(8); }
+  else return challenge.title; // Keep an unsupported source title intact, never invent an action.
   subject = localizedSubject(language, subject, challenge.dexes, pokemonNames);
 
   const verbs: Record<UiLanguage, Record<typeof action, [string, string]>> = {

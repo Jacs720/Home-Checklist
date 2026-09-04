@@ -18,6 +18,7 @@ import {
 } from "../box-themes";
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
+import { collectChallengeSpecimens, evaluateHomeChallenges } from "../home-challenge-progress";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
 import { buildTitanEntries } from "../titan-pokemon";
 import { addGoStorableForms, applySpecialCatalogCorrections, createBattleBondGreninja } from "../catalog-corrections";
@@ -401,6 +402,10 @@ export function useAppController() {
     return [...choices.values()].map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)).sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
   }, [dataset, specialDataset, language, traitOptions, traitOverrides, traitAvailability]);
   const databaseChoiceByPlanId = useMemo(() => new Map(databaseChoices.map((entry) => [entry.planId, entry])), [databaseChoices]);
+  const homeChallengeProgress = useMemo(() => evaluateHomeChallenges(
+    homeChallenges,
+    collectChallengeSpecimens(allImportEntries, owned, livingDexOwned, traitOverrides),
+  ), [allImportEntries, homeChallenges, livingDexOwned, owned, traitOverrides]);
   const derivedGenericProgress = useMemo(() => {
     const keys = new Set<string>();
     const normalSpecies = new Set<number>();
@@ -1384,6 +1389,7 @@ export function useAppController() {
     locatedEntries,
     homeChallengesByDex,
     homeChallengeDexes,
+    homeChallengeProgress,
     entryIsOwned,
     generationSummary,
     originSummary,

@@ -21,6 +21,7 @@ import { LANGUAGE_OPTIONS, copy, groupName, hasCopy } from "../src/translations"
 import { TITAN_COPY } from "../src/titan-translations";
 import { packBoxesContinuously } from "../src/box-packing";
 import { traitEligible } from "../src/specimen-traits";
+import { collectChallengeSpecimens, evaluateHomeChallenges, summarizeHomeChallenges } from "../src/home-challenge-progress";
 
 test("packs adjacent collection boundaries without changing entry order", () => {
   const entries = [
@@ -43,6 +44,22 @@ test("packs adjacent collection boundaries without changing entry order", () => 
 });
 
 const readJson = async <T>(path: string) => JSON.parse(await readFile(resolve(path), "utf8")) as T;
+test("HOME Challenge progress counts tiers and leaves HOME actions for verification", () => {
+  const catalog = [
+    { id: "bulba", dex: 1, name: "Bulbasaur", form: null, types: ["Grass"], shinyEligible: true },
+    { id: "charm", dex: 4, name: "Charmander", form: null, types: ["Fire"], shinyEligible: true },
+  ];
+  const specimens = collectChallengeSpecimens(catalog, new Set(["bulba:normal", "charm:shiny"]), new Set());
+  const rows = evaluateHomeChallenges([
+    { id: "starters", title: "Register Bulbasaur and Charmander!", dexes: [1, 4], category: "pokemon" },
+    { id: "shiny", title: "Deposit Shiny Pokémon!", dexes: [], category: "pokemon", tiers: [1, 5, 10] },
+    { id: "trade", title: "Trade Bulbasaur and Charmander!", dexes: [1, 4], category: "trade" },
+  ], specimens);
+  assert.equal(rows[0].status, "complete");
+  assert.deepEqual(rows[1].levels.map((level) => level.status), ["complete", "missing", "missing"]);
+  assert.equal(rows[2].status, "review");
+  assert.deepEqual(summarizeHomeChallenges(rows), { complete: 2, missing: 2, review: 1, total: 5 });
+});
 const [baseDataset, rawSpecialDataset, names, rulesDataset, mightiestDataset] = await Promise.all([
   readJson<Dataset>("public/data/pokemon-lite.json"),
   readJson<SpecialDataset>("public/data/special-collections.json"),
@@ -526,20 +543,31 @@ test("shareable navigation hashes round-trip without progress data", () => {
   assert.equal(globalHash.includes("owned"), false);
 });
 
-test("search and social metadata consistently reference the collection box preview", async () => {
+test("search branding uses the app logo while social cards retain the collection preview", async () => {
   const html = await readFile(resolve("index.html"), "utf8");
+  const [logo, favicon] = await Promise.all([
+    readFile(resolve("public/assets/home-checklist-logo.png")),
+    readFile(resolve("public/favicon.ico")),
+  ]);
+  const logoUrl = "https://jacs720.github.io/Home-Checklist/assets/home-checklist-logo.png";
   const previewUrl = "https://jacs720.github.io/Home-Checklist/assets/home-checklist-social-preview.png";
 
   assert.match(html, /name="robots" content="index, follow, max-image-preview:large"/);
-  assert.match(html, /rel="icon"[^>]+home-checklist-social-preview\.png/);
-  assert.match(html, /rel="image_src"[^>]+home-checklist-social-preview\.png/);
+  assert.match(html, /rel="icon"[^>]+favicon\.ico/);
+  assert.match(html, /rel="icon"[^>]+home-checklist-logo\.png/);
+  assert.match(html, /rel="image_src"[^>]+home-checklist-logo\.png/);
   assert.doesNotMatch(html, /strange-ball\.png/);
 
   const structuredData = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
   assert.ok(structuredData, "structured search metadata is missing");
   const schema = JSON.parse(structuredData);
-  assert.equal(schema.image, previewUrl);
+  assert.equal(schema.image, logoUrl);
+  assert.equal(schema.logo, logoUrl);
   assert.equal(schema.screenshot, previewUrl);
+  assert.equal(logo.subarray(1, 4).toString(), "PNG");
+  assert.equal(logo.readUInt32BE(16), 512);
+  assert.equal(logo.readUInt32BE(20), 512);
+  assert.equal(favicon.readUInt16LE(4), 4);
 });
 
 test("Vite configuration does not require undeclared Node globals in deployment", async () => {
