@@ -13,6 +13,11 @@
     "build": "npm run test && npm run build:app",
     "build:app": "tsc -b && vite build",
     "release:web": "npm run build",
+    "native:dev": "tauri dev",
+    "native:init:android": "tauri android init",
+    "release:windows": "npm test && tauri build --bundles nsis",
+    "release:android": "npm test && tauri android build --target aarch64 --apk",
+    "release:android:universal": "npm test && tauri android build --apk",
     "preview": "vite preview",
     "sprites:sync": "node scripts/sync-pokemon-sprites.mjs",
     "species:sync": "node scripts/sync-species-rules.mjs",
@@ -20,11 +25,16 @@
     "home-challenges:sync": "node scripts/sync-home-challenges.mjs"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-fs": "^2.5.2",
+    "@tauri-apps/plugin-store": "^2.4.4",
     "fflate": "0.7.4",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",

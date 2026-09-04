@@ -6,6 +6,7 @@ export type TauriPlatformBridge = {
     set(key: string, value: string): Promise<void>;
   };
   saveText(filename: string, text: string, mimeType: string): Promise<void>;
+  showAlert?(message: string): void;
 };
 
 /**
@@ -26,7 +27,8 @@ export function createTauriPlatform(
       document.documentElement.lang = language;
     },
     showAlert(message) {
-      globalThis.alert(message);
+      if (bridge.showAlert) bridge.showAlert(message);
+      else globalThis.alert(message);
     },
   };
 }

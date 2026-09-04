@@ -5,16 +5,25 @@ Home Checklist keeps one React application and changes only the platform adapter
 ```text
 src/
 ├─ entries/
-│  └─ web.tsx             Browser/GitHub Pages entry point
+│  ├─ web.tsx             Browser/GitHub Pages entry point
+│  └─ tauri.tsx           Shared Windows/Android native entry point
 ├─ platform/
 │  ├─ contracts.ts        Stable boundary used by the application
 │  ├─ runtime.ts          Selects the adapter at startup
 │  ├─ web.ts              localStorage and browser downloads
-│  └─ tauri.ts            Tauri bridge contract for desktop/Android
+│  ├─ tauri.ts            Tauri platform adapter
+│  └─ tauri-bridge.ts     Store, dialog, and filesystem plugins
 ├─ bootstrap.tsx          Shared React mount
 ├─ hooks/                 Application state and persistence orchestration
 ├─ views/                 Product UI
 └─ styles/mobile.css      Phone-only layout; preserves both 6 × 5 grids
+
+src-tauri/
+├─ capabilities/          Minimum native permissions
+├─ gen/android/           Tauri Android/Gradle project
+├─ icons/                 Windows and Android icon variants
+├─ src/                   Small Rust shell
+└─ tauri.conf.json        Shared native build configuration
 ```
 
 ## Release targets
@@ -22,22 +31,41 @@ src/
 | Release | Frontend | Platform adapter | Artifact |
 | --- | --- | --- | --- |
 | Web | Existing Vite build | `createWebPlatform("web")` | Static `dist/` deployed by GitHub Pages |
-| Windows | Same Vite build inside Tauri 2 | `createTauriPlatform("desktop", bridge)` | NSIS `.exe` (and optionally MSI) |
-| Android | Same Vite build inside Tauri 2 | `createTauriPlatform("android", bridge)` | `.apk` for direct installation and optionally `.aab` for Play |
+| Windows | Same Vite build inside Tauri 2 | `createTauriPlatform("desktop", bridge)` | NSIS `.exe` |
+| Android | Same Vite build inside Tauri 2 | `createTauriPlatform("android", bridge)` | ARM64 `.apk`; universal APK/AAB when needed |
 
 The web release remains the source of truth. Native releases must not copy views or domain modules into platform-specific folders.
 
-## Tauri 2 integration point
+## How Tauri 2 is integrated
 
-When native releases are scheduled:
+`src/main.tsx` detects Tauri at runtime and loads the native entry only inside a Tauri webview. The web entry continues to use `localStorage` and browser downloads. The native entry constructs a bridge backed by Tauri Store, Dialog, and Filesystem plugins, then mounts the same React application.
 
-1. Initialize Tauri at the repository root so `src-tauri/tauri.conf.json` points `frontendDist` to `../dist`, uses `http://localhost:5173` for `devUrl`, and runs the existing Vite scripts before development and builds.
-2. Add a native entry point next to `entries/web.tsx`. It should construct the bridge for `createTauriPlatform` and then call `mountHomeChecklist`.
-3. Implement persistence with the Tauri store plugin and text export with the dialog and filesystem plugins. The UI and hooks already consume these capabilities through `platform/contracts.ts`.
-4. Keep permissions narrow in Tauri capabilities: application data storage and user-selected export paths are sufficient for the current product.
-5. Add separate CI jobs for Windows and Android only after signing credentials and release channels have been decided.
+The Rust side deliberately stays small. It creates the window/webview and registers only the plugins the current UI needs. `capabilities/default.json` grants only store load/read/write/save, a save dialog, error messages, and text-file writes. This keeps platform code separate without cloning product UI or domain logic.
 
-The Vite server already uses a fixed port, accepts `TAURI_DEV_HOST`, exposes Tauri build environment variables, and ignores the future Rust directory while watching files.
+Tauri uses the operating system web renderer (WebView2 on Windows and Android System WebView on Android). React still owns rendering, so a native package does not automatically make an expensive component fast; it improves packaging, local startup/assets, native persistence, and native file handling while preserving the existing app.
+
+## Build requirements and artifacts
+
+| Command | Local requirement | Output |
+| --- | --- | --- |
+| `npm run release:web` | Node.js | `dist/` |
+| `npm run release:windows` | Rust, MSVC C++ tools, WebView2 | `src-tauri/target/release/bundle/nsis/*-setup.exe` |
+| `npm run release:android` | Rust Android target, JDK 17+, Android SDK/NDK | ARM64 APK under `src-tauri/gen/android/app/build/outputs/apk/` |
+| `npm run release:android:universal` | All four Rust Android targets | Universal Android package |
+
+The Windows installer produced locally is unsigned until a code-signing certificate is configured. Android production builds need a private keystore and should normally publish an AAB; test signing is intentionally kept outside Git. On Windows, the standard Tauri Android command creates a JNI symbolic link and therefore needs Windows Developer Mode or an equivalent symlink privilege.
+
+Generated installers and APKs belong in the ignored `artifacts/` directory when they need a stable local handoff path. Build caches, native libraries, local Android properties, and signing files are ignored.
+
+## Animations without separate apps
+
+Animations can be added once in shared React/CSS and will run in all three releases. Prefer `transform` and `opacity`, honor `prefers-reduced-motion`, and avoid animating layout-heavy properties across all 30 visible slots. A genuinely platform-specific interaction can branch on `getPlatform().target`, but platform-specific copies of a view should remain a last resort.
+
+The highest-value performance work remains shared: split the current large bootstrap chunk, memoize expensive derived collection data, decode/lazy-load sprites near the viewport, and use CSS containment where it does not affect interaction. Windowing may hide off-screen boxes, but it must never change the logical 6 × 5 box or Pokémon grids.
+
+## Release policy
+
+Web remains the easiest release to publish. Native release automation should be added after Windows certificate storage, Android keystore storage, and version/tag conventions are decided. Secrets must live in the release environment, never in this repository.
 
 ## Non-platform browser APIs
 

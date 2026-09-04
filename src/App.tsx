@@ -96,14 +96,14 @@ export default function App() {
     customBoxSearchResults,
   } = controller;
 
-  if (loadError) return <main className="state-screen"><img className="brand-ball" src={assetUrl("assets/strange-ball.png")} alt="" /><h1>{t("load_error")}</h1><p>{t("reload")}</p></main>;
-  if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/strange-ball.png")} alt="" /><p>{t("loading")}</p></main>;
+  if (loadError) return <main className="state-screen"><img className="brand-ball" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><h1>{t("load_error")}</h1><p>{t("reload")}</p></main>;
+  if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><p>{t("loading")}</p></main>;
 
   return (
     <main className="app-shell">
       <header className="topbar">
         <button className="mobile-filter" onClick={() => setFiltersOpen(true)} aria-label={t("open_filters")}>☰</button>
-        <div className="brand-lockup"><a className="brand-link" href="https://github.com/Jacs720/Home-Checklist" target="_blank" rel="noreferrer" aria-label={t("github_repo")}><img className="brand-ball" src={assetUrl("assets/strange-ball.png")} alt="" /></a><h1>Home checklist</h1></div>
+        <div className="brand-lockup"><a className="brand-link" href="https://github.com/Jacs720/Home-Checklist" target="_blank" rel="noreferrer" aria-label={t("github_repo")}><img className="brand-ball" src={assetUrl("assets/home-checklist-logo.png")} alt="" /></a><h1>Home checklist</h1></div>
         <div className="top-actions">
           <div className="progress-summary" aria-label={`${progress}%`}>
             <div><strong>{ownedCount.toLocaleString(locale)}</strong><span>{t("of")} {plannedEntries.length.toLocaleString(locale)}</span></div>
