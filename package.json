@@ -1,6 +1,6 @@
 {
   "name": "home-checklist",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,8 +16,10 @@
     "native:dev": "tauri dev",
     "native:init:android": "tauri android init",
     "release:windows": "npm test && tauri build --bundles nsis",
-    "release:android": "npm test && tauri android build --target aarch64 --apk",
-    "release:android:universal": "npm test && tauri android build --apk",
+    "release:android": "npm test && tauri android build --debug --target aarch64 --apk",
+    "release:android:universal": "npm test && tauri android build --debug --apk",
+    "package:android:unsigned": "npm test && tauri android build --target aarch64 --apk",
+    "package:android:unsigned:universal": "npm test && tauri android build --apk",
     "preview": "vite preview",
     "sprites:sync": "node scripts/sync-pokemon-sprites.mjs",
     "species:sync": "node scripts/sync-species-rules.mjs",

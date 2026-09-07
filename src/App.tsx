@@ -4,8 +4,10 @@ import { assetUrl } from "./app-utils";
 import { GooeyCheckbox, StyledSelect } from "./components/ui-controls";
 import { DatabaseChoiceCard } from "./components/DatabaseChoiceCard";
 import { ManualBoxPacking } from "./components/ManualBoxPacking";
+import { NativeTitleBar } from "./components/NativeTitleBar";
 
 import { useAppController } from "./hooks/use-app-controller";
+import { getPlatform } from "./platform/runtime";
 import { BoxView } from "./views/BoxView";
 import { EntryDetails } from "./views/EntryDetails";
 import { FilterPanel } from "./views/FilterPanel";
@@ -14,6 +16,7 @@ import { SummaryView } from "./views/SummaryView";
 
 export default function App() {
   const controller = useAppController();
+  const nativeDesktop = getPlatform().target === "desktop";
   const {
     dataset,
     specialDataset,
@@ -96,11 +99,14 @@ export default function App() {
     customBoxSearchResults,
   } = controller;
 
-  if (loadError) return <main className="state-screen"><img className="brand-ball" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><h1>{t("load_error")}</h1><p>{t("reload")}</p></main>;
-  if (!dataset || !specialDataset || !pokemonNames) return <main className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><p>{t("loading")}</p></main>;
+  const shellClassName = `app-shell ${nativeDesktop ? "native-desktop" : ""}`;
+
+  if (loadError) return <main className={shellClassName}>{nativeDesktop && <NativeTitleBar />}<section className="state-screen"><img className="brand-ball" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><h1>{t("load_error")}</h1><p>{t("reload")}</p></section></main>;
+  if (!dataset || !specialDataset || !pokemonNames) return <main className={shellClassName}>{nativeDesktop && <NativeTitleBar />}<section className="state-screen"><img className="brand-ball loading" src={assetUrl("assets/home-checklist-logo.png")} alt="" /><p>{t("loading")}</p></section></main>;
 
   return (
-    <main className="app-shell">
+    <main className={shellClassName}>
+      {nativeDesktop && <NativeTitleBar />}
       <header className="topbar">
         <button className="mobile-filter" onClick={() => setFiltersOpen(true)} aria-label={t("open_filters")}>☰</button>
         <div className="brand-lockup"><a className="brand-link" href="https://github.com/Jacs720/Home-Checklist" target="_blank" rel="noreferrer" aria-label={t("github_repo")}><img className="brand-ball" src={assetUrl("assets/home-checklist-logo.png")} alt="" /></a><h1>Home checklist</h1></div>

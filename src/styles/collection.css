@@ -182,4 +182,5 @@ button.pokemon-slot:hover { transform: translateY(-2px); border-color: rgba(85, 
 .data-note { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 28px; padding: 14px 16px; border: 1px solid rgba(243, 200, 87, .16); border-radius: 10px; background: rgba(243, 200, 87, .045); }
 .source-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 11px; }.source-links a { color: #c7b978; font-size: 8px; text-decoration: none; }
 .state-screen { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 15px; color: var(--muted); text-align: center; }.state-screen h1 { color: var(--ink); }
+.native-desktop .state-screen { min-height: calc(100vh - 32px); }
 

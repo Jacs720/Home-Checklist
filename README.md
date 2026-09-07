@@ -25,10 +25,11 @@ The Vite/React application is shared by the web, Windows, and Android releases. 
 
 - `npm run release:web` validates and builds the static `dist/` release.
 - `npm run release:windows` creates the Windows NSIS installer under `src-tauri/target/release/bundle/nsis/`.
-- `npm run release:android` creates an ARM64 Android package. Use `npm run release:android:universal` only when emulator/legacy CPU variants are also required.
+- `npm run release:android` creates a debug-signed ARM64 APK that can be installed directly on a phone. Use `npm run release:android:universal` only when emulator/legacy CPU variants are also required.
+- `npm run package:android:unsigned` preserves the optimized unsigned release package for a later production-signing step.
 - `npm run native:dev` opens the shared UI in the desktop Tauri shell for development.
 
-Windows installers must be code-signed before public distribution to avoid SmartScreen warnings. Android production releases require a private signing keystore; a debug/test-signed APK is suitable only for direct testing. Android builds started from Windows also require permission to create symbolic links (normally Windows Developer Mode).
+Windows installers must be code-signed before public distribution to avoid SmartScreen warnings. The default Android command is intentionally debug-signed for local sideloading; production releases require a private signing keystore and should use the unsigned packaging command before the signing/publishing step. Android builds started from Windows also require permission to create symbolic links (normally Windows Developer Mode).
 
 The platform boundary, build requirements, animation strategy, and performance notes are documented in [`docs/release-architecture.md`](docs/release-architecture.md).
 

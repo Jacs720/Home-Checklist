@@ -1,3 +1,19 @@
+.native-titlebar { position: sticky; top: 0; z-index: 40; height: 32px; display: flex; align-items: stretch; justify-content: flex-end; background: rgba(5, 20, 18, .94); backdrop-filter: blur(18px); user-select: none; }
+.native-titlebar-drag { flex: 1 1 auto; min-width: 0; }
+.native-window-controls { display: flex; flex: 0 0 auto; height: 32px; }
+.native-window-button { position: relative; width: 46px; height: 32px; flex: 0 0 46px; padding: 0; border: 0; border-radius: 0; background: transparent; color: #b8ceca; }
+.native-window-button:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.native-window-button:focus-visible { z-index: 1; outline: 1px solid var(--teal); outline-offset: -2px; }
+.native-window-button span { position: absolute; inset: 0; margin: auto; display: block; width: 11px; height: 11px; pointer-events: none; }
+.native-window-minimize span { top: 10px; height: 1px; border-top: 1px solid currentColor; }
+.native-window-maximize span { border: 1px solid currentColor; }
+.native-window-maximize.is-maximized span::before { content: ""; position: absolute; width: 8px; height: 8px; top: -4px; left: 3px; border: 1px solid currentColor; background: rgba(5, 20, 18, .94); }
+.native-window-maximize.is-maximized span::after { content: ""; position: absolute; width: 8px; height: 8px; top: 1px; left: -2px; border: 1px solid currentColor; background: rgba(5, 20, 18, .94); }
+.native-window-close:hover { background: #c42b1c; }
+.native-window-close span::before, .native-window-close span::after { content: ""; position: absolute; left: 5px; top: -1px; width: 1px; height: 13px; background: currentColor; }
+.native-window-close span::before { transform: rotate(45deg); }
+.native-window-close span::after { transform: rotate(-45deg); }
+.native-desktop .topbar { top: 32px; }
 .topbar { position: sticky; top: 0; z-index: 30; height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 30px; border-bottom: 1px solid var(--line); background: rgba(5, 20, 18, .88); backdrop-filter: blur(18px); }
 .brand-lockup { display: flex; align-items: center; gap: 13px; }
 .brand-link { display: grid; place-items: center; border-radius: 50%; }

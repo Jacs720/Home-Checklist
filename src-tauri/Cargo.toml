@@ -1,6 +1,6 @@
 [package]
 name = "home-checklist"
-version = "1.0.0"
+version = "1.1.0"
 description = "Pokémon HOME collection planner and checklist"
 authors = ["Jacs720"]
 license = "MIT"

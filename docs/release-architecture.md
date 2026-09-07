@@ -50,10 +50,11 @@ Tauri uses the operating system web renderer (WebView2 on Windows and Android Sy
 | --- | --- | --- |
 | `npm run release:web` | Node.js | `dist/` |
 | `npm run release:windows` | Rust, MSVC C++ tools, WebView2 | `src-tauri/target/release/bundle/nsis/*-setup.exe` |
-| `npm run release:android` | Rust Android target, JDK 17+, Android SDK/NDK | ARM64 APK under `src-tauri/gen/android/app/build/outputs/apk/` |
-| `npm run release:android:universal` | All four Rust Android targets | Universal Android package |
+| `npm run release:android` | Rust Android target, JDK 17+, Android SDK/NDK | Debug-signed ARM64 APK under `src-tauri/gen/android/app/build/outputs/apk/` |
+| `npm run release:android:universal` | All four Rust Android targets | Debug-signed universal Android package |
+| `npm run package:android:unsigned` | Rust Android target, JDK 17+, Android SDK/NDK | Optimized unsigned ARM64 package for production signing |
 
-The Windows installer produced locally is unsigned until a code-signing certificate is configured. Android production builds need a private keystore and should normally publish an AAB; test signing is intentionally kept outside Git. On Windows, the standard Tauri Android command creates a JNI symbolic link and therefore needs Windows Developer Mode or an equivalent symlink privilege.
+The Windows installer produced locally is unsigned until a code-signing certificate is configured. The normal Android command uses Android's debug signing so the APK can be sideloaded immediately. Production builds still need a private keystore and should normally publish an AAB; production signing secrets stay outside Git. On Windows, the standard Tauri Android command creates a JNI symbolic link and therefore needs Windows Developer Mode or an equivalent symlink privilege.
 
 Generated installers and APKs belong in the ignored `artifacts/` directory when they need a stable local handoff path. Build caches, native libraries, local Android properties, and signing files are ignored.
 
