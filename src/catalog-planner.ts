@@ -335,6 +335,43 @@ function eventExclusiveEntriesForMark(
       };
     });
 }
+
+const entriesByMarkCache = new WeakMap<PokemonEntry[], Map<string, PokemonEntry[]>>();
+const entriesByCollectionCache = new WeakMap<PokemonEntry[], Map<string, PokemonEntry[]>>();
+
+function compareCatalogEntries(a: PokemonEntry, b: PokemonEntry) {
+  if (a.dex !== b.dex) return a.dex - b.dex;
+  return (a.form ?? "").localeCompare(b.form ?? "");
+}
+
+function catalogEntriesForMark(entries: PokemonEntry[], mark: string) {
+  let cache = entriesByMarkCache.get(entries);
+  if (!cache) {
+    cache = new Map();
+    entriesByMarkCache.set(entries, cache);
+  }
+  let grouped = cache.get(mark);
+  if (!grouped) {
+    grouped = entries.filter((entry) => entry.mark === mark).sort(compareCatalogEntries);
+    cache.set(mark, grouped);
+  }
+  return grouped;
+}
+
+function catalogEntriesForCollection(entries: PokemonEntry[], collection: string) {
+  let cache = entriesByCollectionCache.get(entries);
+  if (!cache) {
+    cache = new Map();
+    entriesByCollectionCache.set(entries, cache);
+  }
+  let grouped = cache.get(collection);
+  if (!grouped) {
+    grouped = entries.filter((entry) => entry.collection === collection);
+    cache.set(collection, grouped);
+  }
+  return grouped;
+}
+
 export function buildBoxes(
   entries: PokemonEntry[],
   specialEntries: PokemonEntry[],
@@ -364,19 +401,12 @@ export function buildBoxes(
   ...MARKS.filter((mark) => effectiveMarks.includes(mark)).map((key) => ({
     key,
     label: groupName(language, key),
-    entries: [
-      ...entries.filter((entry) => entry.mark === key),
-      ...(includeEventMythicals
-        ? eventExclusiveEntriesForMark(key, entries, specialEntries)
-        : []),
-    ].sort((a, b) => {
-      if (a.dex !== b.dex) return a.dex - b.dex;
-
-      return (a.form ?? "").localeCompare(b.form ?? "");
-    }),
+    entries: includeEventMythicals
+      ? [...catalogEntriesForMark(entries, key), ...eventExclusiveEntriesForMark(key, entries, specialEntries)].sort(compareCatalogEntries)
+      : catalogEntriesForMark(entries, key),
     special: false,
     })),
-    ...COLLECTIONS.filter((collection) => selectedCollections.includes(collection)).map((key) => ({ key, label: groupName(language, key), entries: specialEntries.filter((entry) => entry.collection === key), special: true })),
+    ...COLLECTIONS.filter((collection) => selectedCollections.includes(collection)).map((key) => ({ key, label: groupName(language, key), entries: catalogEntriesForCollection(specialEntries, key), special: true })),
   ];
 
   for (const group of groups) {

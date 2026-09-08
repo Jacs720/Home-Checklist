@@ -1,13 +1,13 @@
 /* Phone layout. HOME's box model is invariant: 6 columns by 5 rows. */
 @media (max-width: 820px) {
-  html { scroll-padding-top: 68px; }
+  html { scroll-padding-top: 80px; }
   body { min-width: 320px; -webkit-tap-highlight-color: rgba(85, 224, 192, .16); }
 
   .topbar {
-    height: 64px;
-    min-height: 64px;
+    height: 76px;
+    min-height: 76px;
     gap: 5px;
-    padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
+    padding: max(14px, calc(env(safe-area-inset-top) + 8px)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
   }
   .mobile-filter, .language-trigger, .summary-header-action, .top-view-close, .brand-link { min-width: 44px; min-height: 44px; }
   .mobile-filter { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; font-size: 18px; }
@@ -20,10 +20,11 @@
   .progress-summary strong { font-size: 14px; }
   .progress-summary b { font-size: 11px; }
   .summary-header-action { width: 44px; padding: 0; }
+  .summary-header-action > span { font-size: 22px; line-height: 1; }
   .language-trigger { justify-content: center; padding: 0 7px; }
-  .language-options { position: fixed; top: 70px; right: 10px; width: min(260px, calc(100vw - 20px)); }
+  .language-options { position: fixed; top: 82px; right: 10px; width: min(260px, calc(100vw - 20px)); }
 
-  .workspace { min-height: calc(100dvh - 64px); }
+  .workspace { min-height: calc(100dvh - 76px); }
   .filter-panel {
     width: min(92vw, 360px);
     height: 100dvh;
@@ -132,8 +133,23 @@
   .view-footer > button { min-height: 44px; }
   .view-footer > button:first-child { grid-column: 1; grid-row: 1; }
   .view-footer > button:nth-of-type(2) { grid-column: 2; grid-row: 1; }
-  .view-footer .page-dots { grid-column: 1 / -1; grid-row: 2; justify-content: center; width: 100%; overflow-x: auto; }
-  .page-dots button { width: 36px; height: 36px; flex: 0 0 36px; }
+  .view-footer .page-dots-shell { position: relative; grid-column: 1 / -1; grid-row: 2; min-width: 0; width: 100%; }
+  .view-footer .page-dots { justify-content: flex-start; width: 100%; overflow-x: auto; padding: 0 24px 3px 2px; scrollbar-width: none; overscroll-behavior-inline: contain; scroll-padding-inline: 2px 24px; }
+  .view-footer .page-dots::-webkit-scrollbar { display: none; }
+  .page-dots button { width: 30px; height: 32px; flex: 0 0 30px; border-radius: 6px; font-size: 8px; }
+  .page-scroll-cue {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 32px;
+    pointer-events: none;
+    color: rgba(85, 224, 192, .62);
+    background: linear-gradient(90deg, rgba(5, 20, 18, 0), rgba(5, 20, 18, .92) 55%);
+    font-size: 13px;
+  }
   .view-footer > .primary-action { grid-column: 1 / -1; grid-row: 3; margin-left: 0; }
   .box-footer { flex-wrap: wrap; min-width: 0; padding-top: 13px; }
   .box-footer button { min-height: 44px; }

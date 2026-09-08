@@ -1,4 +1,4 @@
-import { type ChangeEvent, type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type CSSProperties, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { applySpecimenTraits, createTraitAvailability, DEFAULT_TRAIT_OPTIONS, parseTraitOptions, parseTraitOverrides, type SpecimenTrait, type TraitOptions, type TraitOverrides } from "../specimen-traits";
 import {
   BOX_THEME_GAMES,
@@ -361,10 +361,43 @@ export function useAppController() {
   }, [austinPreview, themeOpen, detailEntry, customBoxEditorId]);
 
   const traitAvailability = useMemo(() => createTraitAvailability([...(dataset?.entries ?? []), ...(specialDataset?.entries ?? [])]), [dataset, specialDataset]);
-  const unpackedBoxes = useMemo(() => buildBoxes(dataset?.entries ?? [], specialDataset?.entries ?? [], selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language).map((box) => ({
+  const plannerFilters = useMemo(() => ({
+    selectedMarks,
+    selectedCollections,
+    variants,
+    acquisitions,
+    includeNonShinySpecials,
+    includeEventMythicals,
+    genderMode,
+    formOptions,
+    normalLivingDex,
+    originMarkDex,
+    originIndependentDex,
+    collectionPreset,
+  }), [selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset]);
+  const deferredPlannerFilters = useDeferredValue(plannerFilters);
+  const plannedBoxes = useMemo(() => buildBoxes(
+    dataset?.entries ?? [],
+    specialDataset?.entries ?? [],
+    deferredPlannerFilters.selectedMarks,
+    deferredPlannerFilters.selectedCollections,
+    deferredPlannerFilters.variants,
+    deferredPlannerFilters.acquisitions,
+    deferredPlannerFilters.includeNonShinySpecials,
+    deferredPlannerFilters.includeEventMythicals,
+    deferredPlannerFilters.genderMode,
+    deferredPlannerFilters.formOptions,
+    deferredPlannerFilters.normalLivingDex,
+    deferredPlannerFilters.originMarkDex,
+    deferredPlannerFilters.originIndependentDex,
+    deferredPlannerFilters.collectionPreset,
+    speciesRules,
+    language,
+  ), [dataset, specialDataset, deferredPlannerFilters, speciesRules, language]);
+  const unpackedBoxes = useMemo(() => plannedBoxes.map((box) => ({
     ...box,
     entries: box.entries.map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)),
-  })), [dataset, specialDataset, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, speciesRules, language, traitOptions, traitOverrides, traitAvailability]);
+  })), [plannedBoxes, traitOptions, traitOverrides, traitAvailability]);
   const namedUnpackedBoxes = useMemo(() => unpackedBoxes.map((box) => ({ ...box, label: boxNameOverrides[boxLayoutKey(box)] || box.label })), [unpackedBoxes, boxNameOverrides]);
   const manualPacking = useMemo(() => applyManualBoxMerges(namedUnpackedBoxes, manualBoxMerges), [namedUnpackedBoxes, manualBoxMerges]);
   const boxes = useMemo<PlannedBox[]>(() => (saveSpace ? packBoxesContinuously(unpackedBoxes, true) : manualPacking.boxes).map((box) => ({

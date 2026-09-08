@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { boxThemeStyle, resolveBoxTheme } from "../box-themes";
 import { GROUP_COLORS } from "../app-config";
 import { availabilityForEntry, requiresPokemonBank } from "../collection-features";
@@ -52,6 +53,23 @@ export function BoxView({ app }: BoxViewProps) {
     visiblePageEntries,
     pageAllOwned,
   } = app;
+  const pageDotsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const pageDots = pageDotsRef.current;
+    if (!pageDots || pageDots.scrollWidth <= pageDots.clientWidth) return;
+    const activePage = pageDots.querySelector<HTMLButtonElement>("button.active");
+    if (!activePage) return;
+    if (pageIndex <= 1) {
+      pageDots.scrollTo({ left: 0 });
+      return;
+    }
+    const containerRect = pageDots.getBoundingClientRect();
+    const activeRect = activePage.getBoundingClientRect();
+    if (activeRect.left < containerRect.left) pageDots.scrollBy({ left: activeRect.left - containerRect.left - 2 });
+    else if (activeRect.right > containerRect.right - 24) pageDots.scrollBy({ left: activeRect.right - containerRect.right + 24 });
+  }, [pageIndex, totalPages]);
+
   return !selectedBox ? (
             <>
               <div className="view-heading page-heading">
@@ -87,7 +105,10 @@ export function BoxView({ app }: BoxViewProps) {
 
               <footer className="view-footer">
                 <button onClick={() => setPageIndex((value) => Math.max(0, value - 1))} disabled={pageIndex === 0}>{t("previous_page")}</button>
-                <div className="page-dots">{Array.from({ length: totalPages }, (_, index) => <button aria-label={`${t("page")} ${index + 1}`} className={index === pageIndex ? "active" : ""} onClick={() => setPageIndex(index)} key={index}>{index + 1}</button>)}</div>
+                <div className="page-dots-shell">
+                  <div className="page-dots" ref={pageDotsRef}>{Array.from({ length: totalPages }, (_, index) => <button aria-label={`${t("page")} ${index + 1}`} className={index === pageIndex ? "active" : ""} onClick={() => setPageIndex(index)} key={index}>{index + 1}</button>)}</div>
+                  {totalPages > 9 && <span className="page-scroll-cue" aria-hidden="true">›</span>}
+                </div>
                 <button onClick={() => setPageIndex((value) => Math.min(totalPages - 1, value + 1))} disabled={pageIndex === totalPages - 1}>{t("next_page")}</button>
                 <button className="primary-action" onClick={() => toggleEntries(visiblePageEntries)}>{pageAllOwned ? t("unmark_page") : t("mark_page")}</button>
               </footer>
