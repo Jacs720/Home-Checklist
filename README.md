@@ -6,18 +6,21 @@ It allows you to organize Pokémon by origin marks, boxes, variants, source, and
 
 ## Build the collection you actually want
 
-Choose a ready-made collection profile or shape the checklist around your own goals. Home Checklist supports Living Dexes, every storable form, regional forms, gender differences, shiny collections, origin marks, event Pokémon, in-game trades, Pokémon GO, Pokéwalker encounters, HOME Challenges, and special collections.
+Start with a ready-made profile or customize the checklist around your own goals. You can build a basic Living Dex, collect only final evolutions, add regional or every storable form, create the shiny versions of those collections, organize Pokémon by origin mark or original generation, build a male-and-female "Noah's Ark," or go all the way with the Completionist profile.
+
+You can also include gender differences, Alpha Pokémon, Gigantamax Factor, event Pokémon, in-game trades, Pokémon GO, Pokéwalker encounters, HOME Challenges, and special collections such as N's Pokémon, Shadow Pokémon, Dream World, Dream Radar, Mightiest Mark raids, Titan Pokémon, and Battle Bond Greninja.
 
 ## Find, inspect, and plan
 
-- Browse the complete collection as HOME-style boxes or as a searchable Global view.
-- Filter missing Pokémon, favorites, availability, Pokéwalker encounters, and HOME Challenges.
-- Sort and group Global results by HOME order, Pokédex number, generation, origin mark, or collection.
-- Open any result directly in its exact box and slot, then return to the same result list.
-- Review how each entry is obtained, whether Pokémon Bank is required, and why it belongs in the checklist.
-- Rename planned boxes, create custom boxes, choose box artwork, and keep personal goals and notes.
-- Share links to a search, a filtered Global view, or a specific box and slot without sharing collection progress.
-- Import collection records and Austin John’s normal HOME Organizer, or create a portable backup whenever you want.
+- Browse your collection as HOME-style boxes, search everything in Global view, or open Summary for a clear progress overview.
+- See what you have and what you are missing by generation, origin, availability, and Pokémon HOME Challenge progress.
+- Use the Game Planner to see which games can help with your current missing Pokémon and open a focused list for that game.
+- Filter by missing Pokémon, targets, availability, origin, special collections, Pokéwalker encounters, HOME Challenges, forms, Alpha Pokémon, and Gigantamax Factor.
+- Search, sort, and group Global results, then jump straight to the exact box and slot for any Pokémon.
+- Open a Pokémon to see what exact specimen you need, how to obtain it, how to transfer it to HOME, and whether Pokémon Bank is required.
+- Save box space automatically or combine compatible planned boxes yourself. You can also rename boxes, create custom boxes, choose box artwork, and keep personal goals and notes.
+- Share a search, filtered Global view, or specific box and slot without sharing your collection progress.
+- Import collection records or Austin John’s normal HOME Organizer, export your progress, and create portable backups whenever you want.
 
 ## One interface, three releases
 
