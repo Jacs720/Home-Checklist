@@ -95,6 +95,9 @@ import { assetUrl, downloadText, normalize, prepareThemeImage } from "../app-uti
 import { useCollectionProgress } from "./useCollectionProgress";
 import { useCollectionSearch } from "./useCollectionSearch";
 import { usePersistence } from "./usePersistence";
+import { validateBackup } from "../backup-validation";
+import { progressKey, changeEntryProgress } from "../progress-state";
+import { prepareCollectionImport, parseGenericProgressId } from "../import-export";
 
 export function useAppController() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -119,7 +122,7 @@ export function useAppController() {
   const [availabilityFilters, setAvailabilityFilters] = useState<AvailabilityFilters>(DEFAULT_AVAILABILITY_FILTERS);
   const [language, setLanguage] = useState<UiLanguage>("ES-LA");
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [capacity, setCapacity] = useState<6000 | 8000>(6000);
+  const capacity = 9000;
   const [saveSpace, setSaveSpace] = useState(false);
   const [manualBoxMerges, setManualBoxMerges] = useState<ManualBoxMerge[]>([]);
   const [manualPackingOpen, setManualPackingOpen] = useState(false);
@@ -133,6 +136,8 @@ export function useAppController() {
     setOwned,
     livingDexOwned,
     setLivingDexOwned,
+    progressExclusions,
+    setProgressExclusions,
     undoDepth,
     setUndoDepth,
     changesSinceBackup,
@@ -141,7 +146,7 @@ export function useAppController() {
     livingDexProgressStoredRef,
     livingDexMigrationCheckedRef,
     rememberProgressChange,
-    undoOwned,
+    undoOwned: undoProgress,
     clearProgressHistory,
   } = useCollectionProgress();
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -189,6 +194,11 @@ export function useAppController() {
   const [collectionNotes, setCollectionNotes] = useState("");
   const [lastExternalBackupAt, setLastExternalBackupAt] = useState<number | null>(null);
   const [importNotice, setImportNotice] = useState<ImportNotice | null>(null);
+  const [importPreview, setImportPreview] = useState<{ filename: string; backup?: ReturnType<typeof validateBackup>; csv?: ReturnType<typeof prepareCollectionImport>; records?: CollectionRecord[] } | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const importUndoRef = useRef<{ state: Record<string, unknown>; themes: BoxThemeConfig } | null>(null);
+  const [importUndoAvailable, setImportUndoAvailable] = useState(false);
   const [austinPreview, setAustinPreview] = useState<AustinJohnPreview | null>(null);
   const [austinImportBusy, setAustinImportBusy] = useState(false);
   const [austinNotice, setAustinNotice] = useState<AustinAppliedNotice | null>(null);
@@ -244,6 +254,8 @@ export function useAppController() {
   }, []);
 
   const hydrateCollection = useCallback((value: any) => {
+    setProgressExclusions(new Set(Array.isArray(value.progressExclusions) ? value.progressExclusions : []));
+    if (value.lastExternalBackupAt === null) setLastExternalBackupAt(null);
     if (Array.isArray(value.owned)) setOwned(new Set(correctLegacyTradePlanIds(value.owned)));
     if (Object.hasOwn(value, "livingDexOwned")) livingDexProgressStoredRef.current = true;
     if (Array.isArray(value.livingDexOwned)) setLivingDexOwned(new Set(value.livingDexOwned.filter((dex: unknown) => typeof dex === "number" && Number.isInteger(dex) && dex > 0)));
@@ -285,7 +297,6 @@ export function useAppController() {
     if (typeof value.homeChallengesOnly === "boolean") setHomeChallengesOnly(value.homeChallengesOnly);
     if (typeof value.pokewalkerOnly === "boolean") setPokewalkerOnly(value.pokewalkerOnly);
     if (LANGUAGE_OPTIONS.some((option) => option.code === value.language)) setLanguage(value.language);
-    if (value.capacity === 6000 || value.capacity === 8000) setCapacity(value.capacity);
     if (typeof value.saveSpace === "boolean") setSaveSpace(value.saveSpace);
     setManualBoxMerges(parseManualBoxMerges(value.manualBoxMerges));
     setTraitOptions(parseTraitOptions(value.traitOptions));
@@ -299,12 +310,13 @@ export function useAppController() {
     if (typeof value.collectionNotes === "string") setCollectionNotes(value.collectionNotes.slice(0, 2_000));
     if (typeof value.lastExternalBackupAt === "number") setLastExternalBackupAt(value.lastExternalBackupAt);
     if (typeof value.changesSinceBackup === "number" && value.changesSinceBackup >= 0) setChangesSinceBackup(Math.floor(value.changesSinceBackup));
-  }, [livingDexProgressStoredRef, setChangesSinceBackup, setLivingDexOwned, setOwned]);
+  }, [livingDexProgressStoredRef, setChangesSinceBackup, setLivingDexOwned, setOwned, setProgressExclusions]);
 
   const persistedCollectionState = useMemo(() => ({
     catalogVersion: CATALOG_VERSION,
     owned: [...owned],
     livingDexOwned: [...livingDexOwned],
+    progressExclusions: [...progressExclusions],
     favorites: [...favorites],
     selectedMarks,
     selectedCollections,
@@ -337,9 +349,9 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, manualBoxMerges, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, progressExclusions, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, manualBoxMerges, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
-  const { hydrated, lastSavedAt, clock } = usePersistence({
+  const { hydrated, lastSavedAt, clock, persistenceStatus, retrySave, allowRecovery } = usePersistence({
     language,
     collectionState: persistedCollectionState,
     hydrateCollection,
@@ -348,17 +360,18 @@ export function useAppController() {
   });
 
   useEffect(() => {
-    if (!themeOpen && !detailEntry && !austinPreview && !customBoxEditorId) return;
+    if (!themeOpen && !detailEntry && !austinPreview && !importPreview && !customBoxEditorId) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (detailEntry) { setDetailEntry(null); return; }
       if (customBoxEditorId) { setCustomBoxEditorId(null); return; }
       setThemeOpen(false);
       setAustinPreview(null);
+      setImportPreview(null);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [austinPreview, themeOpen, detailEntry, customBoxEditorId]);
+  }, [austinPreview, importPreview, themeOpen, detailEntry, customBoxEditorId]);
 
   const traitAvailability = useMemo(() => createTraitAvailability([...(dataset?.entries ?? []), ...(specialDataset?.entries ?? [])]), [dataset, specialDataset]);
   const plannerFilters = useMemo(() => ({
@@ -443,7 +456,11 @@ export function useAppController() {
     const keys = new Set<string>();
     const normalSpecies = new Set<number>();
     for (const planId of owned) {
-      if (planId.startsWith("generic:")) continue;
+      if (planId.startsWith("generic:")) {
+        const generic = parseGenericProgressId(planId);
+        if (generic?.variant === "normal") normalSpecies.add(generic.dex);
+        continue;
+      }
       let entry = databaseChoiceByPlanId.get(planId);
       const legacyGender = planId.match(/^(.*):gender:(male|female|any)$/);
       if (!entry && legacyGender) entry = databaseChoiceByPlanId.get(legacyGender[1]);
@@ -482,12 +499,14 @@ export function useAppController() {
     .filter((entry) => entry.availability !== "excluded" && entry.normalEligible !== false)
     .map((entry) => entry.dex)), [allImportEntries]);
   const entryIsOwned = useCallback((entry: PlannedEntry) => {
+    const exclusion = progressKey(entry, normalLivingDex);
+    if (exclusion && progressExclusions.has(exclusion)) return false;
     if (normalLivingDex) return livingDexOwned.has(entry.dex) || derivedGenericProgress.normalSpecies.has(entry.dex);
     if (!entry.genericEntry) return owned.has(entry.planId);
     if (owned.has(entry.planId) || derivedGenericProgress.keys.has(entry.planId)) return true;
     const genderSpecific = entry.requirements?.gender === "male" || entry.requirements?.gender === "female";
     return entry.variant === "normal" && !entry.form && !genderSpecific && livingDexOwned.has(entry.dex);
-  }, [derivedGenericProgress, livingDexOwned, normalLivingDex, owned]);
+  }, [derivedGenericProgress, livingDexOwned, normalLivingDex, owned, progressExclusions]);
   const generationSummary = useMemo(() => Array.from({ length: 9 }, (_, index) => {
     const generation = index + 1;
     const entries = plannedEntries.filter((entry) => generationForDex(entry.dex) === generation);
@@ -783,20 +802,24 @@ export function useAppController() {
     setViewMode("global");
   };
 
+  const undoOwned = useCallback(() => {
+    if (undoDepth) { undoProgress(); return; }
+    const previous = importUndoRef.current;
+    if (!previous) return;
+    hydrateCollection(previous.state);
+    setThemeConfig(previous.themes);
+    importUndoRef.current = null;
+    setImportUndoAvailable(false);
+    clearProgressHistory();
+    setImportNotice(null);
+    setLocationAnnouncement(copy(language, "import_undone"));
+  }, [undoDepth, undoProgress, hydrateCollection, clearProgressHistory, language]);
+
   const toggleOwned = useCallback((entry: PlannedEntry) => {
-    const nextOwned = new Set(owned);
-    const nextLivingDexOwned = new Set(livingDexOwned);
-    const currentlyOwned = entryIsOwned(entry);
-    if (normalLivingDex) {
-      if (currentlyOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
-    } else {
-      if (currentlyOwned) nextOwned.delete(entry.planId); else nextOwned.add(entry.planId);
-      if (entry.genericEntry && entry.variant === "normal") {
-        if (currentlyOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
-      }
-    }
-    rememberProgressChange(nextOwned, nextLivingDexOwned);
-  }, [entryIsOwned, livingDexOwned, normalLivingDex, owned, rememberProgressChange]);
+    const next = { owned: new Set(owned), livingDexOwned: new Set(livingDexOwned), progressExclusions: new Set(progressExclusions) };
+    changeEntryProgress(next, entry, !entryIsOwned(entry), normalLivingDex);
+    rememberProgressChange(next.owned, next.livingDexOwned, next.progressExclusions);
+  }, [entryIsOwned, livingDexOwned, normalLivingDex, owned, progressExclusions, rememberProgressChange]);
 
   const toggleFavorite = (planId: string) => setFavorites((current) => {
     const next = new Set(current);
@@ -808,25 +831,15 @@ export function useAppController() {
     const allOwned = entries.length > 0 && entries.every(entryIsOwned);
     const affected = entries.filter(entryIsOwned).length;
     if (allOwned && affected >= 30 && !window.confirm(t("confirm_unmark_many").replace("{count}", affected.toLocaleString(locale)))) return;
-    const nextOwned = new Set(owned);
-    const nextLivingDexOwned = new Set(livingDexOwned);
-    entries.forEach((entry) => {
-      if (normalLivingDex) {
-        if (allOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
-        return;
-      }
-      if (allOwned) nextOwned.delete(entry.planId); else nextOwned.add(entry.planId);
-      if (entry.genericEntry && entry.variant === "normal") {
-        if (allOwned) nextLivingDexOwned.delete(entry.dex); else nextLivingDexOwned.add(entry.dex);
-      }
-    });
-    if (entries.length) rememberProgressChange(nextOwned, nextLivingDexOwned);
+    const next = { owned: new Set(owned), livingDexOwned: new Set(livingDexOwned), progressExclusions: new Set(progressExclusions) };
+    entries.forEach((entry) => changeEntryProgress(next, entry, !allOwned, normalLivingDex));
+    if (entries.length) rememberProgressChange(next.owned, next.livingDexOwned, next.progressExclusions);
   };
 
   const resetProgress = () => {
-    const currentSize = owned.size + livingDexOwned.size;
+    const currentSize = owned.size + livingDexOwned.size + progressExclusions.size;
     if (!currentSize || !window.confirm(t("confirm_reset_progress").replace("{count}", currentSize.toLocaleString(locale)))) return;
-    rememberProgressChange(new Set(), new Set());
+    rememberProgressChange(new Set(), new Set(), new Set());
   };
 
   const renamePlannedBox = (box: PlannedBox, name: string) => setBoxNameOverrides((current) => {
@@ -942,7 +955,7 @@ export function useAppController() {
     const handleShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const isTyping = Boolean(target?.matches("input, textarea, select") || target?.isContentEditable);
-      if (isTyping || themeOpen || detailEntry || customBoxEditorId || manualPackingOpen) return;
+      if (isTyping || themeOpen || detailEntry || customBoxEditorId || manualPackingOpen || austinPreview || importPreview) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         undoOwned();
@@ -975,7 +988,7 @@ export function useAppController() {
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [boxes.length, detailEntry, customBoxEditorId, manualPackingOpen, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
+  }, [boxes.length, detailEntry, customBoxEditorId, manualPackingOpen, austinPreview, importPreview, keyboardSlotIndex, selectedBox, themeOpen, toggleOwned, totalPages, undoOwned, viewMode, favorites]);
 
   const openThemeDialog = () => {
     const current = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
@@ -1078,7 +1091,7 @@ export function useAppController() {
     exportedAt: new Date(backupAt).toISOString(),
     lastExternalBackupAt: backupAt,
     changesSinceBackup: 0,
-    progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], favorites: [...favorites] },
+    progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], progressExclusions: [...progressExclusions], favorites: [...favorites] },
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
       genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
@@ -1088,115 +1101,86 @@ export function useAppController() {
     themes: themeConfig,
   });
 
-  const exportBackup = (format: "json" | "project") => {
-    const projectFile = format === "project";
+  const exportBackup = async (format: "json" | "project") => {
+    if (exportBusy) return;
     const backupAt = Date.now();
-    downloadText(
-      projectFile ? "home-checklist-backup.homechecklist" : "home-checklist-backup.json",
-      JSON.stringify(createBackupPayload(backupAt), null, 2),
-      projectFile ? "application/vnd.home-checklist+json" : "application/json",
-    );
-    setLastExternalBackupAt(backupAt);
-    setChangesSinceBackup(0);
+    const backedUpChanges = changesSinceBackup;
+    setExportBusy(true);
+    try {
+      const projectFile = format === "project";
+      const saved = await downloadText(projectFile ? "home-checklist-backup.homechecklist" : "home-checklist-backup.json",
+        JSON.stringify(createBackupPayload(backupAt), null, 2), projectFile ? "application/vnd.home-checklist+json" : "application/json");
+      if (saved) {
+        setLastExternalBackupAt(backupAt);
+        setChangesSinceBackup((current) => Math.max(0, current - backedUpChanges));
+      }
+    } catch { window.alert(t("export_failed")); }
+    finally { setExportBusy(false); }
   };
 
-  const exportProgressCsv = () => downloadText("home-checklist-progress.csv", buildOwnedProgressCsv(owned, allImportEntries), "text/csv;charset=utf-8");
-
-  const restoreBackup = (raw: unknown) => {
-    if (!raw || typeof raw !== "object") throw new Error("invalid");
-    const value = raw as Record<string, unknown>;
-    const progress = (value.progress && typeof value.progress === "object" ? value.progress : value) as Record<string, unknown>;
-    const configuration = (value.configuration && typeof value.configuration === "object" ? value.configuration : value) as Record<string, unknown>;
-    if (!Array.isArray(progress.owned)) throw new Error("invalid");
-    const restoredOwned = new Set(correctLegacyTradePlanIds(progress.owned));
-    const restoredLivingDexOwned = new Set(Array.isArray(progress.livingDexOwned)
-      ? progress.livingDexOwned.filter((dex): dex is number => typeof dex === "number" && Number.isInteger(dex) && dex > 0)
-      : configuration.normalLivingDex === true
-        ? [...restoredOwned].map((planId) => databaseChoiceByPlanId.get(planId)?.dex).filter((dex): dex is number => Boolean(dex))
-        : []);
-    setOwned(restoredOwned);
-    setLivingDexOwned(restoredLivingDexOwned);
-    livingDexProgressStoredRef.current = true;
-    livingDexMigrationCheckedRef.current = true;
-    clearProgressHistory();
-    if (Array.isArray(progress.favorites)) setFavorites(new Set(correctLegacyTradePlanIds(progress.favorites)));
-    if (Array.isArray(configuration.selectedMarks)) setSelectedMarks(configuration.selectedMarks.filter((mark): mark is string => typeof mark === "string" && MARKS.includes(mark)));
-    if (Array.isArray(configuration.selectedCollections)) {
-      const savedCollections = configuration.selectedCollections.filter((collection): collection is string => typeof collection === "string" && COLLECTIONS.includes(collection));
-      setSelectedCollections(Number(value.catalogVersion) >= CATALOG_VERSION ? savedCollections : [...new Set([...savedCollections, "radar", "battle-bond"])]);
-    }
-    const savedVariants = configuration.variants as Record<string, unknown> | undefined;
-    if (savedVariants) setVariants({ shiny: Boolean(savedVariants.shiny), normal: Boolean(savedVariants.normal) });
-    const savedAcquisitions = configuration.acquisitions as Record<string, unknown> | undefined;
-    if (savedAcquisitions) setAcquisitions({
-      own: Boolean(savedAcquisitions.own),
-      trade: typeof savedAcquisitions.trade === "boolean" ? savedAcquisitions.trade : true,
-      event: Boolean(savedAcquisitions.event),
-      external: typeof savedAcquisitions.external === "boolean" ? savedAcquisitions.external : true,
-    });
-    if (typeof configuration.includeNonShinySpecials === "boolean") setIncludeNonShinySpecials(configuration.includeNonShinySpecials);
-    if (typeof configuration.includeEventMythicals === "boolean") setIncludeEventMythicals(configuration.includeEventMythicals);
-    if (configuration.genderMode === "notable" || configuration.genderMode === "all") setGenderMode(configuration.genderMode);
-    const savedFormOptions = configuration.formOptions as Record<string, unknown> | undefined;
-    if (savedFormOptions) setFormOptions({
-      alternate: typeof savedFormOptions.alternate === "boolean" ? savedFormOptions.alternate : DEFAULT_FORM_OPTIONS.alternate,
-      alcremie: typeof savedFormOptions.alcremie === "boolean" ? savedFormOptions.alcremie : DEFAULT_FORM_OPTIONS.alcremie,
-      minior: typeof savedFormOptions.minior === "boolean" ? savedFormOptions.minior : DEFAULT_FORM_OPTIONS.minior,
-    });
-    if (typeof configuration.normalLivingDex === "boolean") setNormalLivingDex(configuration.normalLivingDex);
-    if (typeof configuration.originMarkDex === "boolean") setOriginMarkDex(configuration.originMarkDex);
-    if (typeof configuration.collectionPreset === "string" && COLLECTION_PRESETS.includes(configuration.collectionPreset as CollectionPreset)) setCollectionPreset(configuration.collectionPreset as CollectionPreset);
-    if (typeof configuration.originIndependentDex === "boolean") {
-      setOriginIndependentDex(configuration.originIndependentDex);
-      if (configuration.originIndependentDex) {
-        setSelectedMarks([]);
-        setNormalLivingDex(false);
-        setOriginMarkDex(false);
-        setCollectionPreset("custom");
-      }
-    }
-    const savedAvailabilityFilters = configuration.availabilityFilters as Record<string, unknown> | undefined;
-    if (savedAvailabilityFilters) setAvailabilityFilters(Object.fromEntries(AVAILABILITY_STATUSES.map((status) => [status, savedAvailabilityFilters[status] !== false])) as AvailabilityFilters);
-    if (typeof configuration.favoritesOnly === "boolean") setFavoritesOnly(configuration.favoritesOnly);
-    if (typeof configuration.homeChallengesOnly === "boolean") setHomeChallengesOnly(configuration.homeChallengesOnly);
-    if (typeof configuration.pokewalkerOnly === "boolean") setPokewalkerOnly(configuration.pokewalkerOnly);
-    if (LANGUAGE_OPTIONS.some((option) => option.code === configuration.language)) setLanguage(configuration.language as UiLanguage);
-    if (configuration.capacity === 6000 || configuration.capacity === 8000) setCapacity(configuration.capacity);
-    if (typeof configuration.saveSpace === "boolean") setSaveSpace(configuration.saveSpace);
-    setManualBoxMerges(parseManualBoxMerges(configuration.manualBoxMerges));
-    setTraitOptions(parseTraitOptions(configuration.traitOptions));
-    setTraitOverrides(parseTraitOverrides(configuration.traitOverrides));
-    if (configuration.viewMode === "boxes" || configuration.viewMode === "global" || configuration.viewMode === "summary") setViewMode(configuration.viewMode);
-    if (typeof configuration.missingOnly === "boolean") setMissingOnly(configuration.missingOnly);
-    if (typeof configuration.selectedGamePlan === "string" && GAME_PLANS.some((game) => game.id === configuration.selectedGamePlan)) setSelectedGamePlan(configuration.selectedGamePlan as GamePlanId);
-    if (typeof configuration.collectionGoal === "string") setCollectionGoal(configuration.collectionGoal.slice(0, 8));
-    if (typeof configuration.collectionNotes === "string") setCollectionNotes(configuration.collectionNotes.slice(0, 2_000));
-    if (configuration.boxNameOverrides && typeof configuration.boxNameOverrides === "object") setBoxNameOverrides(Object.fromEntries(Object.entries(configuration.boxNameOverrides).filter(([, name]) => typeof name === "string").map(([key, name]) => [key, (name as string).slice(0, 48)])));
-    if (Array.isArray(configuration.customBoxes)) setCustomBoxes(configuration.customBoxes.filter((box: unknown): box is CustomBox => Boolean(box && typeof box === "object" && typeof (box as CustomBox).id === "string" && typeof (box as CustomBox).name === "string" && Array.isArray((box as CustomBox).planIds))).map((box: CustomBox) => ({ id: box.id, name: box.name.slice(0, 48), planIds: correctLegacyTradePlanIds(box.planIds).slice(0, 30) })));
-    const parsedThemes = parseThemeConfig(value.themes);
-    if (parsedThemes) setThemeConfig(parsedThemes);
-    const exportedAt = typeof value.exportedAt === "string" ? Date.parse(value.exportedAt) : Number.NaN;
-    const backupAt = typeof value.lastExternalBackupAt === "number" ? value.lastExternalBackupAt : exportedAt;
-    setLastExternalBackupAt(Number.isFinite(backupAt) ? backupAt : Date.now());
-    setChangesSinceBackup(0);
-    setLocationAnnouncement(t("backup_imported"));
+  const exportProgressCsv = async () => {
+    try { await downloadText("home-checklist-progress.csv", buildOwnedProgressCsv(owned, allImportEntries, livingDexOwned, progressExclusions), "text/csv;charset=utf-8"); }
+    catch { window.alert(t("export_failed")); }
   };
 
   const importData = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
+    setImportBusy(true);
     try {
+      if (file.size > 25_000_000) throw new Error("import-too-large");
       const text = await file.text();
-      const looksJson = file.name.endsWith(".json") || file.name.endsWith(".homechecklist") || text.trimStart().startsWith("{");
+      const looksJson = /\.(json|homechecklist)$/i.test(file.name) || text.trimStart().startsWith("{");
       if (looksJson) {
         const value = JSON.parse(text);
-        if (value?.s === "pokemon-home-ocr") applyCollectionRecords(parseCompactTransfer(value), "csv");
-        else restoreBackup(value);
+        if (value?.s !== "pokemon-home-ocr") { setImportPreview({ filename: file.name, backup: validateBackup(value) }); return; }
+        const records = parseCompactTransfer(value);
+        setImportPreview({ filename: file.name, records, csv: prepareCollectionImport(records, allImportEntries, pokemonNames ?? {}, owned) });
       } else {
-        applyCollectionRecords(parseCollectionCsv(text), "csv");
+        const records = parseCollectionCsv(text);
+        setImportPreview({ filename: file.name, records, csv: prepareCollectionImport(records, allImportEntries, pokemonNames ?? {}, owned) });
       }
     } catch { window.alert(t("invalid_collection")); }
-    event.target.value = "";
+    finally { setImportBusy(false); }
+  };
+
+  const applyImport = async (mode: "merge" | "replace") => {
+    if (!importPreview || importBusy) return;
+    setImportBusy(true);
+    try {
+      await allowRecovery();
+      importUndoRef.current = { state: persistedCollectionState, themes: themeConfig };
+      setImportUndoAvailable(true);
+      clearProgressHistory();
+      if (importPreview.backup) {
+        const { state, themes } = importPreview.backup;
+        if (mode === "replace") {
+          hydrateCollection(state);
+          if (themes) setThemeConfig(themes);
+        } else {
+          setOwned(new Set([...owned, ...correctLegacyTradePlanIds(state.owned)]));
+          setLivingDexOwned(new Set([...livingDexOwned, ...state.livingDexOwned]));
+          setProgressExclusions(new Set([...progressExclusions, ...state.progressExclusions]));
+          setFavorites(new Set([...favorites, ...correctLegacyTradePlanIds(state.favorites)]));
+          setChangesSinceBackup((value) => value + state.owned.length + state.livingDexOwned.length);
+        }
+        livingDexProgressStoredRef.current = true;
+        livingDexMigrationCheckedRef.current = true;
+        setLocationAnnouncement(t("backup_imported"));
+      } else if (importPreview.records) {
+        const prepared = prepareCollectionImport(importPreview.records, allImportEntries, pokemonNames ?? {}, mode === "merge" ? owned : new Set());
+        setOwned(new Set([...(mode === "merge" ? owned : []), ...prepared.owned]));
+        setLivingDexOwned(new Set([...(mode === "merge" ? livingDexOwned : []), ...prepared.livingDexOwned]));
+        setProgressExclusions(new Set([...(mode === "merge" ? progressExclusions : []), ...prepared.progressExclusions]));
+        livingDexProgressStoredRef.current = true;
+        livingDexMigrationCheckedRef.current = true;
+        setChangesSinceBackup((value) => value + prepared.summary.matchedRows);
+        setImportNotice({ ...prepared.summary, source: "csv" });
+      }
+      setImportPreview(null);
+    } catch { window.alert(t("invalid_collection")); }
+    finally { setImportBusy(false); }
   };
 
   const importAustinJohnData = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1231,9 +1215,9 @@ export function useAppController() {
     setLocationAnnouncement(t("austin_import_complete"));
   };
 
-  const exportThemeBackup = () => {
+  const exportThemeBackup = async () => {
     const payload = { type: "origin-marks-box-themes", version: 1, exportedAt: new Date().toISOString(), themes: themeConfig };
-    downloadText("origin-marks-themes-backup.json", JSON.stringify(payload, null, 2), "application/json");
+    try { await downloadText("origin-marks-themes-backup.json", JSON.stringify(payload, null, 2), "application/json"); } catch { window.alert(t("export_failed")); }
   };
 
   const importThemeBackup = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1320,7 +1304,6 @@ export function useAppController() {
     languageOpen,
     setLanguageOpen,
     capacity,
-    setCapacity,
     saveSpace,
     setSaveSpace,
     manualBoxMerges,
@@ -1351,7 +1334,7 @@ export function useAppController() {
     setSelectedGamePlan,
     gameResultLimit,
     setGameResultLimit,
-    undoDepth,
+    undoDepth: undoDepth + Number(importUndoAvailable),
     keyboardSlotIndex,
     setKeyboardSlotIndex,
     customBoxes,
@@ -1490,6 +1473,13 @@ export function useAppController() {
     pageAllOwned,
     themeGameOption,
     themeCanApply,
+    persistenceStatus,
+    retrySave,
+    importPreview,
+    setImportPreview,
+    applyImport,
+    importBusy,
+    exportBusy,
     savedWhen,
     externalBackupWhen,
     boxBeingRenamed,

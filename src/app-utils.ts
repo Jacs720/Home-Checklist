@@ -6,10 +6,10 @@ export const chunk = <T,>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, index * size + size));
 
 export function downloadText(filename: string, text: string, type: string) {
-  void getPlatform().files.saveText(filename, text, type);
+  return getPlatform().files.saveText(filename, text, type);
 }
 
-export const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+export const assetUrl = (path: string) => `${import.meta.env?.BASE_URL ?? "/"}${path.replace(/^\//, "")}`;
 
 export async function prepareThemeImage(file: File) {
   if (!/^image\/(?:png|jpeg|webp)$/i.test(file.type) || file.size > 12_000_000) throw new Error("invalid-image");

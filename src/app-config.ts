@@ -94,7 +94,7 @@ export const ORIGIN_MARK_ICONS: Record<string, string> = {
 export const STORAGE_KEY = "origin-marks-home-checklist-v1";
 export const THEME_STORAGE_KEY = "origin-marks-box-themes-v1";
 export const CATALOG_VERSION = 7;
-export const BACKUP_VERSION = 9;
+export const BACKUP_VERSION = 10;
 export const DEFAULT_FORM_OPTIONS: FormOptions = { alternate: true, alcremie: false, minior: false };
 export const COLLECTION_ACQUISITIONS: Record<string, Acquisition> = {
   n: "trade",

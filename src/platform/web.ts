@@ -18,6 +18,7 @@ export function createWebPlatform(target: ReleaseTarget = "web"): HomeChecklistP
         link.download = filename;
         link.click();
         globalThis.setTimeout(() => URL.revokeObjectURL(link.href), 1_000);
+        return true;
       },
     },
     setDocumentLanguage(language) {

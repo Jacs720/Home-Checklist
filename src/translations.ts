@@ -953,6 +953,8 @@ const VARIANT_COPY: Record<UiLanguage, Copy> = {
 
 
 export function copy(language: UiLanguage, key: string) {
+  const reliability = reliabilityCopy(language, key);
+  if (reliability) return reliability;
   const packing = manualPackingCopy(language, key);
   if (packing) return packing;
   if (VARIANT_COPY[language][key]) return VARIANT_COPY[language][key];
@@ -985,3 +987,4 @@ export function groupName(language: UiLanguage, key: string) {
   if (key === "titan") return copy(language, "titan_collection");
   return GROUPS[key]?.[language] ?? (language.startsWith("ES") ? ({ P: "Pentágono", USUM: "Alola", LGPE: "Let's Go", SwSh: "Galar", LA: "Hisui", BDSP: "Sinnoh", SV: "Escarlata / Púrpura", LZA: "Lumiose", GBA: "GBA", "Sin marca": "Sin marca", GB: "GB", n: "Pokémon de N", dream: "Dream World", radar: "Pokémon Dream Radar", "shadow-colosseum": "Shadow · Colosseum", "shadow-xd": "Shadow · XD", cherish: "Cherish Ball", mighty: "Incursiones con Emblema Imbatibilidad", trades: "Intercambios internos", go: "Pokémon GO" } as Record<string, string>)[key] : undefined) ?? key;
 }
+import { reliabilityCopy } from "./reliability-copy";

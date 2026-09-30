@@ -5,6 +5,7 @@ import { GooeyCheckbox, StyledSelect } from "./components/ui-controls";
 import { DatabaseChoiceCard } from "./components/DatabaseChoiceCard";
 import { ManualBoxPacking } from "./components/ManualBoxPacking";
 import { NativeTitleBar } from "./components/NativeTitleBar";
+import { ImportPreview } from "./components/ImportPreview";
 
 import { useAppController } from "./hooks/use-app-controller";
 import { getPlatform } from "./platform/runtime";
@@ -149,6 +150,7 @@ export default function App() {
         <button aria-label={t("close_import_summary")} onClick={() => setAustinNotice(null)}>×</button>
       </section>}
 
+      {controller.importPreview && <ImportPreview app={controller} />}
       {austinPreview && <div className="theme-modal-layer austin-modal-layer">
         <button className="theme-modal-scrim" aria-label={t("austin_cancel")} onClick={() => setAustinPreview(null)} />
         <section className="austin-dialog" role="dialog" aria-modal="true" aria-labelledby="austin-dialog-title">
@@ -262,7 +264,7 @@ export default function App() {
       <EntryDetails app={controller} />
       {controller.manualPackingOpen && <ManualBoxPacking boxes={controller.manualPacking.boxes} merges={controller.manualBoxMerges} activeIds={controller.manualPacking.activeIds} automatic={controller.saveSpace} onUseManual={() => controller.setSaveSpace(false)} onCombine={controller.combineBoxes} onSeparate={controller.separateBoxes} onClose={controller.closeManualPacking} t={t} />}
 
-      <div className="workspace">
+      <div className="workspace" inert={Boolean(controller.importPreview)}>
         {filtersOpen && <button className="drawer-scrim" aria-label={t("close_filters")} onClick={() => setFiltersOpen(false)} />}
         <FilterPanel app={controller} />
 

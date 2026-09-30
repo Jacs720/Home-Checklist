@@ -107,10 +107,6 @@
 .catalog-caveat span { color: var(--muted); font-size: 8px; line-height: 1.4; }
 .catalog-caveat.neutral { border-color: rgba(85, 224, 192, .18); background: rgba(35, 114, 99, .1); }
 .catalog-caveat.neutral b { color: var(--teal); }
-.capacity-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.capacity-toggle button { display: flex; flex-direction: column; gap: 3px; padding: 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--muted); font-size: 12px; }
-.capacity-toggle small { font-size: 8px; }
-.capacity-toggle button.active { border-color: rgba(85, 224, 192, .5); color: var(--teal); background: rgba(35, 114, 99, .22); }
 .collection-planning { display: grid; gap: 10px; }
 .collection-planning label { display: grid; gap: 5px; color: var(--muted); font-size: 9px; }
 .collection-planning input, .collection-planning textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: rgba(10, 34, 31, .75); color: var(--ink); }
@@ -131,3 +127,4 @@
 .auto-save-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px rgba(85, 224, 192, .5); }
 .drawer-scrim { display: none; }
 
+.auto-save-status.error, .auto-save-status.protected { color: #f3c857; line-height: 1.5; }

@@ -22,7 +22,7 @@ type ThemeStyle = CSSProperties & {
 export const DEFAULT_BOX_THEME: BoxTheme = { kind: "default" };
 export const EMPTY_THEME_CONFIG: BoxThemeConfig = { global: DEFAULT_BOX_THEME, marks: {}, boxes: {} };
 
-const themeAssetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+const themeAssetUrl = (path: string) => `${import.meta.env?.BASE_URL ?? "/"}${path.replace(/^\//, "")}`;
 const numberedWallpapers = (folder: string, prefix: string, count: number, extension = "png") =>
   Array.from({ length: count }, (_, index) => themeAssetUrl(`assets/themes/${folder}/${prefix}-${String(index + 1).padStart(2, "0")}.${extension}`));
 

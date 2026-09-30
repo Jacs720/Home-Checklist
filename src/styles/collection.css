@@ -87,6 +87,9 @@ button.box-tile:hover .box-preview, button.box-tile:focus-visible .box-preview {
 .global-group-heading h3 span { color: var(--dim); font-weight: 400; }
 .global-group-heading h3 b { color: var(--teal); font-size: 10px; }
 .global-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 7px 5px; align-items: center; padding: 9px 2px 22px; }
+.virtual-global-gallery { position: relative; width: 100%; }
+.global-gallery.virtual-gallery-row { padding: 0; gap: 0 5px; align-items: start; }
+.virtual-group-heading { padding-top: 15px; border-top: 1px solid var(--line); }
 .global-pokemon { position: relative; display: grid; place-items: center; min-width: 0; min-height: 82px; padding: 5px; border: 0; border-radius: 18px; background: transparent; isolation: isolate; transition: transform .16s ease, opacity .16s ease, filter .16s ease; }
 .global-pokemon::before { content: ""; position: absolute; inset: 10%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(85, 224, 192, .16), transparent 67%); opacity: 0; transform: scale(.7); transition: opacity .16s ease, transform .16s ease; }
 .global-pokemon > img { display: block; width: 68px; height: 68px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0, 0, 0, .34)); transition: filter .16s ease, opacity .16s ease; }

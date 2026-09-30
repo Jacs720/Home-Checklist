@@ -2,8 +2,9 @@ import { message, save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { load } from "@tauri-apps/plugin-store";
 import type { TauriPlatformBridge } from "./tauri";
+import { retryableResource } from "./retryable-resource";
 
-const storePromise = load("home-checklist.json", { autoSave: false });
+const getStore = retryableResource(() => load("home-checklist.json", { autoSave: false }));
 
 function exportExtension(filename: string) {
   const extension = filename.match(/\.([a-z0-9]+)$/i)?.[1];
@@ -14,10 +15,10 @@ export function createTauriBridge(): TauriPlatformBridge {
   return {
     storage: {
       async get(key) {
-        return (await (await storePromise).get<string>(key)) ?? null;
+        return (await (await getStore()).get<string>(key)) ?? null;
       },
       async set(key, value) {
-        const store = await storePromise;
+        const store = await getStore();
         await store.set(key, value);
         await store.save();
       },
@@ -27,7 +28,9 @@ export function createTauriBridge(): TauriPlatformBridge {
         defaultPath: filename,
         filters: [{ name: "Home Checklist", extensions: exportExtension(filename) }],
       });
-      if (destination) await writeTextFile(destination, text);
+      if (!destination) return false;
+      await writeTextFile(destination, text);
+      return true;
     },
     showAlert(alertMessage) {
       void message(alertMessage, { title: "Home Checklist", kind: "error" });

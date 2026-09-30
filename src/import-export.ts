@@ -1,6 +1,8 @@
 import { correctLegacyTradePlanId } from "./trade-ribbon-corrections";
+import { genericSpecimenKey } from "./collection-features";
 
 export type CollectionRecord = {
+  progressKind?: string;
   planId?: string;
   number?: number;
   species: string;
@@ -44,6 +46,7 @@ type PokemonNames = Record<string, Record<string, string | undefined> | undefine
 
 const MAX_TRANSFER_CHARACTERS = 1_000_000;
 const MAX_TRANSFER_RECORDS = 10_000;
+const MAX_COLLECTION_RECORDS = 100_000;
 
 export function normalizeImportValue(value: unknown) {
   return String(value ?? "")
@@ -83,6 +86,7 @@ export function parseCsv(text: string) {
       cell += value;
     }
   }
+  if (quoted) throw new Error("unclosed-csv-quote");
   if (cell || row.length) {
     row.push(cell);
     if (row.some(Boolean)) rows.push(row);
@@ -92,6 +96,7 @@ export function parseCsv(text: string) {
 }
 
 const HEADER_ALIASES = {
+  progressKind: ["progresskind", "progress kind"],
   planId: ["planid", "plan id", "checklist id", "id checklist"],
   number: ["no", "n", "numero", "number", "national number", "nationalnumber", "nr", "番号", "번호", "编号", "編號"],
   species: ["species", "especie", "espece", "specie", "spezies", "pokemon", "ポケモン", "포켓몬", "宝可梦", "寶可夢"],
@@ -130,13 +135,16 @@ function truthy(value: unknown) {
 }
 
 export function parseCollectionCsv(text: string) {
+  if (text.length > 20_000_000) throw new Error("csv-too-large");
   const rows = parseCsv(text);
   if (rows.length < 2) throw new Error("invalid-csv");
+  if (rows.length > MAX_COLLECTION_RECORDS + 1 || rows.slice(1).some((row) => row.length !== rows[0].length)) throw new Error("invalid-csv-rows");
   const headers = new Map(rows[0].map((header, index) => [normalizeImportValue(header), index]));
   const columns = Object.fromEntries(Object.entries(HEADER_ALIASES).map(([key, aliases]) => [key, headerIndex(headers, aliases)])) as Record<keyof typeof HEADER_ALIASES, number>;
   if (columns.planId < 0 && columns.number < 0 && columns.species < 0) throw new Error("invalid-csv");
 
   return rows.slice(1).map((row) => ({
+    progressKind: valueAt(row, columns.progressKind).trim(),
     planId: valueAt(row, columns.planId).trim() || undefined,
     number: parseNumber(valueAt(row, columns.number)),
     species: valueAt(row, columns.species).trim(),
@@ -196,6 +204,7 @@ export async function decodeOcrTransferHash(hash: string) {
 
 function canonicalOriginMark(value: string) {
   const mark = normalizeImportValue(value);
+  if (mark.includes("game boy advance") || mark.includes("gameboy advance") || mark === "gba") return "GBA";
   if (mark.includes("sin marca") || mark.includes("no mark")) return "Sin marca";
   if (mark.includes("consola virtual") || mark.includes("gameboy") || mark.includes("game boy") || mark === "gb") return "GB";
   if (mark.includes("pokemon go") || mark === "go" || mark.includes("go mark")) return "go";
@@ -207,7 +216,6 @@ function canonicalOriginMark(value: string) {
   if (mark.includes("bdsp") || mark.includes("sinnoh")) return "BDSP";
   if (mark === "paldea" || mark.includes("scarlet violet") || mark === "sv") return "SV";
   if (mark.includes("legends z a") || mark === "lza") return "LZA";
-  if (mark.includes("game boy advance") || mark === "gba") return "GBA";
   return null;
 }
 
@@ -334,7 +342,8 @@ export function matchCollectionRecords(
   let unmatched = 0;
   let ambiguous = 0;
 
-  records.slice(0, MAX_TRANSFER_RECORDS).forEach((record) => {
+  if (records.length > MAX_COLLECTION_RECORDS) throw new Error("too-many-records");
+  records.forEach((record) => {
     if (record.planId) {
       const targetId = correctLegacyTradePlanId(record.planId);
       if (!validTargets.has(targetId)) { unmatched += 1; return; }
@@ -370,8 +379,8 @@ function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-export function buildOwnedProgressCsv(owned: ReadonlySet<string>, entries: ImportCatalogEntry[]) {
-  const rows = [["PlanId", "No.", "Species", "Form", "Shiny", "OriginMark", "Collection"]];
+export function buildOwnedProgressCsv(owned: ReadonlySet<string>, entries: ImportCatalogEntry[], livingDexOwned: ReadonlySet<number> = new Set(), exclusions: ReadonlySet<string> = new Set()) {
+  const rows = [["PlanId", "No.", "Species", "Form", "Shiny", "OriginMark", "Collection", "ProgressKind"]];
   const targets = new Map<string, { entry: ImportCatalogEntry; shiny: boolean }>();
   entries.forEach((entry) => {
     if (eligible(entry, false)) targets.set(planId(entry, false), { entry, shiny: false });
@@ -379,8 +388,49 @@ export function buildOwnedProgressCsv(owned: ReadonlySet<string>, entries: Impor
   });
   [...owned].sort().forEach((id) => {
     const target = targets.get(id);
-    if (!target) return;
-    rows.push([id, String(target.entry.dex), target.entry.name, target.entry.form ?? "", target.shiny ? "Yes" : "No", target.entry.mark ?? "", target.entry.collection ?? ""]);
+    if (!target) {
+      const generic = parseGenericProgressId(id);
+      rows.push([id, generic ? String(generic.dex) : "", generic ? entries.find((entry) => entry.dex === generic.dex)?.name ?? "" : "", generic?.form ?? "", generic?.variant === "shiny" ? "Yes" : "No", "", "", generic ? "generic" : "unresolved"]);
+      return;
+    }
+    rows.push([id, String(target.entry.dex), target.entry.name, target.entry.form ?? "", target.shiny ? "Yes" : "No", target.entry.mark ?? "", target.entry.collection ?? "", "origin"]);
   });
+  [...livingDexOwned].sort((a, b) => a - b).forEach((dex) => rows.push([`living:${dex}`, String(dex), entries.find((entry) => entry.dex === dex)?.name ?? "", "", "No", "", "", "living"]));
+  [...exclusions].sort().forEach((id) => rows.push([id, "", "", "", "", "", "", "excluded"]));
   return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}\r\n`;
+}
+
+export function parseGenericProgressId(id: string) {
+  const match = /^generic:(normal|shiny):(\d+):([^:]+):(any|male|female)$/.exec(id);
+  if (!match) return null;
+  try { return { variant: match[1] as "normal" | "shiny", dex: Number(match[2]), form: decodeURIComponent(match[3]) === "base" ? null : decodeURIComponent(match[3]), gender: match[4] }; } catch { return null; }
+}
+
+export function prepareCollectionImport(records: CollectionRecord[], entries: ImportCatalogEntry[], names: PokemonNames, owned: ReadonlySet<string>) {
+  if (records.length > MAX_COLLECTION_RECORDS) throw new Error("too-many-records");
+  const originRecords: CollectionRecord[] = [];
+  const genericIds = new Set<string>();
+  const livingDexes = new Set<number>();
+  const exclusions = new Set<string>();
+  let portableMatched = 0;
+  let portableUnmatched = 0;
+  const validLiving = new Set(entries.filter((entry) => eligible(entry, false)).map((entry) => entry.dex));
+  const validGeneric = new Set(entries.flatMap((entry) => ([false, true] as const).flatMap((shiny) => eligible(entry, shiny) ? [undefined, "male", "female"].map((gender) => genericSpecimenKey({ ...entry, variant: shiny ? "shiny" : "normal", requirements: gender ? { gender: gender as "male" | "female" } : undefined })) : [])));
+  for (const record of records) {
+    const id = record.planId ?? "";
+    const livingMatch = /^living:(\d+)$/.exec(id);
+    const portable = record.progressKind === "excluded" || record.progressKind === "living" || id.startsWith("generic:");
+    if (!portable) { originRecords.push(record); continue; }
+    const valid = livingMatch ? validLiving.has(Number(livingMatch[1])) : validGeneric.has(id);
+    if (!valid) { portableUnmatched++; continue; }
+    portableMatched++;
+    if (record.progressKind === "excluded") exclusions.add(id);
+    else if (livingMatch) livingDexes.add(Number(livingMatch[1]));
+    else genericIds.add(id);
+  }
+  const summary = matchCollectionRecords(originRecords, entries, names, owned);
+  return {
+    summary: { ...summary, rowsRead: records.length, matchedRows: summary.matchedRows + portableMatched, unmatched: summary.unmatched + portableUnmatched },
+    owned: [...new Set([...summary.newPlanIds, ...genericIds])], livingDexOwned: [...livingDexes], progressExclusions: [...exclusions],
+  };
 }

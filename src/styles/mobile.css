@@ -31,7 +31,7 @@
     padding: max(20px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
   }
   .close-drawer { display: grid; place-items: center; width: 44px; height: 44px; }
-  .preset, .mark-row, .origin-mark-chip, .capacity-toggle button, .backup-actions button { min-height: 44px; }
+  .preset, .mark-row, .origin-mark-chip, .backup-actions button { min-height: 44px; }
 
   .collection-view {
     overflow-x: hidden;

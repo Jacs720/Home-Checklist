@@ -93,4 +93,4 @@ export type SelectOption<T extends string | number> = { value: T; label: string;
 export type CustomBox = { id: string; name: string; planIds: string[] };
 export type ImportNotice = ImportMatchSummary & { source: "ocr" | "csv" };
 export type AustinAppliedNotice = { imported: number; newOwned: number; mode: "merge" | "replace" };
-export type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number> };
+export type ProgressSnapshot = { owned: Set<string>; livingDexOwned: Set<number>; progressExclusions: Set<string> };

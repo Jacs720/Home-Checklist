@@ -592,7 +592,7 @@ test("the Tauri adapter keeps native storage and exports outside shared UI code"
       async get(key) { return values.get(key) ?? null; },
       async set(key, value) { values.set(key, value); },
     },
-    async saveText(filename) { exports.push(filename); },
+    async saveText(filename) { exports.push(filename); return true; },
   });
 
   await platform.storage.set("progress", "saved");
@@ -681,3 +681,4 @@ import "./sea-form-sprites.test.mjs";
 import "./variant-selector.test";
 import "./trade-ribbon-corrections.test";
 import "./manual-box-packing.test";
+import "./reliability.test";

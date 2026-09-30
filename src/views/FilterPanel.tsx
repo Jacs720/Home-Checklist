@@ -31,8 +31,6 @@ export function FilterPanel({ app }: FilterPanelProps) {
     availabilityFilters,
     setAvailabilityFilters,
     language,
-    capacity,
-    setCapacity,
     saveSpace,
     setSaveSpace,
     setManualPackingOpen,
@@ -78,6 +76,10 @@ export function FilterPanel({ app }: FilterPanelProps) {
     collectionCounts,
     availabilityCounts,
     savedWhen,
+    persistenceStatus,
+    retrySave,
+    importBusy,
+    exportBusy,
     externalBackupWhen,
   } = app;
   return (
@@ -242,25 +244,22 @@ export function FilterPanel({ app }: FilterPanelProps) {
             <p className="panel-label">{t("capacity")}</p>
             <label className="switch-row" htmlFor="save-space" aria-label={t("save_space_auto")}><span><b>{t("save_space_auto")}</b></span><GooeyCheckbox id="save-space" checked={saveSpace} onChange={(event) => setSaveSpace(event.target.checked)} /></label>
             <button className="manual-packing-trigger" onClick={() => setManualPackingOpen(true)}>{t("manual_packing")}</button>
-            <div className="capacity-toggle">
-              <button className={capacity === 6000 ? "active" : ""} onClick={() => setCapacity(6000)}>{(6000).toLocaleString(locale)}<small>{t("current")}</small></button>
-              <button className={capacity === 8000 ? "active" : ""} onClick={() => setCapacity(8000)}>{(8000).toLocaleString(locale)}<small>{t("future")}</small></button>
-            </div>
           </section>
 
           <section className="filter-section collection-planning">
             <p className="panel-label">{t("personal_planning")}</p>
-            <label><span>{t("collection_goal")}</span><input type="number" min="1" max="8000" inputMode="numeric" value={collectionGoal} placeholder={t("goal_placeholder")} onChange={(event) => setCollectionGoal(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))} /></label>
+            <label><span>{t("collection_goal")}</span><input type="number" min="1" max="9000" inputMode="numeric" value={collectionGoal} placeholder={t("goal_placeholder")} onChange={(event) => setCollectionGoal(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))} /></label>
             <label><span>{t("collection_notes")}</span><textarea value={collectionNotes} maxLength={2000} rows={3} placeholder={t("notes_placeholder")} onChange={(event) => setCollectionNotes(event.target.value)} /></label>
           </section>
 
           <div className="backup-actions">
             <span>{t("collection_and_backup")}</span>
-            <button className="wide" onClick={() => importRef.current?.click()}>{t("import_collection")}</button><input ref={importRef} type="file" accept=".csv,.json,.homechecklist,text/csv,application/json,application/vnd.home-checklist+json" onChange={importData} hidden />
+            <button className="wide" disabled={importBusy} onClick={() => importRef.current?.click()}>{t("import_collection")}</button><input ref={importRef} type="file" accept=".csv,.json,.homechecklist,text/csv,application/json,application/vnd.home-checklist+json" onChange={importData} hidden />
             <button className="wide austin-import-button" disabled={austinImportBusy} onClick={() => austinImportRef.current?.click()}>{austinImportBusy ? t("austin_reading") : t("austin_import_button")}</button><input ref={austinImportRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importAustinJohnData} hidden />
             <div className={`backup-health ${lastExternalBackupAt ? "" : "needs-backup"}`}><strong>{t("last_external_backup")}: {externalBackupWhen}</strong><span>{t(changesSinceBackup === 1 ? "one_change_since_backup" : "changes_since_backup").replace("{count}", changesSinceBackup.toLocaleString(locale))}</span></div>
-            <button onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button className="wide create-backup" onClick={() => exportBackup("project")}>{t("create_backup")}</button>
-            <small className="auto-save-status"><i aria-hidden="true" />{t("last_saved")} {savedWhen}</small>
+            <button disabled={exportBusy} onClick={() => exportBackup("json")}>{t("export_json")}</button><button onClick={exportProgressCsv}>{t("export_csv")}</button><button disabled={exportBusy} className="wide create-backup" onClick={() => exportBackup("project")}>{t("create_backup")}</button>
+            <small className={`auto-save-status ${persistenceStatus}`} role="status"><i aria-hidden="true" />{persistenceStatus === "saved" ? `${t("last_saved")} ${savedWhen}` : t(`save_${persistenceStatus}`)}</small>
+            {(persistenceStatus === "error" || persistenceStatus === "protected") && <button className="wide" onClick={retrySave}>{t("save_retry")}</button>}
             <span>{t("theme_backup")}</span>
             <button onClick={exportThemeBackup}>{t("export_themes")}</button><button onClick={() => themeImportRef.current?.click()}>{t("import_themes")}</button><input ref={themeImportRef} type="file" accept="application/json" onChange={importThemeBackup} hidden />
             <button className="reset-progress" onClick={resetProgress} disabled={!livingDexOwned.size && !owned.size}>{t("reset_progress")}</button>

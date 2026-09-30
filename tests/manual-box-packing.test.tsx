@@ -95,7 +95,7 @@ test("automatic packing remains independent and never destroys saved manual comb
   const source = readFileSync("src/hooks/use-app-controller.ts", "utf8");
   assert.match(source, /saveSpace \? packBoxesContinuously\(unpackedBoxes, true\) : manualPacking.boxes/);
   assert.match(source, /setManualBoxMerges\(parseManualBoxMerges\(value.manualBoxMerges\)\)/);
-  assert.match(source, /setManualBoxMerges\(parseManualBoxMerges\(configuration.manualBoxMerges\)\)/);
+  assert.match(source, /hydrateCollection\(state\)/);
   assert.match(source, /customBoxes, manualBoxMerges,/);
 });
 

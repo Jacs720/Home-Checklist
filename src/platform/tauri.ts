@@ -5,7 +5,7 @@ export type TauriPlatformBridge = {
     get(key: string): Promise<string | null>;
     set(key: string, value: string): Promise<void>;
   };
-  saveText(filename: string, text: string, mimeType: string): Promise<void>;
+  saveText(filename: string, text: string, mimeType: string): Promise<boolean>;
   showAlert?(message: string): void;
 };
 

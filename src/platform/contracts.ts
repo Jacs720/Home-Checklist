@@ -8,7 +8,7 @@ export interface PlatformStorage {
 }
 
 export interface PlatformFiles {
-  saveText(filename: string, text: string, mimeType: string): Promise<void>;
+  saveText(filename: string, text: string, mimeType: string): Promise<boolean>;
 }
 
 export interface HomeChecklistPlatform {

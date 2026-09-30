@@ -1,3 +1,4 @@
+import { VirtualGallery } from "../components/VirtualGallery";
 import { availabilityForEntry, requiresPokemonBank } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { assetUrl } from "../app-utils";
@@ -57,11 +58,7 @@ export function GlobalView({ app }: GlobalViewProps) {
                 <button className={`global-bulk-action ${globalAllOwned ? "all-owned" : ""}`} disabled={!visibleGlobalEntries.length} onClick={() => toggleEntries(visibleGlobalEntries.map(({ entry }) => entry))}><span aria-hidden="true">✓</span><b>{globalBulkLabel}</b></button>
               </div>
 
-              {visibleGlobalEntries.length ? <div className="global-result-groups">
-                {globalEntryGroups.map((group) => <section className={`global-result-group ${globalGroupMode === "none" ? "ungrouped" : ""}`} key={group.key}>
-                  {globalGroupMode !== "none" && <div className="global-group-heading"><h3>{group.label}<span aria-hidden="true">—</span><b>{group.entries.length.toLocaleString(locale)}</b></h3></div>}
-                  <div className="global-gallery" aria-label={globalGroupMode === "none" ? t("global_view") : `${t("global_view")}: ${group.label}`}>
-                {group.entries.map((located) => {
+              {visibleGlobalEntries.length ? <VirtualGallery groups={globalEntryGroups} grouped={globalGroupMode !== "none"} label={t("global_view")} renderEntry={(located) => {
                   const { entry, box, slotIndex } = located;
                   const localizedName = displayName(entry);
                   const localizedForm = displayForm(entry);
@@ -92,10 +89,7 @@ export function GlobalView({ app }: GlobalViewProps) {
                     </button>
                     <FavoriteButton active={favorite} label={t(favorite ? "remove_favorite" : "add_favorite")} onClick={() => toggleFavorite(entry.planId)} className="global-favorite" />
                   </div>;
-                })}
-                  </div>
-                </section>)}
-              </div> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
+                }} /> : <div className="global-empty"><span>⌕</span><h3>{t("no_results")}</h3><p>{t("no_results_desc")}</p></div>}
 
               {globalTooltip && (() => {
                 const { entry, box, slotIndex } = globalTooltip.located;
