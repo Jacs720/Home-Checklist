@@ -22,19 +22,6 @@ You can also include gender differences, Alpha Pokémon, Gigantamax Factor, even
 - Share a search, filtered Global view, or specific box and slot without sharing your collection progress.
 - Import collection records or Austin John’s normal HOME Organizer, export your progress, and create portable backups whenever you want.
 
-## One interface, three releases
-
-The Vite/React application is shared by the web, Windows, and Android releases. Tauri 2 supplies the native window and a small adapter for persistent storage, save dialogs, and file writes; catalog rules, translations, views, responsive behavior, and the HOME-style 6-column × 5-row grids stay in one codebase.
-
-- `npm run release:web` validates and builds the static `dist/` release.
-- `npm run release:windows` creates the Windows NSIS installer under `src-tauri/target/release/bundle/nsis/`.
-- `npm run release:android` creates a debug-signed ARM64 APK that can be installed directly on a phone. Use `npm run release:android:universal` only when emulator/legacy CPU variants are also required.
-- `npm run package:android:unsigned` preserves the optimized unsigned release package for a later production-signing step.
-- `npm run native:dev` opens the shared UI in the desktop Tauri shell for development.
-
-Windows installers must be code-signed before public distribution to avoid SmartScreen warnings. The default Android command is intentionally debug-signed for local sideloading; production releases require a private signing keystore and should use the unsigned packaging command before the signing/publishing step. Android builds started from Windows also require permission to create symbolic links (normally Windows Developer Mode).
-
-The platform boundary, build requirements, animation strategy, and performance notes are documented in [`docs/release-architecture.md`](docs/release-architecture.md).
 
 ## Preview
 
