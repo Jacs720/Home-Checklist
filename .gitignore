@@ -7,3 +7,6 @@ artifacts/
 .DS_Store
 Thumbs.db
 README.md
+
+# Pending Pokemon Automation integration; keep local until it is ready.
+/integrations/pokemon-automation/

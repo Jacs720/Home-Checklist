@@ -371,6 +371,48 @@ test("own-OT shiny locks remain excluded", () => {
   assert.deepEqual(invalid.map((entry) => entry.id), []);
 });
 
+test("Johtonian Sneasel is available in Hisui with both genders and player-OT variants", () => {
+  const planned = buildProfile({
+    preset: "custom", marks: ["LA"], variants: { normal: true, shiny: true },
+    gender: "all", forms: allForms,
+  }).flatMap((box) => box.entries);
+  for (const gender of ["male", "female"] as const) {
+    const sneasel = catalogEntries.find((entry) => entry.mark === "LA" && entry.dex === 215 && entry.form === "Original" && entry.gender === gender);
+    assert.ok(sneasel, `missing Johtonian Sneasel (${gender})`);
+    assert.equal(sneasel.artId, 215);
+    assert.deepEqual(sneasel.types, ["Dark", "Ice"]);
+    assert.equal(sneasel.ownOtNormal, true);
+    assert.equal(sneasel.ownOtShiny, true);
+    assert.deepEqual(planned.filter((entry) => entry.id === sneasel.id).map((entry) => entry.variant), ["normal", "shiny"]);
+  }
+  assert.equal(planned.filter((entry) => entry.dex === 215 && entry.form === "Hisuian").length, 4);
+  assert.equal(applyCatalogCorrections(catalogEntries).filter((entry) => entry.mark === "LA" && entry.dex === 215 && entry.form === "Original").length, 2);
+});
+
+test("Hisui Enamorus shiny uses HOME OT in both forms and respects form selection", () => {
+  const events = correctedRawSpecialEntries.filter((entry) => entry.dex === 905 && ["events", "event-dex"].includes(entry.collection ?? ""));
+  assert.equal(events.length, 2);
+  assert.ok(events.every((entry) => entry.mark === "LA" && entry.form === "Incarnate" && entry.trainerName === "HOME" && entry.shinyEligible && !entry.ownOtShiny && entry.normalEligible === false));
+
+  for (const forms of [noForms, allForms]) {
+    const planned = buildProfile({
+      preset: "custom", marks: ["LA"], variants: { normal: true, shiny: true },
+      acquisitions: allAcquisitions, includeEventMythicals: true, forms,
+    }).flatMap((box) => box.entries).filter((entry) => entry.dex === 905);
+    const shinies = planned.filter((entry) => entry.variant === "shiny");
+    assert.deepEqual(shinies.map((entry) => entry.form), forms.alternate ? ["Incarnate", "Therian"] : ["Incarnate"]);
+    assert.ok(shinies.every((entry) => entry.mark === "LA" && entry.trainerName === "HOME" && entry.trainerId === "250128" && !entry.ownOt));
+    assert.deepEqual(shinies.map((entry) => entry.artId), forms.alternate ? [905, 10249] : [905]);
+    assert.ok(planned.filter((entry) => entry.variant === "normal").every((entry) => entry.ownOt && !entry.trainerName));
+  }
+
+  const ownOnly = buildProfile({
+    preset: "custom", marks: ["LA"], variants: { normal: false, shiny: true },
+    acquisitions: ownAcquisition, forms: allForms,
+  }).flatMap((box) => box.entries);
+  assert.equal(ownOnly.some((entry) => entry.dex === 905), false);
+});
+
 test("Arceus Alolan Vulpix and Ninetales remain normal-only and cannot be alpha", () => {
   const planned = buildProfile({
     preset: "custom", marks: ["LA"], variants: { normal: true, shiny: true },

@@ -120,6 +120,20 @@ const GALARIAN_BIRD_ART_IDS: Record<number, number> = {
 export function applySpecialCatalogCorrections<T extends CatalogEntry>(entries: T[]) {
   return entries.map((source) => {
     const entry = correctTradeAndRibbons(source);
+    if (entry.dex === 905 && entry.shinyEligible &&
+        (entry.trainerName === "HOME" || (entry.collection === "events" && entry.mark === "Sin marca"))) {
+      return {
+        ...entry,
+        mark: "LA",
+        form: entry.form ?? "Incarnate",
+        trainerName: "HOME",
+        normalEligible: false,
+        ownOtNormal: false,
+        ownOtShiny: false,
+        acquisitionCategory: "event",
+        note: entry.note.replace("marca Sin marca", "marca LA"),
+      };
+    }
     if (entry.shinyEligible && entry.mark === "SwSh" && GALARIAN_BIRD_ART_IDS[entry.dex]) {
       return {
         ...entry,
@@ -277,6 +291,28 @@ export function correctModernAlolanOriginAvailability<T extends CatalogEntry>(en
     };
     return entry;
   });
+}
+
+/** Johtonian Sneasel is catchable in Hisui's space-time distortions. */
+export function addJohtonianSneaselHisuiEntries<T extends CatalogEntry>(entries: T[]) {
+  let correctedEntries = entries;
+  const templates = entries.filter((entry) => entry.dex === 215 && entry.mark === "SwSh" && entry.form === "Original");
+  for (const template of templates) {
+    correctedEntries = insertCatalogEntry(correctedEntries, {
+      ...template,
+      id: template.id.replace(/^SwSh:/, "LA:"),
+      sourceNumber: undefined,
+      mark: "LA",
+      note: "Legends: Arceus · Sneasel de Johto en distorsiones espaciotemporales",
+      shinyEligible: true,
+      shinyReview: "verified-correction",
+      availability: "standard",
+      normalEligible: true,
+      ownOtNormal: true,
+      ownOtShiny: true,
+    });
+  }
+  return correctedEntries;
 }
 
 export function addStorableShayminSkyForms<T extends CatalogEntry>(entries: T[]) {

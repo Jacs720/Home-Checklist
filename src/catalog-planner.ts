@@ -3,6 +3,7 @@ import type { Acquisition, FormOptions, GenderMode, PlannedBox, PlannedEntry, Po
 import { assetUrl, chunk } from "./app-utils";
 import { packBoxesContinuously } from "./box-packing";
 import {
+  addJohtonianSneaselHisuiEntries,
   addStorableShayminSkyForms,
   addSwShHisuianEvolutionEntries,
   correctBloodmoonUrsalunaDex,
@@ -133,6 +134,7 @@ export function applyCatalogCorrections(entries: PokemonEntry[]) {
     artId: 10086,
   } : entry);
   let correctedEntries = correctModernAlolanOriginAvailability(correctBloodmoonUrsalunaDex(addSwShHisuianEvolutionEntries(expandCollectibleForms(uniqueFormIds))));
+  correctedEntries = addJohtonianSneaselHisuiEntries(correctedEntries);
   const phioneTemplate = entries.find((entry) => entry.dex === 489);
   if (phioneTemplate) {
     const breedingMarks: Record<string, string> = {
@@ -308,6 +310,13 @@ function eventExclusiveEntriesForMark(
       entry.mark === mark &&
       (MYTHICAL_DEX.has(entry.dex) || entry.shinyEligible)
     )
+    // HOME's shiny Enamorus can change into either storable form while
+    // retaining its Hisui origin mark and fixed HOME OT.
+    .flatMap((entry) => entry.dex === 905 && entry.trainerName === "HOME" && mark === "LA"
+      ? normalEntries.filter((candidate) => candidate.dex === 905 && candidate.mark === mark).map((candidate) => ({
+          ...entry, form: candidate.form, artId: candidate.artId, keyword: candidate.keyword,
+        }))
+      : [entry])
     .filter((entry) => {
       const variant = entry.shinyEligible ? "shiny" : "normal";
       const key = `${entry.dex}:${entry.form ?? ""}:${variant}`;
@@ -411,14 +420,15 @@ export function buildBoxes(
 
   for (const group of groups) {
     const planned: PlannedEntry[] = [];
-    const seenSpecies = new Set<string>();
+    const firstFormBySpecies = new Map<string, string | null>();
     for (const entry of group.entries) {
       if (entry.availability === "excluded") continue;
       if (entry.genderVariant === "extra" && entry.genderDifferenceTier === "all" && genderMode !== "all") continue;
       const speciesKey = `${entry.mark ?? entry.collection ?? group.key}:${entry.dex}:${entry.genderVariant ?? "species"}`;
-      const firstSpeciesEntry = !seenSpecies.has(speciesKey);
-      seenSpecies.add(speciesKey);
-      if (!entry.collection && !firstSpeciesEntry) {
+      const firstSpeciesEntry = !firstFormBySpecies.has(speciesKey);
+      if (firstSpeciesEntry) firstFormBySpecies.set(speciesKey, entry.form);
+      // An event supplement of the first form is not an alternate form.
+      if (!entry.collection && !firstSpeciesEntry && firstFormBySpecies.get(speciesKey) !== entry.form) {
         if (entry.dex === 869 && !formOptions.alcremie) continue;
         if (entry.dex === 774 && !formOptions.minior) continue;
         if (entry.dex !== 869 && entry.dex !== 774 && !formOptions.alternate) continue;
