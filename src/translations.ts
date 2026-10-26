@@ -19,6 +19,7 @@ export const LANGUAGE_OPTIONS: { code: UiLanguage; label: string; locale: string
 type Copy = Record<string, string>;
 
 const ES: Copy = {
+  go_availability_source: "Disponibilidad actual de Pokémon GO ↗",
   original_trainer: "EO",
   loading: "Ordenando las cajas…", load_error: "No pude abrir el catálogo", reload: "Recarga la página para intentarlo de nuevo.",
   open_filters: "Abrir filtros", close_filters: "Cerrar filtros", of: "de", your_collection: "TU COLECCIÓN", design: "Diseña tu checklist",
@@ -42,6 +43,7 @@ const ES: Copy = {
 };
 
 const EN: Copy = {
+  go_availability_source: "Current Pokémon GO availability ↗",
   original_trainer: "OT",
   loading: "Organizing boxes…", load_error: "The catalog could not be opened", reload: "Reload the page to try again.", open_filters: "Open filters", close_filters: "Close filters", of: "of", your_collection: "YOUR COLLECTION", design: "Design your checklist",
   preset_shiny: "Shiny only", preset_shiny_desc: "Catchable and special collections", preset_special: "Special collections", preset_special_desc: "N, Dream, Shadow, trades and Cherish", preset_normal: "Normal color", preset_normal_desc: "Normal-color specimens", preset_sv: "All SV", preset_sv_desc: "Normal + shiny",
@@ -59,6 +61,7 @@ const EN: Copy = {
 };
 
 const DE: Copy = {
+  go_availability_source: "Aktuelle Verfügbarkeit in Pokémon GO ↗",
   original_trainer: "OT",
   loading: "Boxen werden sortiert…", load_error: "Der Katalog konnte nicht geöffnet werden", reload: "Lade die Seite neu und versuche es erneut.", open_filters: "Filter öffnen", close_filters: "Filter schließen", of: "von", your_collection: "DEINE SAMMLUNG", design: "Gestalte deine Checkliste",
   preset_shiny: "Nur Shinys", preset_shiny_desc: "Fangbar und Sondersammlungen", preset_special: "Sondersammlungen", preset_special_desc: "N, Traumwelt, Crypto, Tausch und Jubelball", preset_normal: "Normale Farbe", preset_normal_desc: "Normalfarbene Exemplare", preset_sv: "Alles aus K/P", preset_sv_desc: "Normal + Shiny",
@@ -72,6 +75,7 @@ const DE: Copy = {
 };
 
 const FR: Copy = {
+  go_availability_source: "Disponibilité actuelle dans Pokémon GO ↗",
   original_trainer: "DO",
   loading: "Organisation des Boîtes…", load_error: "Impossible d’ouvrir le catalogue", reload: "Rechargez la page pour réessayer.", open_filters: "Ouvrir les filtres", close_filters: "Fermer les filtres", of: "sur", your_collection: "VOTRE COLLECTION", design: "Créez votre checklist",
   preset_shiny: "Chromatiques", preset_shiny_desc: "Capturables et collections spéciales", preset_special: "Collections spéciales", preset_special_desc: "N, Rêve, Obscurs, échanges et Mémoire", preset_normal: "Couleur normale", preset_normal_desc: "Spécimens de couleur normale", preset_sv: "Tout EV", preset_sv_desc: "Normal + chromatique",
@@ -85,6 +89,7 @@ const FR: Copy = {
 };
 
 const IT: Copy = {
+  go_availability_source: "Disponibilità attuale in Pokémon GO ↗",
   original_trainer: "AO",
   loading: "Ordinamento dei Box…", load_error: "Impossibile aprire il catalogo", reload: "Ricarica la pagina per riprovare.", open_filters: "Apri filtri", close_filters: "Chiudi filtri", of: "di", your_collection: "LA TUA COLLEZIONE", design: "Crea la tua checklist",
   preset_shiny: "Solo cromatici", preset_shiny_desc: "Catturabili e collezioni speciali", preset_special: "Collezioni speciali", preset_special_desc: "N, Dream World, Ombra, scambi e Pregio", preset_normal: "Colore normale", preset_normal_desc: "Esemplari di colore normale", preset_sv: "Tutto SV", preset_sv_desc: "Normale + cromatico",
@@ -98,6 +103,7 @@ const IT: Copy = {
 };
 
 const JA: Copy = {
+  go_availability_source: "Pokémon GOの現在の入手状況 ↗",
   original_trainer: "おや",
   loading: "ボックスを整理しています…", load_error: "カタログを開けませんでした", reload: "ページを再読み込みしてください。", open_filters: "フィルターを開く", close_filters: "フィルターを閉じる", of: "/", your_collection: "コレクション", design: "チェックリストを作成",
   preset_shiny: "色違いのみ", preset_shiny_desc: "捕獲可能＋特別コレクション", preset_special: "特別コレクション", preset_special_desc: "N・夢・ダーク・ゲーム内交換・プレシャス", preset_normal: "通常色", preset_normal_desc: "通常色の個体", preset_sv: "SVすべて", preset_sv_desc: "通常＋色違い",
@@ -111,6 +117,7 @@ const JA: Copy = {
 };
 
 const KO: Copy = {
+  go_availability_source: "Pokémon GO 현재 입수 가능 여부 ↗",
   original_trainer: "어버이",
   loading: "박스를 정리하는 중…", load_error: "카탈로그를 열 수 없습니다", reload: "페이지를 새로고침해 주세요.", open_filters: "필터 열기", close_filters: "필터 닫기", of: "/", your_collection: "내 컬렉션", design: "체크리스트 만들기",
   preset_shiny: "이로치만", preset_shiny_desc: "포획 가능＋특별 컬렉션", preset_special: "특별 컬렉션", preset_special_desc: "N, 드림월드, 다크, 게임 내 교환, 프레셔스", preset_normal: "일반 색상", preset_normal_desc: "일반 색상의 개체", preset_sv: "SV 전체", preset_sv_desc: "일반＋이로치",
@@ -124,6 +131,7 @@ const KO: Copy = {
 };
 
 const ZHS: Copy = {
+  go_availability_source: "Pokémon GO 当前可获得的宝可梦 ↗",
   original_trainer: "初训家",
   loading: "正在整理盒子…", load_error: "无法打开目录", reload: "请刷新页面后重试。", open_filters: "打开筛选", close_filters: "关闭筛选", of: "/", your_collection: "你的收藏", design: "设计收藏清单",
   preset_shiny: "仅异色", preset_shiny_desc: "可捕获与特殊收藏", preset_special: "特殊收藏", preset_special_desc: "N、梦境、黑暗、游戏内交换与贵重球", preset_normal: "普通颜色", preset_normal_desc: "普通颜色的个体", preset_sv: "全部朱紫", preset_sv_desc: "普通＋异色",
@@ -138,6 +146,7 @@ const ZHS: Copy = {
 
 const ZHT: Copy = {
   ...ZHS,
+  go_availability_source: "Pokémon GO 目前可獲得的寶可夢 ↗",
   original_trainer: "初訓家",
   loading: "正在整理盒子…", load_error: "無法開啟目錄", reload: "請重新整理頁面後再試。", open_filters: "開啟篩選", close_filters: "關閉篩選", your_collection: "你的收藏", design: "設計收藏清單",
   preset_shiny: "僅異色", preset_shiny_desc: "可捕捉與特殊收藏", preset_special: "特殊收藏", preset_special_desc: "N、夢境、黑暗、遊戲內交換與貴重球", preset_normal: "普通收藏", preset_normal_desc: "每種形態一個位置", variants: "種類", shiny_possible: "可為異色", catalog_review: "目錄審核中", non_shiny: "非異色", normal_specimen: "普通個體", special_non_shiny: "特殊收藏中的非異色", special_non_shiny_desc: "即使只收藏異色也加入盒子", gender_differences: "性別差異", all_gender_differences: "所有性別差異", all_gender_differences_desc: "全部102種具有可見差異的寶可夢", notable_gender_differences_desc: "僅第5世代起最顯著的8種", male: "雄性", female: "雌性",
