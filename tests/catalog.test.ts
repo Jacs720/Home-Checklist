@@ -19,6 +19,9 @@ import { buildTitanEntries } from "../src/titan-pokemon";
 import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, groupName, hasCopy } from "../src/translations";
 import { TITAN_COPY } from "../src/titan-translations";
+import { getGoAvailability, goAvailabilityLabel, goMethodText } from "../src/go-availability";
+import { GO_COPY_KEYS, goCopy } from "../src/go-translations";
+import { transferKeyForEntry } from "../src/collection-features";
 import { packBoxesContinuously } from "../src/box-packing";
 import { traitEligible } from "../src/specimen-traits";
 import { collectChallengeSpecimens, evaluateHomeChallenges, summarizeHomeChallenges } from "../src/home-challenge-progress";
@@ -121,6 +124,89 @@ const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, 
 const ownAcquisition: Record<Acquisition, boolean> = { own: true, trade: false, event: false, external: false };
 const allForms: FormOptions = { alternate: true, alcremie: true, minior: true };
 const noForms: FormOptions = { alternate: false, alcremie: false, minior: false };
+
+test("all GO planning slots carry independently checked form and Shiny availability", () => {
+  const planned = buildProfile({ preset: "custom", marks: [], collections: ["go"], gender: "all", forms: allForms, variants: { normal: true, shiny: true }, acquisitions: allAcquisitions }).flatMap(box => box.entries);
+  assert.equal(new Set(planned.map(entry => entry.dex)).size, 1025);
+  assert.equal(new Set(planned.map(entry => entry.planId)).size, planned.length);
+  for (const entry of planned) {
+    const fact = entry.goAvailability;
+    assert.ok(fact, entry.id);
+    assert.notEqual(fact.release, "unknown", entry.id);
+    assert.notEqual(fact.shiny, "unknown", entry.id);
+    assert.ok(fact.revisionId && fact.sourceUrl.startsWith("https://pokemongo.fandom.com/wiki/"));
+    assert.equal(fact.checkedOn, "2026-10-28");
+    assert.equal(entry.shinyEligible, fact.shiny === "released");
+    if (fact.release === "released") {
+      assert.ok(fact.methods.length, entry.id);
+      assert.ok(fact.releaseDate! <= fact.checkedOn, entry.id);
+    } else {
+      assert.deepEqual(fact.methods, []);
+      assert.equal(fact.shiny, "unreleased");
+    }
+    if (entry.variant === "shiny" && fact.shiny !== "released") assert.equal(availabilityForEntry(entry), "hypothetical");
+  }
+  const eternal = planned.filter(entry => entry.dex === 670 && entry.form === "Eternal Flower");
+  assert.deepEqual(eternal.map(entry => entry.variant), ["normal", "shiny"]);
+  for (const entry of eternal) {
+    assert.equal(goAvailabilityLabel(entry), "go_unreleased");
+    assert.equal(entry.shinyEligible, false);
+    assert.equal(transferKeyForEntry(entry), "go_transfer_unreleased");
+    assert.equal(availabilityForEntry(entry), "hypothetical");
+  }
+  assert.equal(getGoAvailability({ dex: 901, form: "Bloodmoon" }).release, "unreleased");
+  assert.equal(getGoAvailability({ dex: 774, form: "Green Core" }).release, "released");
+  assert.equal(getGoAvailability({ dex: 774, form: "Red Core" }).release, "unreleased");
+  assert.equal(getGoAvailability({ dex: 666, form: "Fancy" }).release, "unreleased");
+  assert.equal(getGoAvailability({ dex: 570, form: "Hisuian" }).shiny, "unreleased");
+  assert.equal(getGoAvailability({ dex: 999, form: "Chest Form" }).release, "unreleased");
+  assert.equal(getGoAvailability({ dex: 999, form: "Roaming Form" }).shiny, "released");
+  assert.equal(getGoAvailability({ dex: 705, form: "Hisuian" }).release, "unreleased");
+  assert.equal(getGoAvailability({ dex: 1026 }).release, "unknown");
+});
+
+test("GO methods distinguish raids, research, wild encounters, evolution and form changes", () => {
+  const t = (key: string) => copy("ES-LA", key);
+  const text = (dex: number, form: string | null = null) => goMethodText({ collection: "go", dex, form }, t);
+  assert.match(text(1), /Encuentros salvajes/);
+  assert.match(text(150), /Incursiones/);
+  assert.match(text(151), /Misiones de investigación/);
+  assert.doesNotMatch(text(151), /salvajes|Incursiones/);
+  assert.match(text(678), /Evolución/);
+  assert.equal(text(670, "Red Flower"), "Evolución");
+  assert.match(text(670, "White Flower"), /Evolución.*Misiones/);
+  assert.equal(text(676, "Heart"), "Cambio de forma");
+  assert.equal(text(646, "Black"), "Fusión");
+  assert.equal(getGoAvailability({ dex: 327 }).transfer, "blocked");
+  assert.equal(getGoAvailability({ dex: 718, form: "Complete" }).transfer, "blocked");
+});
+
+test("GO details never advertise Eternal Flower Floette as released or Shiny available", () => {
+  const source = specialEntries.find(entry => entry.collection === "go" && entry.dex === 670 && entry.form === "Eternal Flower");
+  assert.ok(source);
+  for (const variant of ["normal", "shiny"] as const) {
+    const entry: PlannedEntry = { ...source, variant, planId: `${source.id}:${variant}`, groupKey: "go", groupLabel: "Pokémon GO", ownOt: false };
+    const app = {
+      detailEntry: { entry }, locatedEntries: [], traitAvailability: new Map(), pokemonNames: names, language: "ES-LA", favorites: new Set(), homeChallengesByDex: new Map(),
+      t: (key: string) => copy("ES-LA", key), displayName: () => "Floette", displayForm: () => "Eternal Flower", displayNote: (value: PokemonEntry) => value.note,
+      setDetailEntry() {}, toggleFavorite() {},
+    } as unknown as AppController;
+    const html = renderToStaticMarkup(createElement(EntryDetails, { app }));
+    assert.match(html, /Aún no lanzado en GO/);
+    assert.match(html, /Brillante aún no lanzado en GO/);
+    assert.match(html, /Sin método disponible/);
+    assert.match(html, /2026-10-28/);
+    assert.doesNotMatch(html, /Disponible actualmente|Captúralo o recíbelo/);
+    assert.ok(html.includes(source.sourceUrl!));
+  }
+});
+
+test("all GO availability and encounter messages are localized", () => {
+  for (const { code } of LANGUAGE_OPTIONS) for (const key of GO_COPY_KEYS) {
+    assert.ok(goCopy(code, key), `${code} ${key}`);
+    assert.notEqual(copy(code, key), key);
+  }
+});
 
 test("GO includes notable gender forms by default and all dimorphisms on request", async () => {
   const goProfile = (gender: GenderMode) => buildProfile({
@@ -784,6 +870,7 @@ test("required interface copy exists in every available language", async () => {
 import "./specimen-traits.test.mjs";
 import "./specimen-trait-controls.test";
 import "./sea-form-sprites.test.mjs";
+import "./go-availability-parser.test.mjs";
 import "./variant-selector.test";
 import "./trade-ribbon-corrections.test";
 import "./manual-box-packing.test";

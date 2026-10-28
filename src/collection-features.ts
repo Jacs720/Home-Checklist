@@ -1,4 +1,5 @@
 export type AvailabilityStatus = "current" | "legacy" | "historical" | "hypothetical";
+import type { GoAvailability } from "./go-availability";
 export type CollectionPreset =
   | "basic"
   | "shiny_basic"
@@ -292,6 +293,7 @@ export const GAME_PLANS: Array<{ id: GamePlanId; marks?: string[]; collections?:
 ];
 
 type AccessEntry = {
+  goAvailability?: GoAvailability;
   mark?: string;
   collection?: string;
   dex: number;
@@ -341,6 +343,7 @@ export function generationForDex(dex: number) {
 }
 
 function matchesGamePlanSource(entry: AccessEntry, planId: GamePlanId) {
+  if (entry.collection === "go" && (entry.goAvailability?.release !== "released" || entry.goAvailability.transfer !== "allowed" || (entry.variant === "shiny" && entry.goAvailability.shiny !== "released"))) return false;
   const plan = GAME_PLANS.find((candidate) => candidate.id === planId);
   if (!plan || entry.availability === "hypothetical" || entry.availability === "excluded" || entry.collection === "dream" || entry.collection === "events" || entry.collection === "cherish" || entry.acquisitionCategory === "event") return false;
   if (entry.mark && plan.marks?.includes(entry.mark)) return true;
@@ -387,6 +390,7 @@ export function requiresPokemonBank(entry: AccessEntry) {
 }
 
 export function availabilityForEntry(entry: AccessEntry): AvailabilityStatus {
+  if (entry.collection === "go" && (entry.goAvailability?.release !== "released" || (entry.variant === "shiny" && entry.goAvailability.shiny !== "released"))) return "hypothetical";
   if (entry.availability === "hypothetical") return "hypothetical";
   if (entry.availability === "historical") return "historical";
   if (entry.collection === "dream") return "historical";
@@ -417,6 +421,7 @@ export function methodKeyForEntry(entry: AccessEntry) {
 }
 
 export function reasonKeyForEntry(entry: AccessEntry) {
+  if (entry.collection === "go") return "go_why_planning";
   if (entry.collection === "battle-bond") return "why_battle_bond_demo";
   if (entry.collection === "mighty" && entry.dex === 151) return "why_mightiest_mew";
   if (entry.collection === "mighty") return "why_mightiest_raid";
@@ -428,11 +433,15 @@ export function reasonKeyForEntry(entry: AccessEntry) {
 }
 
 export function transferKeyForEntry(entry: AccessEntry) {
+  if (entry.collection === "go") {
+    if (!entry.goAvailability || entry.goAvailability.transfer === "unknown") return "go_transfer_unknown";
+    if (entry.goAvailability.transfer === "unreleased" || (entry.variant === "shiny" && entry.goAvailability.shiny !== "released")) return "go_transfer_unreleased";
+    return entry.goAvailability.transfer === "blocked" ? "go_transfer_blocked" : "transfer_go_home";
+  }
   if (entry.collection === "battle-bond") return "transfer_bank_home";
   if (entry.availability === "historical") return "transfer_unavailable_historical";
   if (entry.collection === "dream") return "transfer_existing_bank_home";
   if (requiresPokemonBank(entry)) return "transfer_bank_home";
-  if (entry.collection === "go") return "transfer_go_home";
   if (entry.availability === "hypothetical") return "transfer_hypothetical";
   return "transfer_direct_home";
 }

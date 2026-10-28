@@ -2,6 +2,7 @@ import { VirtualGallery } from "../components/VirtualGallery";
 import { availabilityForEntry, requiresPokemonBank } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { assetUrl } from "../app-utils";
+import { goAvailabilityLabel } from "../go-availability";
 import { BankBadge, FavoriteButton, OriginMarkIcon, StyledSelect, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
 
@@ -71,7 +72,7 @@ export function GlobalView({ app }: GlobalViewProps) {
                   const needsBank = requiresPokemonBank(entry);
                   const status = isOwned ? t("status_obtained") : t("status_missing");
                   const collectionContext = entry.genericEntry ? t("generic_specimen") : `${entry.mark ? t("origin_marks") : t("special_collections")}: ${entry.groupLabel}`;
-                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${collectionContext}. ${t("availability_label")}: ${t(`availability_${availabilityForEntry(entry)}`)}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
+                  const accessibleLabel = `${localizedName}${localizedForm ? ` — ${localizedForm}` : ""}. ${entry.variant === "shiny" ? t("shiny") : t("normal")}. ${collectionContext}. ${t("availability_label")}: ${t(entry.collection === "go" ? goAvailabilityLabel(entry) : `availability_${availabilityForEntry(entry)}`)}. ${t("box")} ${boxNumber}, ${t("slot")} ${slotNumber}. ${status}. ${t("locate_in_box")}`;
                   return <div className="global-pokemon-shell" key={`${entry.planId}:${box.globalIndex}:${slotIndex}`}>
                     <button
                       className={`global-pokemon ${isOwned ? "owned" : "pending"}`}
@@ -102,7 +103,7 @@ export function GlobalView({ app }: GlobalViewProps) {
                   <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                   <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
                   <span><em>{entry.genericEntry ? t("generic_specimen") : entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.genericEntry ? <span>{t("no_origin_required")}</span> : originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
-                  <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availability}`}>{t(`availability_${availability}`)}</span></span>
+                  <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availability}`}>{t(entry.collection === "go" ? goAvailabilityLabel(entry) : `availability_${availability}`)}</span></span>
                   {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
                   <span><em>{t("box")} · {t("slot")}</em>{String(box.globalIndex + 1).padStart(3, "0")} · {String(slotIndex + 1).padStart(2, "0")}</span>
                   <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>

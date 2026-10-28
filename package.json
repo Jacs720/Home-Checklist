@@ -24,7 +24,8 @@
     "sprites:sync": "node scripts/sync-pokemon-sprites.mjs",
     "species:sync": "node scripts/sync-species-rules.mjs",
     "events:sync": "node scripts/sync-serebii-events.mjs",
-    "home-challenges:sync": "node scripts/sync-home-challenges.mjs"
+    "home-challenges:sync": "node scripts/sync-home-challenges.mjs",
+    "go-availability:sync": "node scripts/sync-go-availability.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",

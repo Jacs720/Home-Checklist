@@ -1,4 +1,5 @@
 import { correctTradeAndRibbons } from "./trade-ribbon-corrections";
+import { applyGoAvailability } from "./go-availability";
 
 type CatalogEntry = {
   id: string;
@@ -113,7 +114,7 @@ export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], 
     if (keepsUnnamedBase) expanded.push(entry);
     candidates.forEach((candidate, index) => expanded.push(createFormEntry(candidate, !keepsUnnamedBase && index === 0)));
   }
-  return expanded.flatMap((entry): T[] => {
+  return applyGoAvailability(expanded.flatMap((entry): T[] => {
     if (entry.collection !== "go") return [entry];
     const genders = gendersByForm.get(`${entry.dex}:${entry.form ?? ""}`);
     if (!genders?.some((candidate) => candidate.genderVariant === "extra")) return [entry];
@@ -128,7 +129,7 @@ export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], 
         artId: candidate.artId ?? entry.artId,
         shinyArtStyle: candidate.shinyArtStyle ?? entry.shinyArtStyle,
       } as T));
-  });
+  }));
 }
 
 const GALARIAN_BIRD_ART_IDS: Record<number, number> = {

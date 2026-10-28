@@ -443,7 +443,7 @@ export function useAppController() {
       const groupKey = entry.mark ?? entry.collection ?? "Sin marca";
       const groupLabel = groupName(language, groupKey);
       if (entry.normalEligible !== false) choices.set(`${entry.id}:normal`, { ...entry, variant: "normal", ownOt: entry.ownOtNormal, groupKey, groupLabel, planId: `${entry.id}:normal` });
-      if (entry.shinyEligible) choices.set(`${entry.id}:shiny`, { ...entry, variant: "shiny", ownOt: entry.ownOtShiny, groupKey, groupLabel, planId: `${entry.id}:shiny` });
+      if (entry.shinyEligible || entry.collection === "go") choices.set(`${entry.id}:shiny`, { ...entry, variant: "shiny", ownOt: entry.ownOtShiny, groupKey, groupLabel, planId: `${entry.id}:shiny` });
     });
     return [...choices.values()].map((entry) => applySpecimenTraits(entry, traitOptions, traitOverrides, traitAvailability)).sort((a, b) => a.dex - b.dex || a.name.localeCompare(b.name) || a.planId.localeCompare(b.planId));
   }, [dataset, specialDataset, language, traitOptions, traitOverrides, traitAvailability]);

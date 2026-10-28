@@ -9,6 +9,7 @@ import { pokemonArtworkUrl } from "../catalog-planner";
 import { assetUrl } from "../app-utils";
 import { BankBadge, FavoriteButton, OriginMarkIcon, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
+import { getGoAvailability, goAvailabilityLabel, goMethodText } from "../go-availability";
 
 type EntryDetailsProps = { app: AppController };
 
@@ -66,6 +67,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
         const originMarkKey = entry.mark ?? entry.groupKey;
         const originLabel = entry.mark ? groupName(language, entry.mark) : entry.groupLabel;
         const availability = availabilityForEntry(entry);
+        const go = entry.collection === "go" ? entry.goAvailability ?? getGoAvailability(entry) : null;
         const favorite = favorites.has(entry.planId);
         const matchingHomeChallenges = homeChallengesByDex.get(entry.dex) ?? [];
         return <div className="entry-modal-layer">
@@ -81,7 +83,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
             <div className="entry-badges">
               <TraitBadges requirements={entry.requirements} t={t} />
               {entry.genericEntry ? <span className="entry-origin-chip">{t("generic_specimen")}</span> : originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={originLabel} className="detail-origin-mark" />{originLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
-              <span className={`availability-badge ${availability}`}>{t(`availability_${availability}`)}</span>
+              <span className={`availability-badge ${availability}`}>{t(go ? goAvailabilityLabel(entry) : `availability_${availability}`)}</span>
               {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
               <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
             </div>
@@ -92,9 +94,9 @@ export function EntryDetails({ app }: EntryDetailsProps) {
             </div>
             <dl className="entry-facts">
               <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : originLabel}</dd></div>
-              <div><dt>{t("method")}</dt><dd>{t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
+              <div><dt>{t("method")}</dt><dd>{go ? goMethodText(entry, t) : t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
-              <div><dt>{t("shiny_available")}</dt><dd>{entry.shinyEligible ? t(!entry.genericEntry && entry.normalEligible === false ? "shiny_guaranteed" : "yes") : t("shiny_locked")}</dd></div>
+              <div><dt>{t("shiny_available")}</dt><dd>{go ? t(go.shiny === "released" ? "yes" : go.shiny === "unknown" ? "go_unknown" : "go_shiny_unreleased") : entry.shinyEligible ? t(!entry.genericEntry && entry.normalEligible === false ? "shiny_guaranteed" : "yes") : t("shiny_locked")}</dd></div>
               <div><dt>{t("own_ot_possible")}</dt><dd>{entry.ownOt ? t("yes") : t("no")}</dd></div>
               {requiredGender && <div><dt>{t("required_gender")}</dt><dd>{requiredGender}</dd></div>}
               {requirements.originGame && <div><dt>{t("origin_game")}</dt><dd>{entry.collection === "battle-bond" ? t("battle_bond_origin") : localizeCatalogText(language, requirements.originGame)}</dd></div>}
@@ -120,7 +122,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
               <p>{t("home_challenges_met_desc")}</p>
               <ul>{matchingHomeChallenges.map((challenge) => <li key={challenge.id}>{localizeHomeChallengeTitle(language, challenge, pokemonNames)}</li>)}</ul>
             </section>}
-            <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p></section>
+            <section className="entry-explanation"><h3>{t("why_exists")}</h3><p>{t(reasonKeyForEntry(entry))}</p>{go && <><p>{t("go_methods_note")}</p><p>{t("go_checked_on")} {go.checkedOn}</p></>}</section>
             <section className="entry-catalog-note"><h3>{t("catalog_note")}</h3>{entry.displayDetail && <p><strong>{localizeCatalogText(language, entry.displayDetail)}</strong></p>}<p>{displayNote(entry)}</p>{entry.sourceLabel && (entry.sourceUrl ? <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{localizeCatalogText(language, entry.sourceLabel)} ↗</a> : <small>{localizeCatalogText(language, entry.sourceLabel)}</small>)}</section>
           </section>
         </div>;

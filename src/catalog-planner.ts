@@ -433,7 +433,7 @@ export function buildBoxes(
         if (entry.dex === 774 && !formOptions.minior) continue;
         if (entry.dex !== 869 && entry.dex !== 774 && !formOptions.alternate) continue;
       }
-      const includeAsNormal = entry.normalEligible !== false && (variants.normal || (group.special && variants.shiny && includeNonShinySpecials && !entry.shinyEligible));
+      const includeAsNormal = entry.normalEligible !== false && (variants.normal || (group.special && entry.collection !== "go" && variants.shiny && includeNonShinySpecials && !entry.shinyEligible));
       if (includeAsNormal) {
         const ownOt = entry.ownOtNormal;
         const acquisition =
@@ -459,7 +459,8 @@ export function buildBoxes(
           });
         }
       }
-      if (variants.shiny && entry.shinyEligible) {
+      // GO keeps future Shiny planning slots while their details report the real release status.
+      if (variants.shiny && (entry.shinyEligible || entry.collection === "go")) {
         const ownOt = entry.ownOtShiny;
 
         const acquisition =

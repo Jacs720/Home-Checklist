@@ -3,8 +3,10 @@ import type { ThemeGame } from "./box-themes";
 import type { AvailabilityStatus, SpecimenRequirements } from "./collection-features";
 import type { ImportMatchSummary } from "./import-export";
 import type { UiLanguage } from "./translations";
+import type { GoAvailability } from "./go-availability";
 
 export type PokemonEntry = {
+  goAvailability?: GoAvailability;
   id: string;
   sourceNumber?: number;
   mark?: string;
