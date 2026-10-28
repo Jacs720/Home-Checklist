@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { seaFormSpriteKey } from "../src/sprite-forms.ts";
+import { seaFormSpriteKey, seasonalFormSpriteKey } from "../src/sprite-forms.ts";
 import { access, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -35,9 +35,9 @@ function addRequest(requests, entry, variant) {
   if (!entry.artId) return;
   const female = entry.genderVariant === "extra";
   const suffix = female ? "-female" : "";
-  const seaFormKey = seaFormSpriteKey(entry);
-  const sourceKey = seaFormKey ? seaFormKey.replace(/^0+/, "") : entry.artId;
-  const filename = `${seaFormKey ?? `${padArtId(entry.artId)}${suffix}`}.webp`;
+  const namedFormKey = seaFormSpriteKey(entry) ?? seasonalFormSpriteKey(entry);
+  const sourceKey = namedFormKey ? namedFormKey.replace(/^0+/, "") : entry.artId;
+  const filename = `${namedFormKey ?? `${padArtId(entry.artId)}${suffix}`}.webp`;
   const destination = path.join(OUTPUT_ROOT, variant, filename);
   const variantPath = variant === "shiny" ? "shiny/" : "";
   const sources = female

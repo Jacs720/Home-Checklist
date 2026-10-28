@@ -22,6 +22,8 @@ type CatalogEntry = {
   types?: string[];
   shinyArtStyle?: "home";
   gender?: "male" | "female";
+  genderVariant?: "base" | "extra";
+  genderDifferenceTier?: "notable" | "all";
   trainerName?: string;
   trainerId?: string;
   partnerRibbon?: boolean;
@@ -49,8 +51,16 @@ function goFormSlug(form: string) {
  */
 export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], catalogEntries: T[]) {
   const formsByDex = new Map<number, T[]>();
+  const gendersByForm = new Map<string, T[]>();
   for (const candidate of catalogEntries) {
-    if (!candidate.form || candidate.availability === "excluded" || candidate.dex <= 0) continue;
+    if (candidate.availability === "excluded" || candidate.dex <= 0) continue;
+    if (candidate.genderVariant) {
+      const key = `${candidate.dex}:${candidate.form ?? ""}`;
+      const genders = gendersByForm.get(key) ?? [];
+      if (!genders.some((entry) => entry.genderVariant === candidate.genderVariant)) genders.push(candidate);
+      gendersByForm.set(key, genders);
+    }
+    if (!candidate.form) continue;
     if (GO_FORMS_THAT_DO_NOT_REACH_HOME.has(`${candidate.dex}:${candidate.form}`)) continue;
     const forms = formsByDex.get(candidate.dex) ?? [];
     if (!forms.some((entry) => entry.form === candidate.form)) forms.push(candidate);
@@ -103,7 +113,22 @@ export function addGoStorableForms<T extends CatalogEntry>(specialEntries: T[], 
     if (keepsUnnamedBase) expanded.push(entry);
     candidates.forEach((candidate, index) => expanded.push(createFormEntry(candidate, !keepsUnnamedBase && index === 0)));
   }
-  return expanded;
+  return expanded.flatMap((entry): T[] => {
+    if (entry.collection !== "go") return [entry];
+    const genders = gendersByForm.get(`${entry.dex}:${entry.form ?? ""}`);
+    if (!genders?.some((candidate) => candidate.genderVariant === "extra")) return [entry];
+    return [...genders].sort((left, right) => left.genderVariant === right.genderVariant ? 0 : left.genderVariant === "base" ? -1 : 1)
+      .map((candidate) => ({
+        ...entry,
+        // Keep the existing GO slot and its saved progress for the base gender.
+        id: candidate.genderVariant === "extra" ? `${entry.id}:female` : entry.id,
+        gender: candidate.gender,
+        genderVariant: candidate.genderVariant,
+        genderDifferenceTier: candidate.genderDifferenceTier,
+        artId: candidate.artId ?? entry.artId,
+        shinyArtStyle: candidate.shinyArtStyle ?? entry.shinyArtStyle,
+      } as T));
+  });
 }
 
 const GALARIAN_BIRD_ART_IDS: Record<number, number> = {

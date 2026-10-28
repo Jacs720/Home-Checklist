@@ -88,11 +88,75 @@ test("every catalog origin and collection routes Shellos/Gastrodon artwork by se
     }
   }
 });
+
+test("every origin and GO uses distinct seasonal artwork for Deerling and Sawsbuck", async () => {
+  const seasons = { Spring: "spring", Summer: "summer", Fall: "autumn", Winter: "winter" };
+  for (const dex of [585, 586]) {
+    const entries = importEntries.filter((entry) => entry.dex === dex);
+    assert.ok(entries.some((entry) => entry.collection === "go"));
+    for (const [form, season] of Object.entries(seasons)) {
+      const matching = entries.filter((entry) => entry.form === form);
+      assert.ok(matching.length > 1, `missing #${dex} ${form}`);
+      for (const variant of ["normal", "shiny"] as const) {
+        const expected = `assets/pokemon/${variant}/0${dex}-${season}.webp`;
+        for (const entry of matching) {
+          const planned: PlannedEntry = { ...entry, planId: `${entry.id}:${variant}`, variant, ownOt: true, groupKey: "test", groupLabel: "Test" };
+          assert.ok(pokemonArtworkUrl(planned)?.endsWith(expected), entry.id);
+          assert.equal(planned.planId, `${entry.id}:${variant}`);
+        }
+      }
+    }
+    for (const variant of ["normal", "shiny"] as const) {
+      const images = await Promise.all(Object.values(seasons).map((season) => readFile(`public/assets/pokemon/${variant}/0${dex}-${season}.webp`)));
+      for (const image of images) assert.equal(image.toString("ascii", 8, 12), "WEBP");
+      assert.equal(new Set(images.map((image) => image.toString("base64"))).size, 4);
+    }
+    for (const season of Object.values(seasons)) {
+      assert.notDeepEqual(await readFile(`public/assets/pokemon/normal/0${dex}-${season}.webp`), await readFile(`public/assets/pokemon/shiny/0${dex}-${season}.webp`));
+    }
+  }
+});
 const speciesRules = new Map(rulesDataset.species.map((rule) => [rule.dex, rule]));
 const allAcquisitions: Record<Acquisition, boolean> = { own: true, trade: true, event: true, external: true };
 const ownAcquisition: Record<Acquisition, boolean> = { own: true, trade: false, event: false, external: false };
 const allForms: FormOptions = { alternate: true, alcremie: true, minior: true };
 const noForms: FormOptions = { alternate: false, alcremie: false, minior: false };
+
+test("GO includes notable gender forms by default and all dimorphisms on request", async () => {
+  const goProfile = (gender: GenderMode) => buildProfile({
+    preset: "custom", marks: [], collections: ["go"], gender,
+    variants: { normal: true, shiny: true }, acquisitions: allAcquisitions,
+  }).flatMap((box) => box.entries);
+  const notable = goProfile("notable");
+  const all = goProfile("all");
+
+  for (const dex of [521, 592, 593, 668, 678, 876, 902, 916]) {
+    for (const variant of ["normal", "shiny"] as const) {
+      const pair = notable.filter((entry) => entry.dex === dex && entry.variant === variant);
+      assert.deepEqual(pair.map((entry) => entry.gender), ["male", "female"], `GO #${dex} ${variant}`);
+      assert.equal(pair[0].planId, `go:${String(dex).padStart(4, "0")}:${variant}`);
+      assert.equal(pair[1].planId, `go:${String(dex).padStart(4, "0")}:female:${variant}`);
+      const artwork = pair.map(pokemonArtworkUrl);
+      assert.notEqual(artwork[0], artwork[1]);
+      for (const url of artwork) await readFile(resolve("public", url!.replace(/^\//, "")));
+    }
+  }
+
+  for (const variant of ["normal", "shiny"] as const) {
+    assert.deepEqual(notable.filter((entry) => entry.dex === 25 && entry.variant === variant).map((entry) => entry.gender), ["male"]);
+    assert.deepEqual(all.filter((entry) => entry.dex === 25 && entry.variant === variant).map((entry) => entry.gender), ["male", "female"]);
+  }
+  const expectedExtras = new Set(catalogEntries.filter((entry) => entry.genderVariant === "extra" && entry.availability !== "excluded")
+    .map((entry) => `${entry.dex}:${entry.form ?? ""}`));
+  const actualExtras = new Set(all.filter((entry) => entry.genderVariant === "extra").map((entry) => `${entry.dex}:${entry.form ?? ""}`));
+  assert.deepEqual(actualExtras, expectedExtras);
+  for (const dex of [19, 20, 26]) {
+    assert.equal(all.some((entry) => entry.dex === dex && entry.form === "Alolan" && entry.genderVariant === "extra"), false);
+  }
+  assert.ok(notable.every((entry) => all.some((candidate) => candidate.planId === entry.planId)));
+  assert.equal(new Set(all.map((entry) => entry.planId)).size, all.length);
+  assert.equal(new Set(all.map((entry) => entry.dex)).size, 1025);
+});
 
 type ProfileOptions = {
   preset: CollectionPreset;
