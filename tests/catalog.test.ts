@@ -313,7 +313,7 @@ test("In-Game order stays within each origin and preserves every specimen identi
 });
 
 test("the in-game-only filter is independent of order and includes DLC without duplication", () => {
-  const options: ProfileOptions = { preset: "custom", marks: ["SwSh", "BDSP", "SV"], forms: allForms, gender: "all", acquisitions: allAcquisitions };
+  const options: ProfileOptions = { preset: "custom", marks: ["SwSh", "BDSP", "SV"], forms: allForms, gender: "all", acquisitions: allAcquisitions, includeEventMythicals: true };
   const original = buildProfile(options).flatMap(box => box.entries);
   const national = buildProfile({ ...options, pokedexOrganization: { order: "national", onlyInGameDex: true } }).flatMap(box => box.entries);
   const ingame = buildProfile({ ...options, pokedexOrganization: { order: "ingame", onlyInGameDex: true } }).flatMap(box => box.entries);
@@ -322,12 +322,36 @@ test("the in-game-only filter is independent of order and includes DLC without d
   assert.deepEqual(new Set(ingame.map(entry => entry.planId)), new Set(national.map(entry => entry.planId)));
   assert.equal(new Set(ingame.map(entry => entry.planId)).size, ingame.length);
   assert.equal(national.some(entry => entry.mark === "SwSh" && entry.dex === 151), false);
-  assert.equal(national.some(entry => entry.mark === "BDSP" && entry.dex === 491), false);
+  assert.ok(national.some(entry => entry.mark === "BDSP" && entry.dex === 491));
   assert.ok(national.some(entry => entry.mark === "SwSh" && entry.dex === 1), "lost Isle of Armor Bulbasaur");
   assert.ok(national.some(entry => entry.mark === "SwSh" && entry.dex === 894), "lost Crown Tundra Regieleki");
   for (const mark of ["SwSh", "BDSP", "SV"]) {
     const numbers = national.filter(entry => entry.mark === mark).map(entry => entry.dex);
     assert.deepEqual(numbers, [...numbers].sort((a, b) => a - b));
+  }
+});
+
+test("every origin keeps all specimens when only changing Box organization, including future evolutions", () => {
+  for (const originMarkDex of [false, true]) {
+    const options: ProfileOptions = { preset: "custom", marks: MARKS, forms: allForms, gender: "all", variants: { normal: true, shiny: true }, acquisitions: allAcquisitions, includeEventMythicals: true, originMarkDex };
+    const national = buildProfile(options).flatMap(box => box.entries);
+    const ingame = buildProfile({ ...options, pokedexOrganization: { order: "ingame", onlyInGameDex: false } }).flatMap(box => box.entries);
+    for (const mark of MARKS) {
+      const expected = national.filter(entry => entry.mark === mark).map(entry => entry.planId);
+      const actual = ingame.filter(entry => entry.mark === mark).map(entry => entry.planId);
+      assert.equal(actual.length, expected.length, mark);
+      assert.deepEqual(new Set(actual), new Set(expected), mark);
+    }
+    assert.ok(ingame.some(entry => entry.mark === "BDSP" && entry.dex === 490), "Manaphy remains in BDSP");
+    for (const mark of ["BDSP", "LGPE"]) assert.ok(ingame.some(entry => entry.mark === mark && entry.dex === 979), `${mark} retains Annihilape for planning`);
+    for (const order of ["national", "ingame"] as const) {
+      const filtered = buildProfile({ ...options, pokedexOrganization: { order, onlyInGameDex: true } }).flatMap(box => box.entries);
+      assert.ok(filtered.some(entry => entry.mark === "BDSP" && entry.dex === 490), "BDSP Manaphy is in the regional Dex");
+      assert.ok(filtered.some(entry => entry.mark === "BDSP" && entry.dex === 491), "BDSP Darkrai is in the game's National Dex");
+      assert.ok(filtered.some(entry => entry.mark === "BDSP" && entry.dex === 151), "BDSP Mew is in the game's National Dex");
+      for (const dex of [808, 809]) assert.ok(filtered.some(entry => entry.mark === "LGPE" && entry.dex === dex), `Let's Go #${dex}`);
+      for (const mark of ["BDSP", "LGPE"]) assert.equal(filtered.some(entry => entry.mark === mark && entry.dex === 979), false, `${mark} filters Annihilape only with the checkbox`);
+    }
   }
 });
 

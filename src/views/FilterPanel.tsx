@@ -202,7 +202,7 @@ export function FilterPanel({ app }: FilterPanelProps) {
             </label>)}
           </section>
 
-          <PokedexOrganizationControls order={pokedexOrder} onlyInGameDex={onlyInGameDex} disabled={originIndependentSelected} onOrderChange={setPokedexOrder} onOnlyInGameDexChange={(checked) => { markProfileCustom(); setOnlyInGameDex(checked); }} t={t} />
+          <PokedexOrganizationControls order={pokedexOrder} onlyInGameDex={onlyInGameDex} disabled={originIndependentSelected} onOrderChange={setPokedexOrder} onOnlyInGameDexChange={setOnlyInGameDex} t={t} />
 
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>

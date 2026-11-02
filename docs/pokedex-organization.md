@@ -7,7 +7,9 @@ Las colecciones por marca de origen tienen dos controles independientes:
 
 El orden se aplica dentro de cada marca. Las formas, géneros y variantes normal/brillante mantienen sus filtros y su orden relativo. La pertenencia a una Pokédex se comprueba por especie; no introduce formas que el catálogo de esa procedencia no admita.
 
-Con orden In-Game, las especies sin número local se conservan al final de su marca, en cajas «Fuera de la Pokédex» ordenadas por número nacional. Activar el filtro las oculta. La casilla también funciona con el orden nacional.
+Con orden In-Game, las especies sin número local se conservan al final de su marca, en cajas «Fuera de la Pokédex» ordenadas por número nacional. Activar el filtro las oculta. La casilla también funciona con el orden nacional. Cambiar el orden no modifica el filtro y activar la casilla no cambia el perfil de colección ni sus opciones de formas.
+
+En los juegos que incluyen una Pokédex Nacional propia, esta también cuenta: GBA hasta #386, los juegos sin marca hasta #649, el pentágono hasta #721 y BDSP hasta #493. Se coloca primero la numeración regional y después las especies restantes por la numeración Nacional de ese juego. Esto conserva los míticos registrables y excluye del filtro las evoluciones posteriores que solo pueden conservar la marca fuera del juego. En BDSP, por ejemplo, Manaphy es #151 regional y Darkrai #491 nacional; Annihilape conserva su entrada de planificación sin pasar el filtro. Véase la [Pokédex Nacional de BDSP](https://bulbapedia.bulbagarden.net/wiki/National_Pok%C3%A9dex).
 
 Las colecciones especiales, incluido Pokémon GO, conservan sus reglas. Los perfiles de Living Dex sin separación por origen conservan su orden nacional; los controles quedan desactivados en ese modo.
 
@@ -25,7 +27,7 @@ Una marca puede corresponder a varios juegos. Al no añadir un selector de juego
 | Let's Go | Kanto de Let's Go, incluidos Meltan y Melmetal |
 | Espada/Escudo | Galar, Isla de la Armadura, Nieves de la Corona |
 | Leyendas: Arceus | Hisui |
-| Diamante Brillante/Perla Reluciente | Sinnoh regional |
+| Diamante Brillante/Perla Reluciente | Sinnoh regional, Nacional hasta #493 |
 | Escarlata/Púrpura | Paldea, Noroteo, Arándano |
 | Leyendas: Z-A | Ciudad Luminalia, Hyperspace |
 
@@ -37,7 +39,7 @@ El cambio reorganiza ejemplares existentes: no modifica sus identificadores ni e
 
 ## Datos y actualización
 
-La instantánea `public/data/pokedex-orders.json` contiene 22 Pokédex con sus números y nombres traducidos. Procede de los CSV del [repositorio oficial de PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv), consultados el 1 de noviembre de 2026. La estructura corresponde al recurso [Pokédex de PokéAPI](https://pokeapi.co/docs/v2#pokedexes).
+La instantánea `public/data/pokedex-orders.json` contiene 23 Pokédex con sus números y nombres traducidos. Procede de los CSV del [repositorio oficial de PokéAPI](https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv), consultados el 1 de noviembre de 2026. La estructura corresponde al recurso [Pokédex de PokéAPI](https://pokeapi.co/docs/v2#pokedexes).
 
 Actualizar desde la fuente:
 

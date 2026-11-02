@@ -30,7 +30,7 @@ async function load(name) {
   return csv(await readFile(path, "utf8"));
 }
 const [definitions, numbers, prose] = await Promise.all([load("pokedexes"), load("pokemon_dex_numbers"), load("pokedex_prose")]);
-const identifiers = ["kanto", "original-johto", "hoenn", "original-sinnoh", "extended-sinnoh", "updated-johto", "updated-unova", "kalos-central", "kalos-coastal", "kalos-mountain", "updated-hoenn", "updated-alola", "letsgo-kanto", "galar", "isle-of-armor", "crown-tundra", "hisui", "paldea", "kitakami", "blueberry", "lumiose-city", "hyperspace"];
+const identifiers = ["national", "kanto", "original-johto", "hoenn", "original-sinnoh", "extended-sinnoh", "updated-johto", "updated-unova", "kalos-central", "kalos-coastal", "kalos-mountain", "updated-hoenn", "updated-alola", "letsgo-kanto", "galar", "isle-of-armor", "crown-tundra", "hisui", "paldea", "kitakami", "blueberry", "lumiose-city", "hyperspace"];
 const languageCodes = { 1: "JPN", 3: "KOR", 4: "CHT", 5: "FRA", 6: "DEU", 7: "ES-ES", 8: "ITA", 9: "ENG", 11: "JPN", 12: "CHS", 14: "ES-LA" };
 const pokedexes = {};
 for (const identifier of identifiers) {

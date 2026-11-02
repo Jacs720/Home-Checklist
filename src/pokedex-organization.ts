@@ -20,6 +20,9 @@ export const ORIGIN_POKEDEXES: Record<string, readonly string[]> = {
   SV: ["paldea", "kitakami", "blueberry"], LZA: ["lumiose-city", "hyperspace"],
 };
 type DexReference = { id: string; number: number; section: number };
+// These games also register species in their own National Pokédex.
+// Later evolutions may retain the origin mark without being in that game's Dex.
+const NATIONAL_POKEDEX_LIMITS: Record<string, number> = { "Sin marca": 649, GBA: 386, P: 721, BDSP: 493 };
 const references = new Map<string, Map<number, DexReference>>();
 const pokedexes = data.pokedexes as Record<string, { names: Record<string, string>; entries: number[][] }>;
 for (const [mark, identifiers] of Object.entries(ORIGIN_POKEDEXES)) {
@@ -29,6 +32,10 @@ for (const [mark, identifiers] of Object.entries(ORIGIN_POKEDEXES)) {
     if (!dex) throw new Error(`Missing Pokédex ${id}`);
     for (const [species, number] of dex.entries) if (!entries.has(species)) entries.set(species, { id, number, section });
   });
+  const nationalLimit = NATIONAL_POKEDEX_LIMITS[mark];
+  if (nationalLimit) for (const [species, number] of pokedexes.national.entries) {
+    if (species <= nationalLimit && !entries.has(species)) entries.set(species, { id: "national", number, section: identifiers.length });
+  }
   references.set(mark, entries);
 }
 
@@ -41,16 +48,23 @@ export function inGameDexName(id: string, language: string) {
   return names?.[language] || (language === "ES-LA" ? names?.["ES-ES"] : undefined) || names?.ENG || id;
 }
 
-/** Reorders the existing specimens without changing identities or source arrays. */
-export function organizeOriginPokedex<T extends { dex: number }>(entries: T[], mark: string, options: PokedexOrganization) {
-  if (!references.has(mark) || (options.order === "national" && !options.onlyInGameDex)) return [{ entries, outside: false }];
+export function filterOriginPokedex<T extends { dex: number }>(entries: T[], mark: string, onlyInGameDex: boolean) {
+  return onlyInGameDex && references.has(mark) ? entries.filter(entry => inGameDexReference(mark, entry.dex)) : entries;
+}
+
+/** Sorting never removes specimens, including those without a local Dex number. */
+export function sortOriginPokedex<T extends { dex: number }>(entries: T[], mark: string, order: PokedexOrder) {
+  if (!references.has(mark) || order === "national") return [{ entries, outside: false }];
   const inside: T[] = [], outside: T[] = [];
   for (const entry of entries) (inGameDexReference(mark, entry.dex) ? inside : outside).push(entry);
-  if (options.order === "national") return [{ entries: inside, outside: false }];
   inside.sort((a, b) => {
     const left = inGameDexReference(mark, a.dex)!, right = inGameDexReference(mark, b.dex)!;
     return left.section - right.section || left.number - right.number;
   });
   outside.sort((a, b) => a.dex - b.dex);
-  return [{ entries: inside, outside: false }, ...(!options.onlyInGameDex && outside.length ? [{ entries: outside, outside: true }] : [])];
+  return [{ entries: inside, outside: false }, ...(outside.length ? [{ entries: outside, outside: true }] : [])];
+}
+
+export function organizeOriginPokedex<T extends { dex: number }>(entries: T[], mark: string, options: PokedexOrganization) {
+  return sortOriginPokedex(filterOriginPokedex(entries, mark, options.onlyInGameDex), mark, options.order);
 }

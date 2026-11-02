@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DEFAULT_POKEDEX_ORGANIZATION, inGameDexReference, organizeOriginPokedex, parsePokedexOrganization } from "../src/pokedex-organization";
+import { DEFAULT_POKEDEX_ORGANIZATION, filterOriginPokedex, inGameDexReference, organizeOriginPokedex, parsePokedexOrganization, sortOriginPokedex } from "../src/pokedex-organization";
 import { PokedexOrganizationControls } from "../src/components/PokedexOrganizationControls";
 import { validateBackup, validateCollectionState } from "../src/backup-validation";
 import { LANGUAGE_OPTIONS, copy } from "../src/translations";
@@ -16,7 +16,33 @@ test("game Dex references retain local numbering, including Meltan, Victini zero
   assert.equal(inGameDexReference("SwSh", 1)?.id, "isle-of-armor");
   assert.equal(inGameDexReference("SV", 906)?.id, "paldea");
   assert.equal(inGameDexReference("SwSh", 151), undefined);
-  assert.equal(inGameDexReference("BDSP", 491), undefined);
+  assert.equal(inGameDexReference("BDSP", 490)?.number, 151);
+  assert.deepEqual(inGameDexReference("BDSP", 491), { id: "national", number: 491, section: 1 });
+  assert.equal(inGameDexReference("BDSP", 979), undefined);
+});
+
+test("the sorting function retains outside entries and only the independent filter removes them", () => {
+  for (const [mark, dexes] of [["BDSP", [490, 491, 979]], ["LGPE", [808, 809, 979]]] as const) {
+    const entries = dexes.map(dex => ({ dex, id: `${mark}:${dex}` }));
+    const original = structuredClone(entries);
+    for (const order of ["national", "ingame"] as const) {
+      const sorted = sortOriginPokedex(entries, mark, order).flatMap(section => section.entries);
+      assert.deepEqual(new Set(sorted.map(entry => entry.id)), new Set(entries.map(entry => entry.id)));
+      const filtered = filterOriginPokedex(sorted, mark, true);
+      assert.deepEqual(new Set(filtered.map(entry => entry.dex)), new Set(dexes.filter(dex => dex !== 979)));
+      assert.strictEqual(filterOriginPokedex(sorted, mark, false), sorted);
+      assert.deepEqual(organizeOriginPokedex(entries, mark, { order, onlyInGameDex: true }).flatMap(section => section.entries), filtered);
+    }
+    assert.deepEqual(entries, original);
+  }
+});
+
+test("game National Pokédex coverage stops at that game's generation, including registerable Mythicals", () => {
+  for (const [mark, limit] of [["GBA", 386], ["Sin marca", 649], ["P", 721], ["BDSP", 493]] as const) {
+    for (let dex = 1; dex <= limit; dex++) assert.ok(inGameDexReference(mark, dex), `${mark} #${dex}`);
+    assert.equal(inGameDexReference(mark, limit + 1), undefined);
+    assert.equal(inGameDexReference(mark, 979), undefined);
+  }
 });
 
 test("organizing by game preserves sibling form order, source arrays and national fallback", () => {
