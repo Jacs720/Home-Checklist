@@ -19,6 +19,7 @@ import { buildTitanEntries } from "../src/titan-pokemon";
 import { createTauriPlatform } from "../src/platform/tauri";
 import { LANGUAGE_OPTIONS, copy, groupName, hasCopy } from "../src/translations";
 import { TITAN_COPY } from "../src/titan-translations";
+import { inGameDexReference, organizeOriginPokedex, type PokedexOrganization } from "../src/pokedex-organization";
 import { getGoAvailability, goAvailabilityLabel, goMethodText } from "../src/go-availability";
 import { GO_COPY_KEYS, goCopy } from "../src/go-translations";
 import { transferKeyForEntry } from "../src/collection-features";
@@ -257,6 +258,7 @@ type ProfileOptions = {
   normalLivingDex?: boolean;
   originMarkDex?: boolean;
   originIndependentDex?: boolean;
+  pokedexOrganization?: PokedexOrganization;
 };
 
 function buildProfile(options: ProfileOptions) {
@@ -277,8 +279,67 @@ function buildProfile(options: ProfileOptions) {
     options.preset,
     speciesRules,
     "ENG",
+    false,
+    options.pokedexOrganization,
   );
 }
+
+test("In-Game order stays within each origin and preserves every specimen identity", () => {
+  const options: ProfileOptions = { preset: "custom", marks: ["SwSh", "LA", "SV"], forms: allForms, gender: "all", variants: { normal: true, shiny: true }, acquisitions: allAcquisitions };
+  const original = buildProfile(options).flatMap(box => box.entries);
+  const reordered = buildProfile({ ...options, pokedexOrganization: { order: "ingame", onlyInGameDex: false } });
+  const entries = reordered.flatMap(box => box.entries);
+  assert.deepEqual(new Set(entries.map(entry => entry.planId)), new Set(original.map(entry => entry.planId)));
+  assert.equal(entries.length, original.length);
+  for (const [mark, starter] of [["SwSh", 810], ["LA", 722], ["SV", 906]] as const) {
+    const group = entries.filter(entry => entry.mark === mark);
+    assert.equal(group[0].dex, starter, mark);
+    let outside = false;
+    let last = { section: -1, number: -1 };
+    for (const entry of group) {
+      const reference = inGameDexReference(mark, entry.dex);
+      if (!reference) outside = true;
+      else {
+        assert.equal(outside, false, `${mark} returned to its Dex after outside entries`);
+        assert.ok(reference.section > last.section || reference.section === last.section && reference.number >= last.number);
+        last = reference;
+      }
+    }
+  }
+  const groups = [...new Set(entries.map(entry => entry.groupKey))];
+  assert.deepEqual(groups, ["SwSh", "LA", "SV"]);
+  assert.ok(reordered.some(box => box.groupKey === "SwSh" && box.label.includes("Outside the Pokédex")));
+  assert.ok(reordered.every(box => box.entries.length > 0 && box.entries.length <= 30));
+});
+
+test("the in-game-only filter is independent of order and includes DLC without duplication", () => {
+  const options: ProfileOptions = { preset: "custom", marks: ["SwSh", "BDSP", "SV"], forms: allForms, gender: "all", acquisitions: allAcquisitions };
+  const original = buildProfile(options).flatMap(box => box.entries);
+  const national = buildProfile({ ...options, pokedexOrganization: { order: "national", onlyInGameDex: true } }).flatMap(box => box.entries);
+  const ingame = buildProfile({ ...options, pokedexOrganization: { order: "ingame", onlyInGameDex: true } }).flatMap(box => box.entries);
+  const expected = original.filter(entry => inGameDexReference(entry.mark, entry.dex));
+  assert.deepEqual(national.map(entry => entry.planId), expected.map(entry => entry.planId));
+  assert.deepEqual(new Set(ingame.map(entry => entry.planId)), new Set(national.map(entry => entry.planId)));
+  assert.equal(new Set(ingame.map(entry => entry.planId)).size, ingame.length);
+  assert.equal(national.some(entry => entry.mark === "SwSh" && entry.dex === 151), false);
+  assert.equal(national.some(entry => entry.mark === "BDSP" && entry.dex === 491), false);
+  assert.ok(national.some(entry => entry.mark === "SwSh" && entry.dex === 1), "lost Isle of Armor Bulbasaur");
+  assert.ok(national.some(entry => entry.mark === "SwSh" && entry.dex === 894), "lost Crown Tundra Regieleki");
+  for (const mark of ["SwSh", "BDSP", "SV"]) {
+    const numbers = national.filter(entry => entry.mark === mark).map(entry => entry.dex);
+    assert.deepEqual(numbers, [...numbers].sort((a, b) => a - b));
+  }
+});
+
+test("Pokédex organization preserves special catalogs and origin-independent profiles", () => {
+  const organization: PokedexOrganization = { order: "ingame", onlyInGameDex: true };
+  const special: ProfileOptions = { preset: "custom", marks: [], collections: ["go", "trades"], acquisitions: allAcquisitions };
+  assert.deepEqual(buildProfile({ ...special, pokedexOrganization: organization }), buildProfile(special));
+  for (const preset of ["basic", "forms", "original_generation"] as const) {
+    const options: ProfileOptions = { preset, forms: allForms, gender: "all" };
+    assert.deepEqual(buildProfile({ ...options, pokedexOrganization: organization }), buildProfile(options));
+  }
+});
 
 const canonicalProfileOptions = {
   "Living Dex": { preset: "basic", normalLivingDex: true },
@@ -871,6 +932,7 @@ import "./specimen-traits.test.mjs";
 import "./specimen-trait-controls.test";
 import "./sea-form-sprites.test.mjs";
 import "./go-availability-parser.test.mjs";
+import "./pokedex-organization.test";
 import "./variant-selector.test";
 import "./trade-ribbon-corrections.test";
 import "./manual-box-packing.test";

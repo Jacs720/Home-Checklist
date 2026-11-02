@@ -17,6 +17,7 @@ import {
   type ThemeGame,
 } from "../box-themes";
 import { LANGUAGE_OPTIONS, copy, formName, groupName, localizeCatalogText, type UiLanguage } from "../translations";
+import { parsePokedexOrganization, type PokedexOrder } from "../pokedex-organization";
 import { localizeHomeChallengeTitle, type HomeChallenge, type HomeChallengesDataset } from "../home-challenges";
 import { collectChallengeSpecimens, evaluateHomeChallenges } from "../home-challenge-progress";
 import { buildMightiestRaidEntries, type MightiestRaidsDataset } from "../mightiest-raids";
@@ -117,6 +118,8 @@ export function useAppController() {
   const [formOptions, setFormOptions] = useState<FormOptions>(DEFAULT_FORM_OPTIONS);
   const [normalLivingDex, setNormalLivingDex] = useState(false);
   const [originMarkDex, setOriginMarkDex] = useState(false);
+  const [pokedexOrder, setPokedexOrder] = useState<PokedexOrder>("national");
+  const [onlyInGameDex, setOnlyInGameDex] = useState(false);
   const [originIndependentDex, setOriginIndependentDex] = useState(false);
   const [collectionPreset, setCollectionPreset] = useState<CollectionPreset>("custom");
   const [availabilityFilters, setAvailabilityFilters] = useState<AvailabilityFilters>(DEFAULT_AVAILABILITY_FILTERS);
@@ -282,6 +285,9 @@ export function useAppController() {
     });
     if (typeof value.normalLivingDex === "boolean") setNormalLivingDex(value.normalLivingDex);
     if (typeof value.originMarkDex === "boolean") setOriginMarkDex(value.originMarkDex);
+    const organization = parsePokedexOrganization(value);
+    setPokedexOrder(organization.order);
+    setOnlyInGameDex(organization.onlyInGameDex);
     if (COLLECTION_PRESETS.includes(value.collectionPreset)) setCollectionPreset(value.collectionPreset);
     if (typeof value.originIndependentDex === "boolean") {
       setOriginIndependentDex(value.originIndependentDex);
@@ -330,6 +336,8 @@ export function useAppController() {
     originMarkDex,
     originIndependentDex,
     collectionPreset,
+    pokedexOrder,
+    onlyInGameDex,
     availabilityFilters,
     favoritesOnly,
     homeChallengesOnly,
@@ -349,7 +357,7 @@ export function useAppController() {
     customBoxes,
     lastExternalBackupAt,
     changesSinceBackup,
-  }), [owned, livingDexOwned, progressExclusions, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, manualBoxMerges, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
+  }), [owned, livingDexOwned, progressExclusions, favorites, selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, pokedexOrder, onlyInGameDex, availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, manualBoxMerges, traitOptions, traitOverrides, viewMode, missingOnly, selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, lastExternalBackupAt, changesSinceBackup]);
 
   const { hydrated, lastSavedAt, clock, persistenceStatus, retrySave, allowRecovery } = usePersistence({
     language,
@@ -387,7 +395,9 @@ export function useAppController() {
     originMarkDex,
     originIndependentDex,
     collectionPreset,
-  }), [selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset]);
+    pokedexOrder,
+    onlyInGameDex,
+  }), [selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, pokedexOrder, onlyInGameDex]);
   const deferredPlannerFilters = useDeferredValue(plannerFilters);
   const plannedBoxes = useMemo(() => buildBoxes(
     dataset?.entries ?? [],
@@ -406,6 +416,8 @@ export function useAppController() {
     deferredPlannerFilters.collectionPreset,
     speciesRules,
     language,
+    false,
+    { order: deferredPlannerFilters.pokedexOrder, onlyInGameDex: deferredPlannerFilters.onlyInGameDex },
   ), [dataset, specialDataset, deferredPlannerFilters, speciesRules, language]);
   const unpackedBoxes = useMemo(() => plannedBoxes.map((box) => ({
     ...box,
@@ -538,7 +550,7 @@ export function useAppController() {
   const selectedBox = selectedBoxIndex === null ? null : boxes[selectedBoxIndex];
   const activeBoxTheme = selectedBox ? resolveBoxTheme(themeConfig, selectedBox.groupKey, selectedBox.number) : themeConfig.global;
   const pageBoxes = Array.from({ length: 30 }, (_, offset) => boxes[pageIndex * 30 + offset] ?? null);
-  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${originIndependentDex}:${collectionPreset}:${homeChallengesOnly}:${pokewalkerOnly}:${saveSpace}`;
+  const filterKey = `${selectedMarks.join("|")}:${selectedCollections.join("|")}:${variants.shiny}:${variants.normal}:${acquisitions.own}:${acquisitions.trade}:${acquisitions.event}:${acquisitions.external}:${includeNonShinySpecials}:${includeEventMythicals}:${genderMode}:${formOptions.alternate}:${formOptions.alcremie}:${formOptions.minior}:${normalLivingDex}:${originMarkDex}:${originIndependentDex}:${collectionPreset}:${pokedexOrder}:${onlyInGameDex}:${homeChallengesOnly}:${pokewalkerOnly}:${saveSpace}`;
 
   const applyCollectionRecords = useCallback((records: CollectionRecord[], source: ImportNotice["source"]) => {
     const summary = matchCollectionRecords(records, allImportEntries, pokemonNames ?? {}, owned);
@@ -1094,7 +1106,7 @@ export function useAppController() {
     progress: { owned: [...owned], livingDexOwned: [...livingDexOwned], progressExclusions: [...progressExclusions], favorites: [...favorites] },
     configuration: {
       selectedMarks, selectedCollections, variants, acquisitions, includeNonShinySpecials, includeEventMythicals,
-      genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset,
+      genderMode, formOptions, normalLivingDex, originMarkDex, originIndependentDex, collectionPreset, pokedexOrder, onlyInGameDex,
       availabilityFilters, favoritesOnly, homeChallengesOnly, pokewalkerOnly, language, capacity, saveSpace, traitOptions, traitOverrides, viewMode, missingOnly,
       selectedGamePlan, collectionGoal, collectionNotes, boxNameOverrides, customBoxes, manualBoxMerges,
     },
@@ -1236,7 +1248,7 @@ export function useAppController() {
   };
 
   const markCounts: Record<string, number> = dataset && specialDataset ? Object.fromEntries(MARKS.map((mark) => {
-    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language).flatMap((box) => box.entries);
+    const entriesForMark = buildBoxes(dataset.entries, specialDataset.entries, [mark], [], variants, acquisitions, includeNonShinySpecials, includeEventMythicals, genderMode, formOptions, normalLivingDex, originMarkDex, false, collectionPreset, speciesRules, language, false, { order: pokedexOrder, onlyInGameDex }).flatMap((box) => box.entries);
     return [mark, entriesForMark.length];
   })) : {};
   const collectionCounts: Record<string, number> = dataset && specialDataset ? Object.fromEntries(COLLECTIONS.map((collection) => {
@@ -1296,6 +1308,10 @@ export function useAppController() {
     setFormOptions,
     originIndependentDex,
     originIndependentSelected,
+    pokedexOrder,
+    setPokedexOrder,
+    onlyInGameDex,
+    setOnlyInGameDex,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,

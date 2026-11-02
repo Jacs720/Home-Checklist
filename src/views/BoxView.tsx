@@ -8,12 +8,14 @@ import { boxLayoutKey } from "../manual-box-packing";
 import { assetUrl } from "../app-utils";
 import { BankBadge, FavoriteButton, OriginMarkIcon, PokemonArtwork, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
+import { inGameDexReference, inGameDexName } from "../pokedex-organization";
 
 type BoxViewProps = { app: AppController };
 
 export function BoxView({ app }: BoxViewProps) {
   const {
     language,
+    pokedexOrder,
     owned,
     favorites,
     pageIndex,
@@ -132,7 +134,9 @@ export function BoxView({ app }: BoxViewProps) {
                   const localizedForm = displayForm(entry);
                   const requiredGender = entry.requirements?.gender;
                   const genderDetail = requiredGender ? t(requiredGender === "any" ? "any_gender" : requiredGender) : entry.gender ? t(entry.gender) : null;
-                  const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, genderDetail].filter(Boolean).join(" · ");
+                  const dexReference = pokedexOrder === "ingame" && !entry.genericEntry ? inGameDexReference(entry.mark, entry.dex) : undefined;
+                  const dexDetail = dexReference ? `${inGameDexName(dexReference.id, language)} #${String(dexReference.number).padStart(3, "0")}` : pokedexOrder === "ingame" && entry.mark && !entry.genericEntry ? t("pokedex_outside") : null;
+                  const detail = [entry.displayDetail || localizedForm || `#${String(entry.dex).padStart(4, "0")}`, dexDetail, genderDetail].filter(Boolean).join(" · ");
                   const originMarkKey = entry.mark ?? entry.groupKey;
                   const favorite = favorites.has(entry.planId);
                   return (

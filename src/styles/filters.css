@@ -38,6 +38,10 @@
   .variant-option, .variant-option-normal::before { transition: none; }
 }
 .filter-section { padding: 22px 0; border-bottom: 1px solid var(--line); }
+.pokedex-organization fieldset { border: 0; padding: 0; margin: 0; min-width: 0; width: 100%; }
+.pokedex-organization legend { padding: 0; margin-bottom: 12px; }
+.pokedex-organization fieldset:disabled { opacity: .5; }
+.pokedex-organization-hint { font-size: 10px; color: var(--dim); line-height: 1.5; margin: 8px 0 0; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 43px; cursor: pointer; }
 .switch-row > span:first-child { display: flex; flex-direction: column; gap: 2px; }
 .switch-row b { font-size: 12px; }

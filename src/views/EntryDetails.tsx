@@ -10,6 +10,7 @@ import { assetUrl } from "../app-utils";
 import { BankBadge, FavoriteButton, OriginMarkIcon, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
 import { getGoAvailability, goAvailabilityLabel, goMethodText } from "../go-availability";
+import { inGameDexReference, inGameDexName } from "../pokedex-organization";
 
 type EntryDetailsProps = { app: AppController };
 
@@ -67,6 +68,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
         const originMarkKey = entry.mark ?? entry.groupKey;
         const originLabel = entry.mark ? groupName(language, entry.mark) : entry.groupLabel;
         const availability = availabilityForEntry(entry);
+        const inGameDex = entry.genericEntry ? undefined : inGameDexReference(entry.mark, entry.dex);
         const go = entry.collection === "go" ? entry.goAvailability ?? getGoAvailability(entry) : null;
         const favorite = favorites.has(entry.planId);
         const matchingHomeChallenges = homeChallengesByDex.get(entry.dex) ?? [];
@@ -94,6 +96,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
             </div>
             <dl className="entry-facts">
               <div><dt>{t("origin_required")}</dt><dd>{entry.genericEntry ? t("no_origin_required") : originLabel}</dd></div>
+              {inGameDex && <div><dt>{t("pokedex_ingame_number")}</dt><dd>{inGameDexName(inGameDex.id, language)} · #{String(inGameDex.number).padStart(3, "0")}</dd></div>}
               <div><dt>{t("method")}</dt><dd>{go ? goMethodText(entry, t) : t(methodKeyForEntry(entry))}{entry.game ? ` · ${localizeCatalogText(language, entry.game)}` : ""}</dd></div>
               <div><dt>{t("transfer")}</dt><dd>{t(transferKeyForEntry(entry))}</dd></div>
               <div><dt>{t("shiny_available")}</dt><dd>{go ? t(go.shiny === "released" ? "yes" : go.shiny === "unknown" ? "go_unknown" : "go_shiny_unreleased") : entry.shinyEligible ? t(!entry.genericEntry && entry.normalEligible === false ? "shiny_guaranteed" : "yes") : t("shiny_locked")}</dd></div>

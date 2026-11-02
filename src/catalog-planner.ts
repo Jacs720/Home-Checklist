@@ -2,6 +2,7 @@ import { COLLECTIONS, COLLECTION_ACQUISITIONS, DEFAULT_MARKS, MARKS, MYTHICAL_DE
 import type { Acquisition, FormOptions, GenderMode, PlannedBox, PlannedEntry, PokemonEntry, Variant } from "./app-types";
 import { assetUrl, chunk } from "./app-utils";
 import { packBoxesContinuously } from "./box-packing";
+import { DEFAULT_POKEDEX_ORGANIZATION, organizeOriginPokedex, type PokedexOrganization } from "./pokedex-organization";
 import {
   addJohtonianSneaselHisuiEntries,
   addStorableShayminSkyForms,
@@ -399,6 +400,7 @@ export function buildBoxes(
   speciesRules: Map<number, SpeciesRule>,
   language: UiLanguage,
   saveSpace = false,
+  pokedexOrganization: PokedexOrganization = DEFAULT_POKEDEX_ORGANIZATION,
 ) {
   const boxes: PlannedBox[] = [];
   const unifiedCandidates: PlannedEntry[] = [];
@@ -560,8 +562,12 @@ export function buildBoxes(
     }
   }
   for (const group of separateGroups) {
-    chunk(group.entries, 30).forEach((boxEntries, index) => {
-      boxes.push({ globalIndex: boxes.length, groupKey: group.key, number: index + 1, label: `${group.label} ${String(index + 1).padStart(2, "0")}`, entries: boxEntries });
+    const sections = MARKS.includes(group.key) ? organizeOriginPokedex(group.entries, group.key, pokedexOrganization) : [{ entries: group.entries, outside: false }];
+    let number = 0;
+    for (const section of sections) chunk(section.entries, 30).forEach((boxEntries) => {
+      number++;
+      const label = section.outside ? `${group.label} · ${copy(language, "pokedex_outside")}` : group.label;
+      boxes.push({ globalIndex: boxes.length, groupKey: group.key, number, label: `${label} ${String(number).padStart(2, "0")}`, entries: boxEntries });
     });
   }
   return packBoxesContinuously(boxes, saveSpace);

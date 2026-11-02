@@ -1,6 +1,7 @@
 import { titanCopy } from "./titan-translations";
 import { manualPackingCopy } from "./manual-packing-translations";
 import { goCopy } from "./go-translations";
+import { pokedexCopy } from "./pokedex-translations";
 
 export type UiLanguage = "CHS" | "CHT" | "DEU" | "ENG" | "ES-ES" | "ES-LA" | "FRA" | "ITA" | "JPN" | "KOR";
 
@@ -963,6 +964,8 @@ const VARIANT_COPY: Record<UiLanguage, Copy> = {
 
 
 export function copy(language: UiLanguage, key: string) {
+  const pokedex = pokedexCopy(language, key);
+  if (pokedex) return pokedex;
   const go = goCopy(language, key);
   if (go) return go;
   const reliability = reliabilityCopy(language, key);

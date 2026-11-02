@@ -6,6 +6,7 @@ import { assetUrl } from "../app-utils";
 import { BankBadge, CompactCheckbox, GooeyCheckbox, OriginMarkChip, OriginMarkIcon, StyledSelect, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
 import { VariantSelector } from "../components/variant-selector";
+import { PokedexOrganizationControls } from "../components/PokedexOrganizationControls";
 
 type FilterPanelProps = { app: AppController };
 
@@ -27,6 +28,10 @@ export function FilterPanel({ app }: FilterPanelProps) {
     traitOptions,
     setTraitOptions,
     originIndependentSelected,
+    pokedexOrder,
+    setPokedexOrder,
+    onlyInGameDex,
+    setOnlyInGameDex,
     collectionPreset,
     availabilityFilters,
     setAvailabilityFilters,
@@ -196,6 +201,8 @@ export function FilterPanel({ app }: FilterPanelProps) {
               <em>{availabilityCounts[status].toLocaleString(locale)}</em>
             </label>)}
           </section>
+
+          <PokedexOrganizationControls order={pokedexOrder} onlyInGameDex={onlyInGameDex} disabled={originIndependentSelected} onOrderChange={setPokedexOrder} onOnlyInGameDexChange={(checked) => { markProfileCustom(); setOnlyInGameDex(checked); }} t={t} />
 
           <section className="filter-section">
             <p className="panel-label">{t("origin_marks")}</p>
