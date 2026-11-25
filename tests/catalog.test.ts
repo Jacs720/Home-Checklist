@@ -136,7 +136,7 @@ test("all GO planning slots carry independently checked form and Shiny availabil
     assert.notEqual(fact.release, "unknown", entry.id);
     assert.notEqual(fact.shiny, "unknown", entry.id);
     assert.ok(fact.revisionId && fact.sourceUrl.startsWith("https://pokemongo.fandom.com/wiki/"));
-    assert.equal(fact.checkedOn, "2026-10-28");
+    assert.equal(fact.checkedOn, "2026-11-24");
     assert.equal(entry.shinyEligible, fact.shiny === "released");
     if (fact.release === "released") {
       assert.ok(fact.methods.length, entry.id);
@@ -156,13 +156,22 @@ test("all GO planning slots carry independently checked form and Shiny availabil
     assert.equal(availabilityForEntry(entry), "hypothetical");
   }
   assert.equal(getGoAvailability({ dex: 901, form: "Bloodmoon" }).release, "unreleased");
-  assert.equal(getGoAvailability({ dex: 774, form: "Green Core" }).release, "released");
+  for (const form of ["Green Core", "Yellow Core"]) {
+    const minior = getGoAvailability({ dex: 774, form });
+    assert.equal(minior.release, "released");
+    assert.equal(minior.shiny, "unreleased");
+    assert.deepEqual(minior.methods, ["wild"]);
+  }
   assert.equal(getGoAvailability({ dex: 774, form: "Red Core" }).release, "unreleased");
   assert.equal(getGoAvailability({ dex: 666, form: "Fancy" }).release, "unreleased");
   assert.equal(getGoAvailability({ dex: 570, form: "Hisuian" }).shiny, "unreleased");
   assert.equal(getGoAvailability({ dex: 999, form: "Chest Form" }).release, "unreleased");
   assert.equal(getGoAvailability({ dex: 999, form: "Roaming Form" }).shiny, "released");
-  assert.equal(getGoAvailability({ dex: 705, form: "Hisuian" }).release, "unreleased");
+  assert.deepEqual(getGoAvailability({ dex: 705, form: "Hisuian" }).methods, ["wild"]);
+  assert.deepEqual(getGoAvailability({ dex: 706, form: "Hisuian" }).methods, ["evolution"]);
+  for (const [dex, form] of [[705, "Hisuian"], [706, "Hisuian"], [971, null], [972, null]] as const) {
+    assert.equal(getGoAvailability({ dex, form }).shiny, "released");
+  }
   assert.equal(getGoAvailability({ dex: 1026 }).release, "unknown");
 });
 
@@ -196,7 +205,7 @@ test("GO details never advertise Eternal Flower Floette as released or Shiny ava
     assert.match(html, /Aún no lanzado en GO/);
     assert.match(html, /Brillante aún no lanzado en GO/);
     assert.match(html, /Sin método disponible/);
-    assert.match(html, /2026-10-28/);
+    assert.match(html, /2026-11-24/);
     assert.doesNotMatch(html, /Disponible actualmente|Captúralo o recíbelo/);
     assert.ok(html.includes(source.sourceUrl!));
   }
@@ -387,15 +396,15 @@ const EXPECTED_PROFILE_COUNTS: Record<keyof typeof canonicalProfiles, number> = 
   "Living Dex": 1025,
   "Final Form Dex": 606,
   "Living Dex + Regional Forms": 1082,
-  "Living Form Lite": 1274,
-  "Living Form Dex": 1378,
+  "Living Form Lite": 1275,
+  "Living Form Dex": 1379,
   "Shiny Living Dex": 981,
   "Shiny Final Form Dex": 563,
   "Shiny Living Dex + Regional Forms": 1035,
   "Shiny Living Form Lite": 1220,
   "Shiny Form Living Dex": 1324,
   "Origin Mark Dex": 5044,
-  "Event Dex": 1882,
+  "Event Dex": 1888,
 };
 
 function profileEntries(profile: CanonicalProfile) {
@@ -587,6 +596,24 @@ test("event-only shiny distributions augment the matching origin catalogs", () =
   for (const dex of [144, 145, 146]) {
     assert.ok(eventShinies.some((entry) => entry.dex === dex && entry.form === "Galarian" && entry.variant === "shiny"), `missing shiny Galarian bird #${dex}`);
   }
+});
+
+test("Legends Z-A event gifts keep their form, OT, and distribution window", () => {
+  const options: ProfileOptions = { preset: "custom", marks: ["LZA"], forms: allForms, variants: { normal: true, shiny: true }, acquisitions: allAcquisitions, includeEventMythicals: true };
+  const planned = buildProfile(options).flatMap((box) => box.entries);
+  const vivillon = planned.find((entry) => entry.dex === 666 && entry.form === "Poké Ball");
+  const xerneas = planned.find((entry) => entry.dex === 716 && entry.variant === "shiny");
+  const yveltal = planned.find((entry) => entry.dex === 717 && entry.variant === "shiny");
+  const spewpa = profileEntries("Event Dex").find((entry) => entry.dex === 665 && entry.eventYear === 2026);
+  assert.ok(vivillon && xerneas && yveltal && spewpa);
+  assert.deepEqual([vivillon.variant, vivillon.ownOt, vivillon.artId], ["normal", false, 10162]);
+  assert.equal(methodKeyForEntry(vivillon), "method_event");
+  assert.equal(spewpa.ownOt, true);
+  assert.ok([xerneas, yveltal].every((entry) => entry.trainerName === "Kalos" && !entry.ownOt));
+  const cutoff = Date.parse("2026-11-24T12:00:00Z");
+  assert.deepEqual([vivillon, xerneas, yveltal, spewpa].map((entry) => availabilityForEntry(entry, cutoff)), ["current", "current", "hypothetical", "historical"]);
+  assert.equal(availabilityForEntry(yveltal, Date.parse("2026-12-10T14:00:00Z")), "current");
+  assert.equal(availabilityForEntry(vivillon, Date.parse("2027-03-01")), "historical");
 });
 
 test("Battle Bond Greninja preserves the unique Sun and Moon demo requirements", () => {

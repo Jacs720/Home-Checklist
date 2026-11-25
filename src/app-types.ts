@@ -51,6 +51,7 @@ export type PokemonEntry = {
   eventType?: string;
   startDate?: string;
   endDate?: string;
+  eventWindow?: { startsAt?: string; endsAt?: string };
   genericEntry?: boolean;
 };
 

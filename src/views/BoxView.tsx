@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { boxThemeStyle, resolveBoxTheme } from "../box-themes";
 import { GROUP_COLORS } from "../app-config";
-import { availabilityForEntry, requiresPokemonBank } from "../collection-features";
+import { availabilityForEntry, availabilityLabelForEntry, requiresPokemonBank } from "../collection-features";
 import { groupName } from "../translations";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { boxLayoutKey } from "../manual-box-packing";
@@ -157,7 +157,7 @@ export function BoxView({ app }: BoxViewProps) {
                         <strong>{localizedName}{localizedForm && <><span> — </span>{localizedForm}</>}</strong>
                         <b className={entry.variant}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</b>
                         <span><em>{entry.genericEntry ? t("generic_specimen") : entry.mark ? t("origin_marks") : t("special_collections")}</em>{entry.genericEntry ? <span>{t("no_origin_required")}</span> : originMarkIconUrl(originMarkKey) ? <OriginMarkIcon mark={originMarkKey} label={entry.groupLabel} className="tooltip-origin-mark" /> : <span>{entry.groupLabel}</span>}</span>
-                        <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availabilityForEntry(entry)}`}>{t(`availability_${availabilityForEntry(entry)}`)}</span></span>
+                        <span><em>{t("availability_label")}</em><span className={`tooltip-availability ${availabilityForEntry(entry)}`}>{t(availabilityLabelForEntry(entry))}</span></span>
                         {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} className="tooltip-bank-badge" />}
                         <span><em>{t("box")} · {t("slot")}</em>{String(selectedBox.globalIndex + 1).padStart(3, "0")} · {String(index + 1).padStart(2, "0")}</span>
                         <span className={isOwned ? "owned" : "pending"}>{isOwned ? t("status_obtained") : t("status_missing")}</span>

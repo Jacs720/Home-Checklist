@@ -277,6 +277,7 @@ function asGenericSpecimen(entry: PlannedEntry): PlannedEntry {
     eventType: undefined,
     startDate: undefined,
     endDate: undefined,
+    eventWindow: undefined,
     acquisitionCategory: "own",
     game: undefined,
     gender: cleanRequirements.gender === "male" || cleanRequirements.gender === "female" ? cleanRequirements.gender : undefined,
@@ -309,7 +310,7 @@ function eventExclusiveEntriesForMark(
     .filter((entry) =>
       entry.collection === "event-dex" &&
       entry.mark === mark &&
-      (MYTHICAL_DEX.has(entry.dex) || entry.shinyEligible)
+      (MYTHICAL_DEX.has(entry.dex) || entry.shinyEligible || (entry.dex === 666 && entry.form === "Poké Ball"))
     )
     // HOME's shiny Enamorus can change into either storable form while
     // retaining its Hisui origin mark and fixed HOME OT.
@@ -335,7 +336,7 @@ function eventExclusiveEntriesForMark(
         id: `${mark}:historical-event:${entry.dex}:${entry.form ?? "base"}:${variant}`,
         collection: undefined,
         acquisitionCategory: "event" as const,
-        availability: entry.endDate && !/^No End Date$/i.test(entry.endDate)
+        availability: !entry.eventWindow && entry.endDate && !/^No End Date$/i.test(entry.endDate)
           ? "historical" as const
           : entry.availability,
         normalEligible: variant === "normal",

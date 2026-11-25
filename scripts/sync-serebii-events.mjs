@@ -309,7 +309,12 @@ const pages = await parallelMap(dexes, concurrency, async (dex) => {
   return parseEventPage(html, dex, templates.get(dex), sourceUrl);
 });
 
-const eventEntries = pages.flat().sort((left, right) => left.dex - right.dex || (right.eventYear ?? 0) - (left.eventYear ?? 0) || left.id.localeCompare(right.id));
+// Preserve events verified against the publisher, whose dates, forms, or delivery methods may differ from the index.
+const verifiedDistributions = specialDataset.entries.filter((entry) => entry.collection === "event-dex" && entry.sourceLabel === "The Pokémon Company");
+const distributionKey = (entry) => [entry.dex, entry.mark, entry.eventYear, entry.trainerId].join(":");
+const verifiedKeys = new Set(verifiedDistributions.map(distributionKey));
+const eventEntries = [...pages.flat().filter((entry) => !verifiedKeys.has(distributionKey(entry))), ...verifiedDistributions]
+  .sort((left, right) => left.dex - right.dex || (right.eventYear ?? 0) - (left.eventYear ?? 0) || left.id.localeCompare(right.id));
 const cherishEventsByDex = new Map();
 for (const entry of eventEntries) {
   if (entry.ball !== "Cherish Ball" || entry.availability === "historical") continue;

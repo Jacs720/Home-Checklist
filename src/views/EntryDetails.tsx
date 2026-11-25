@@ -4,12 +4,12 @@ import { SPECIMEN_TRAITS, TRAIT_LABELS, traitEligible } from "../specimen-traits
 import { TraitBadges, TraitSwitch } from "../components/specimen-trait-controls";
 import { encounterMarkLabel } from "../encounter-marks";
 import { localizeHomeChallengeTitle } from "../home-challenges";
-import { availabilityForEntry, methodKeyForEntry, reasonKeyForEntry, requiresPokemonBank, transferKeyForEntry } from "../collection-features";
+import { availabilityForEntry, availabilityLabelForEntry, methodKeyForEntry, reasonKeyForEntry, requiresPokemonBank, transferKeyForEntry } from "../collection-features";
 import { pokemonArtworkUrl } from "../catalog-planner";
 import { assetUrl } from "../app-utils";
 import { BankBadge, FavoriteButton, OriginMarkIcon, originMarkIconUrl } from "../components/ui-controls";
 import type { AppController } from "../hooks/use-app-controller";
-import { getGoAvailability, goAvailabilityLabel, goMethodText } from "../go-availability";
+import { getGoAvailability, goMethodText } from "../go-availability";
 import { inGameDexReference, inGameDexName } from "../pokedex-organization";
 
 type EntryDetailsProps = { app: AppController };
@@ -85,7 +85,7 @@ export function EntryDetails({ app }: EntryDetailsProps) {
             <div className="entry-badges">
               <TraitBadges requirements={entry.requirements} t={t} />
               {entry.genericEntry ? <span className="entry-origin-chip">{t("generic_specimen")}</span> : originMarkIconUrl(originMarkKey) ? <span className="entry-origin-chip"><OriginMarkIcon mark={originMarkKey} label={originLabel} className="detail-origin-mark" />{originLabel}</span> : <span className="entry-origin-chip">{entry.groupLabel}</span>}
-              <span className={`availability-badge ${availability}`}>{t(go ? goAvailabilityLabel(entry) : `availability_${availability}`)}</span>
+              <span className={`availability-badge ${availability}`}>{t(availabilityLabelForEntry(entry, availability))}</span>
               {requiresPokemonBank(entry) && <BankBadge label={t("bank_required")} />}
               <span className={`variant-chip ${entry.variant}`}>{entry.variant === "shiny" && <img src={assetUrl("assets/shiny.png")} alt="" />}{entry.variant === "shiny" ? t("shiny") : t("normal")}</span>
             </div>

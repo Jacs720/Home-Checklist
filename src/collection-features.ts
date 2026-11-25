@@ -1,5 +1,5 @@
 export type AvailabilityStatus = "current" | "legacy" | "historical" | "hypothetical";
-import type { GoAvailability } from "./go-availability";
+import { goAvailabilityLabel, type GoAvailability } from "./go-availability";
 export type CollectionPreset =
   | "basic"
   | "shiny_basic"
@@ -303,6 +303,7 @@ type AccessEntry = {
   normalEligible?: boolean;
   shinyEligible?: boolean;
   availability?: "standard" | "historical" | "hypothetical" | "excluded";
+  eventWindow?: { startsAt?: string; endsAt?: string };
   game?: string;
   acquisitionCategory?: "own" | "trade" | "event" | "external";
 };
@@ -389,12 +390,19 @@ export function requiresPokemonBank(entry: AccessEntry) {
   return entry.collection === "trades" && Boolean(entry.game && LEGACY_GAME.test(entry.game));
 }
 
-export function availabilityForEntry(entry: AccessEntry): AvailabilityStatus {
+export function availabilityForEntry(entry: AccessEntry, now = Date.now()): AvailabilityStatus {
   if (entry.collection === "go" && (entry.goAvailability?.release !== "released" || (entry.variant === "shiny" && entry.goAvailability.shiny !== "released"))) return "hypothetical";
+  if (entry.eventWindow?.startsAt && now < Date.parse(entry.eventWindow.startsAt)) return "hypothetical";
+  if (entry.eventWindow?.endsAt && now >= Date.parse(entry.eventWindow.endsAt)) return "historical";
   if (entry.availability === "hypothetical") return "hypothetical";
   if (entry.availability === "historical") return "historical";
   if (entry.collection === "dream") return "historical";
   return requiresPokemonBank(entry) ? "legacy" : "current";
+}
+
+export function availabilityLabelForEntry(entry: AccessEntry, availability = availabilityForEntry(entry)) {
+  if (entry.collection === "go") return goAvailabilityLabel(entry);
+  return entry.eventWindow && availability === "hypothetical" ? "availability_upcoming" : `availability_${availability}`;
 }
 
 export function isLaterGenerationEvolution(entry: AccessEntry) {
@@ -415,7 +423,7 @@ export function methodKeyForEntry(entry: AccessEntry) {
   if (entry.collection === "mighty") return "method_mightiest_raid";
   if (entry.collection === "titan") return "method_titan";
   if (entry.collection === "battle-bond") return "method_battle_bond_demo";
-  if (entry.collection === "cherish" || entry.collection === "event-dex") return "method_event";
+  if (entry.collection === "cherish" || entry.collection === "event-dex" || entry.acquisitionCategory === "event") return "method_event";
   if (entry.availability === "hypothetical") return "method_hypothetical";
   return "method_source_game";
 }
@@ -439,6 +447,7 @@ export function transferKeyForEntry(entry: AccessEntry) {
     return entry.goAvailability.transfer === "blocked" ? "go_transfer_blocked" : "transfer_go_home";
   }
   if (entry.collection === "battle-bond") return "transfer_bank_home";
+  if (entry.eventWindow?.startsAt && availabilityForEntry(entry) === "hypothetical") return "transfer_hypothetical";
   if (entry.availability === "historical") return "transfer_unavailable_historical";
   if (entry.collection === "dream") return "transfer_existing_bank_home";
   if (requiresPokemonBank(entry)) return "transfer_bank_home";
