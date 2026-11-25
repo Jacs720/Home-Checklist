@@ -9791,7 +9791,8 @@
       "shinyDate": "2019-05-17",
       "methods": [
         "wild",
-        "research"
+        "research",
+        "evolution"
       ],
       "forms": []
     },
@@ -18895,7 +18896,8 @@
       "releaseDate": "2025-05-10",
       "shinyDate": "2025-05-10",
       "methods": [
-        "research"
+        "research",
+        "evolution"
       ],
       "forms": []
     },

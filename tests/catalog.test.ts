@@ -183,6 +183,8 @@ test("GO methods distinguish raids, research, wild encounters, evolution and for
   assert.match(text(151), /Misiones de investigación/);
   assert.doesNotMatch(text(151), /salvajes|Incursiones/);
   assert.match(text(678), /Evolución/);
+  assert.match(text(462), /Evolución/);
+  assert.match(text(983), /Evolución/);
   assert.equal(text(670, "Red Flower"), "Evolución");
   assert.match(text(670, "White Flower"), /Evolución.*Misiones/);
   assert.equal(text(676, "Heart"), "Cambio de forma");

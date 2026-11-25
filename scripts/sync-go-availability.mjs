@@ -12,9 +12,12 @@ const catalog = JSON.parse(await readFile("public/data/special-collections.json"
 if (catalog.length !== 1025 || new Set(catalog.map(entry => entry.dex)).size !== 1025) throw new Error("Expected all 1,025 GO planning species");
 const batches = Array.from({ length: Math.ceil(catalog.length / 25) }, (_, i) => catalog.slice(i * 25, (i + 1) * 25));
 const species = {};
-// The wiki dates this debut but omits its encounter table. The event announcement confirms wild encounters.
-// https://pokemongo.com/gowildarea/sendai/gameplay
-const fallbackMethods = new Map([["705:Hisuian Sliggoo", ["wild"]]]);
+// Encounter tables can omit routes documented in the species page or announcement.
+const verifiedMethods = new Map([
+  ["462:Magnezone", "evolution"],
+  ["705:Hisuian Sliggoo", "wild"], // https://pokemongo.com/gowildarea/sendai/gameplay
+  ["983:Kingambit", "evolution"], // https://pokemongo.com/en/news/communityday-november-2026-pawniard
+]);
 async function worker() {
   while (batches.length) {
     const batch = batches.shift();
@@ -39,9 +42,9 @@ async function worker() {
       if (!page?.revisions?.[0]?.slots?.main?.content) throw new Error(`Missing GO page: ${entry.dex} ${title}`);
       const record = parseGoPage(page, asOf);
       if (record.release === "unknown" && record.forms.length === 0) throw new Error(`Unresolved release: ${entry.dex} ${title}`);
-      for (const fact of record.forms) {
-        const fallback = fallbackMethods.get(`${entry.dex}:${fact.label}`);
-        if (fact.release === "released" && fact.methods.length === 0 && fallback) fact.methods = fallback;
+      for (const fact of [record, ...record.forms]) {
+        const method = verifiedMethods.get(`${entry.dex}:${fact.label ?? record.name}`);
+        if (fact.release === "released" && method && !fact.methods.includes(method)) fact.methods.push(method);
       }
       species[entry.dex] = record;
     }
