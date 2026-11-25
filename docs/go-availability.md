@@ -2,12 +2,12 @@
 
 The GO collection retains its stable 1–1025 planning slots, HOME forms, gender variants and normal/Shiny plan IDs. A planning slot is not evidence that the specimen has been released in GO.
 
-`public/data/go-availability.json` records release dates, separate Shiny release dates, historical encounter categories and the source URL/revision for all 1,025 species. The source is each species' **Availability** section in [Pokémon GO Wiki](https://pokemongo.fandom.com/wiki/List_of_Pokémon). The snapshot is checked as of 2026-10-28. Future announced releases remain unreleased until their release date.
+`public/data/go-availability.json` records release dates, separate Shiny release dates, historical encounter categories and the source URL/revision for all 1,025 species. The source is each species' **Availability** section in [Pokémon GO Wiki](https://pokemongo.fandom.com/wiki/List_of_Pokémon). The snapshot is checked as of 2026-11-24. Future announced releases remain unreleased until their release date.
 
 Update from the shared project directory:
 
 ```sh
-npm run go-availability:sync -- --as-of 2026-10-28
+npm run go-availability:sync -- --as-of 2026-11-24
 ```
 
 Without `--cache-dir`, the command fetches fresh source pages. To reproduce an existing download offline, provide `--cache-dir artifacts/go-availability-cache`. Validation must complete before the previous snapshot is replaced.

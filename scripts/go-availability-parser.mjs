@@ -45,7 +45,8 @@ export function parseGoSection(text, asOf) {
   const explicitlyUnreleased = wikiTemplates(text, 'Trivia/Unreleased').length > 0;
   const release = releaseDate ? releaseDate <= asOf ? 'released' : 'unreleased' : explicitlyUnreleased ? 'unreleased' : 'unknown';
   const shiny = release === 'unreleased' ? 'unreleased' : shinyDate ? shinyDate <= asOf ? 'released' : 'unreleased' : release === 'released' ? 'unreleased' : 'unknown';
-  const params = Object.fromEntries(wikiTemplates(text, 'AvailabilityTable').flatMap(fields => fields.slice(1).filter(field => field.includes('=')).map(field => {
+  const tables = [...wikiTemplates(text, 'AvailabilityTable'), ...wikiTemplates(text, 'AvailabilityMega')];
+  const params = Object.fromEntries(tables.flatMap(fields => fields.slice(1).filter(field => field.includes('=')).map(field => {
     const index = field.indexOf('='); return [field.slice(0,index).trim(),field.slice(index+1).trim()];
   })));
   const positive = key => Boolean(params[key] && !/^(?:no|false|0)$/i.test(params[key]));

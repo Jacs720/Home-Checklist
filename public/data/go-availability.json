@@ -1,6 +1,6 @@
 {
   "meta": {
-    "asOf": "2026-10-28",
+    "asOf": "2026-11-24",
     "speciesCount": 1025,
     "source": "Pokémon GO Wiki",
     "sourceUrl": "https://pokemongo.fandom.com/wiki/List_of_Pokémon",
@@ -11,8 +11,8 @@
     "1": {
       "name": "Bulbasaur",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Bulbasaur",
-      "revisionId": 189476,
-      "revisionAt": "2026-09-14T13:42:47Z",
+      "revisionId": 191716,
+      "revisionAt": "2026-11-17T13:35:41Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -74,15 +74,18 @@
           "shiny": "released",
           "releaseDate": "2020-08-27",
           "shinyDate": "2020-08-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "4": {
       "name": "Charmander",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Charmander",
-      "revisionId": 189712,
-      "revisionAt": "2026-09-18T18:10:32Z",
+      "revisionId": 191717,
+      "revisionAt": "2026-11-17T13:35:49Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -146,15 +149,18 @@
           "shiny": "released",
           "releaseDate": "2020-08-27",
           "shinyDate": "2020-08-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "7": {
       "name": "Squirtle",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Squirtle",
-      "revisionId": 189479,
-      "revisionAt": "2026-09-14T13:43:33Z",
+      "revisionId": 191718,
+      "revisionAt": "2026-11-17T13:35:55Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -216,7 +222,10 @@
           "shiny": "released",
           "releaseDate": "2020-08-27",
           "shinyDate": "2020-08-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -343,7 +352,11 @@
           "shiny": "released",
           "releaseDate": "2020-08-27",
           "shinyDate": "2020-08-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -411,7 +424,10 @@
           "shiny": "released",
           "releaseDate": "2020-09-18",
           "shinyDate": "2020-09-18",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -561,8 +577,8 @@
     "25": {
       "name": "Pikachu",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Pikachu",
-      "revisionId": 190877,
-      "revisionAt": "2026-10-27T23:42:26Z",
+      "revisionId": 191710,
+      "revisionAt": "2026-11-16T16:29:51Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -599,8 +615,8 @@
     "26": {
       "name": "Raichu",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Raichu",
-      "revisionId": 190027,
-      "revisionAt": "2026-09-30T14:34:45Z",
+      "revisionId": 191508,
+      "revisionAt": "2026-11-12T20:55:21Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -624,7 +640,10 @@
           "shiny": "released",
           "releaseDate": "2026-07-18",
           "shinyDate": "2026-07-18",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         },
         {
           "label": "Alolan Raichu",
@@ -645,8 +664,8 @@
     "27": {
       "name": "Sandshrew",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sandshrew",
-      "revisionId": 188889,
-      "revisionAt": "2026-09-03T15:46:41Z",
+      "revisionId": 191900,
+      "revisionAt": "2026-11-24T19:29:44Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -678,7 +697,8 @@
             "egg",
             "research",
             "go_pass",
-            "snapshot"
+            "snapshot",
+            "max_battle"
           ]
         }
       ]
@@ -686,8 +706,8 @@
     "28": {
       "name": "Sandslash",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sandslash",
-      "revisionId": 188993,
-      "revisionAt": "2026-09-04T15:49:13Z",
+      "revisionId": 191901,
+      "revisionAt": "2026-11-24T19:30:13Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -843,25 +863,40 @@
     "36": {
       "name": "Clefable",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Clefable",
-      "revisionId": 183215,
-      "revisionAt": "2026-03-13T18:39:51Z",
-      "release": "released",
-      "shiny": "released",
-      "releaseDate": "2016-07-06",
-      "shinyDate": "2019-02-13",
-      "methods": [
-        "wild",
-        "raid",
-        "research",
-        "go_pass"
-      ],
-      "forms": []
+      "revisionId": 191436,
+      "revisionAt": "2026-11-10T21:58:15Z",
+      "release": "unknown",
+      "shiny": "unknown",
+      "methods": [],
+      "forms": [
+        {
+          "label": "Clefable",
+          "release": "released",
+          "shiny": "released",
+          "releaseDate": "2016-07-06",
+          "shinyDate": "2019-02-13",
+          "methods": [
+            "wild",
+            "raid",
+            "research",
+            "go_pass"
+          ]
+        },
+        {
+          "label": "Mega Clefable",
+          "release": "unreleased",
+          "shiny": "unreleased",
+          "releaseDate": "2026-11-28",
+          "shinyDate": "2026-11-28",
+          "methods": []
+        }
+      ]
     },
     "37": {
       "name": "Vulpix",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Vulpix",
-      "revisionId": 190854,
-      "revisionAt": "2026-10-27T13:53:21Z",
+      "revisionId": 190929,
+      "revisionAt": "2026-10-30T19:15:39Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -940,8 +975,8 @@
     "39": {
       "name": "Jigglypuff",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Jigglypuff",
-      "revisionId": 187366,
-      "revisionAt": "2026-07-20T20:06:05Z",
+      "revisionId": 191712,
+      "revisionAt": "2026-11-16T16:31:28Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -976,8 +1011,8 @@
     "41": {
       "name": "Zubat",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Zubat",
-      "revisionId": 190625,
-      "revisionAt": "2026-10-16T19:02:25Z",
+      "revisionId": 191243,
+      "revisionAt": "2026-11-06T19:48:30Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -1131,8 +1166,8 @@
     "50": {
       "name": "Diglett",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Diglett",
-      "revisionId": 187828,
-      "revisionAt": "2026-08-02T17:30:50Z",
+      "revisionId": 191683,
+      "revisionAt": "2026-11-16T15:19:32Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1171,8 +1206,8 @@
     "51": {
       "name": "Dugtrio",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Dugtrio",
-      "revisionId": 183232,
-      "revisionAt": "2026-03-13T18:57:27Z",
+      "revisionId": 191277,
+      "revisionAt": "2026-11-07T18:03:58Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1198,7 +1233,8 @@
           "shinyDate": "2019-06-28",
           "methods": [
             "wild",
-            "raid"
+            "raid",
+            "go_pass"
           ]
         }
       ]
@@ -1206,8 +1242,8 @@
     "52": {
       "name": "Meowth",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Meowth",
-      "revisionId": 188062,
-      "revisionAt": "2026-08-07T23:00:37Z",
+      "revisionId": 191655,
+      "revisionAt": "2026-11-16T14:36:04Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1260,8 +1296,8 @@
     "53": {
       "name": "Persian",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Persian",
-      "revisionId": 190320,
-      "revisionAt": "2026-10-06T15:58:55Z",
+      "revisionId": 190994,
+      "revisionAt": "2026-11-01T19:30:27Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1560,15 +1596,19 @@
           "shiny": "released",
           "releaseDate": "2022-09-06",
           "shinyDate": "2022-09-06",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "66": {
       "name": "Machop",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Machop",
-      "revisionId": 190268,
-      "revisionAt": "2026-10-05T16:36:09Z",
+      "revisionId": 191625,
+      "revisionAt": "2026-11-15T18:43:33Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -1605,8 +1645,8 @@
     "68": {
       "name": "Machamp",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Machamp",
-      "revisionId": 189645,
-      "revisionAt": "2026-09-16T18:03:57Z",
+      "revisionId": 191599,
+      "revisionAt": "2026-11-15T16:41:35Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1691,7 +1731,10 @@
           "shiny": "released",
           "releaseDate": "2026-02-20",
           "shinyDate": "2026-02-20",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -1960,8 +2003,8 @@
     "80": {
       "name": "Slowbro",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Slowbro",
-      "revisionId": 189099,
-      "revisionAt": "2026-09-05T18:41:05Z",
+      "revisionId": 191892,
+      "revisionAt": "2026-11-24T18:17:31Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -1985,7 +2028,11 @@
           "shiny": "released",
           "releaseDate": "2021-06-08",
           "shinyDate": "2021-06-08",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         },
         {
           "label": "Galarian Slowbro",
@@ -2002,8 +2049,8 @@
     "81": {
       "name": "Magnemite",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Magnemite",
-      "revisionId": 187705,
-      "revisionAt": "2026-08-01T19:07:58Z",
+      "revisionId": 191676,
+      "revisionAt": "2026-11-16T15:10:45Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2219,8 +2266,8 @@
     "90": {
       "name": "Shellder",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Shellder",
-      "revisionId": 187754,
-      "revisionAt": "2026-08-01T19:40:48Z",
+      "revisionId": 191690,
+      "revisionAt": "2026-11-16T15:52:54Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2254,8 +2301,8 @@
     "92": {
       "name": "Gastly",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Gastly",
-      "revisionId": 190317,
-      "revisionAt": "2026-10-06T15:57:03Z",
+      "revisionId": 190914,
+      "revisionAt": "2026-10-29T21:54:14Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2291,8 +2338,8 @@
     "94": {
       "name": "Gengar",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Gengar",
-      "revisionId": 190388,
-      "revisionAt": "2026-10-08T17:35:25Z",
+      "revisionId": 191893,
+      "revisionAt": "2026-11-24T18:18:10Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -2316,15 +2363,19 @@
           "shiny": "released",
           "releaseDate": "2020-10-23",
           "shinyDate": "2020-10-23",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "95": {
       "name": "Onix",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Onix",
-      "revisionId": 189117,
-      "revisionAt": "2026-09-06T16:17:40Z",
+      "revisionId": 191685,
+      "revisionAt": "2026-11-16T15:22:24Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2514,8 +2565,8 @@
     "103": {
       "name": "Exeggutor",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Exeggutor",
-      "revisionId": 187814,
-      "revisionAt": "2026-08-01T20:17:26Z",
+      "revisionId": 191612,
+      "revisionAt": "2026-11-15T18:10:31Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -2740,8 +2791,8 @@
     "112": {
       "name": "Rhydon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Rhydon",
-      "revisionId": 186545,
-      "revisionAt": "2026-06-30T00:26:29Z",
+      "revisionId": 191468,
+      "revisionAt": "2026-11-12T06:46:26Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2822,15 +2873,18 @@
           "shiny": "released",
           "releaseDate": "2022-04-29",
           "shinyDate": "2022-04-29",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "116": {
       "name": "Horsea",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Horsea",
-      "revisionId": 187336,
-      "revisionAt": "2026-07-20T19:28:48Z",
+      "revisionId": 191654,
+      "revisionAt": "2026-11-16T14:35:00Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -2940,7 +2994,10 @@
           "shiny": "released",
           "releaseDate": "2026-08-22",
           "shinyDate": "2026-08-22",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -2986,8 +3043,8 @@
     "123": {
       "name": "Scyther",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Scyther",
-      "revisionId": 189065,
-      "revisionAt": "2026-09-05T15:27:29Z",
+      "revisionId": 191455,
+      "revisionAt": "2026-11-11T19:54:03Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3092,7 +3149,11 @@
           "shiny": "released",
           "releaseDate": "2023-05-11",
           "shinyDate": "2023-05-11",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -3154,8 +3215,8 @@
     "129": {
       "name": "Magikarp",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Magikarp",
-      "revisionId": 189131,
-      "revisionAt": "2026-09-06T16:23:40Z",
+      "revisionId": 191722,
+      "revisionAt": "2026-11-17T13:41:46Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3199,7 +3260,11 @@
           "shiny": "released",
           "releaseDate": "2021-02-09",
           "shinyDate": "2021-02-09",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -3249,8 +3314,8 @@
     "133": {
       "name": "Eevee",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Eevee",
-      "revisionId": 189855,
-      "revisionAt": "2026-09-23T18:27:44Z",
+      "revisionId": 191724,
+      "revisionAt": "2026-11-17T13:43:17Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3321,8 +3386,8 @@
     "137": {
       "name": "Porygon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Porygon",
-      "revisionId": 190313,
-      "revisionAt": "2026-10-06T15:54:01Z",
+      "revisionId": 191691,
+      "revisionAt": "2026-11-16T15:53:03Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3439,7 +3504,11 @@
           "shiny": "released",
           "releaseDate": "2022-01-07",
           "shinyDate": "2022-01-07",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -3584,8 +3653,8 @@
     "147": {
       "name": "Dratini",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Dratini",
-      "revisionId": 190267,
-      "revisionAt": "2026-10-05T16:33:45Z",
+      "revisionId": 191666,
+      "revisionAt": "2026-11-16T14:57:34Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3604,8 +3673,8 @@
     "148": {
       "name": "Dragonair",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Dragonair",
-      "revisionId": 185430,
-      "revisionAt": "2026-05-28T13:05:22Z",
+      "revisionId": 191271,
+      "revisionAt": "2026-11-07T17:58:30Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2016-07-06",
@@ -3613,6 +3682,7 @@
       "methods": [
         "wild",
         "research",
+        "go_pass",
         "battle_league"
       ],
       "forms": []
@@ -3646,7 +3716,10 @@
           "shiny": "released",
           "releaseDate": "2026-02-20",
           "shinyDate": "2026-02-20",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -3678,7 +3751,10 @@
           "shiny": "released",
           "releaseDate": "2026-05-25",
           "shinyDate": "2026-05-25",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         },
         {
           "label": "Armored Mewtwo",
@@ -4178,8 +4254,8 @@
     "179": {
       "name": "Mareep",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Mareep",
-      "revisionId": 189087,
-      "revisionAt": "2026-09-05T15:39:11Z",
+      "revisionId": 191494,
+      "revisionAt": "2026-11-12T18:46:46Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -4239,7 +4315,11 @@
           "shiny": "released",
           "releaseDate": "2021-01-19",
           "shinyDate": "2021-01-19",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -4281,8 +4361,8 @@
     "184": {
       "name": "Azumarill",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Azumarill",
-      "revisionId": 182931,
-      "revisionAt": "2026-03-06T19:29:37Z",
+      "revisionId": 191617,
+      "revisionAt": "2026-11-15T18:15:54Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -4591,8 +4671,8 @@
     "200": {
       "name": "Misdreavus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Misdreavus",
-      "revisionId": 187740,
-      "revisionAt": "2026-08-01T19:32:57Z",
+      "revisionId": 191025,
+      "revisionAt": "2026-11-02T18:42:39Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -4602,6 +4682,7 @@
         "raid",
         "egg",
         "research",
+        "go_pass",
         "battle_league",
         "snapshot"
       ],
@@ -4718,8 +4799,8 @@
     "207": {
       "name": "Gligar",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Gligar",
-      "revisionId": 187339,
-      "revisionAt": "2026-07-20T19:32:19Z",
+      "revisionId": 191700,
+      "revisionAt": "2026-11-16T16:03:29Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -4759,7 +4840,11 @@
           "shiny": "released",
           "releaseDate": "2021-12-01",
           "shinyDate": "2021-12-01",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -4838,8 +4923,8 @@
     "212": {
       "name": "Scizor",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Scizor",
-      "revisionId": 188398,
-      "revisionAt": "2026-08-22T19:09:12Z",
+      "revisionId": 191613,
+      "revisionAt": "2026-11-15T18:12:02Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -4863,15 +4948,18 @@
           "shiny": "released",
           "releaseDate": "2022-08-10",
           "shinyDate": "2022-08-10",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "213": {
       "name": "Shuckle",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Shuckle",
-      "revisionId": 187803,
-      "revisionAt": "2026-08-01T20:09:30Z",
+      "revisionId": 191692,
+      "revisionAt": "2026-11-16T15:53:28Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -4914,7 +5002,9 @@
           "shiny": "released",
           "releaseDate": "2024-04-13",
           "shinyDate": "2024-04-13",
-          "methods": []
+          "methods": [
+            "raid"
+          ]
         }
       ]
     },
@@ -4963,8 +5053,8 @@
     "216": {
       "name": "Teddiursa",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Teddiursa",
-      "revisionId": 187844,
-      "revisionAt": "2026-08-02T17:44:14Z",
+      "revisionId": 191138,
+      "revisionAt": "2026-11-05T13:41:35Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -5016,8 +5106,8 @@
     "219": {
       "name": "Magcargo",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Magcargo",
-      "revisionId": 186112,
-      "revisionAt": "2026-06-16T16:34:35Z",
+      "revisionId": 191270,
+      "revisionAt": "2026-11-07T17:57:48Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -5025,7 +5115,8 @@
       "methods": [
         "wild",
         "raid",
-        "research"
+        "research",
+        "go_pass"
       ],
       "forms": []
     },
@@ -5175,8 +5266,8 @@
     "227": {
       "name": "Skarmory",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Skarmory",
-      "revisionId": 190583,
-      "revisionAt": "2026-10-14T19:01:22Z",
+      "revisionId": 191894,
+      "revisionAt": "2026-11-24T18:18:26Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -5202,7 +5293,10 @@
           "shiny": "released",
           "releaseDate": "2026-06-27",
           "shinyDate": "2026-06-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -5252,20 +5346,26 @@
           "shiny": "released",
           "releaseDate": "2020-09-29",
           "shinyDate": "2020-09-29",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "230": {
       "name": "Kingdra",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Kingdra",
-      "revisionId": 189506,
-      "revisionAt": "2026-09-14T23:53:20Z",
+      "revisionId": 191620,
+      "revisionAt": "2026-11-15T18:20:02Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
       "shinyDate": "2019-06-13",
       "methods": [
+        "wild",
+        "research",
         "battle_league"
       ],
       "forms": []
@@ -5273,8 +5373,8 @@
     "231": {
       "name": "Phanpy",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Phanpy",
-      "revisionId": 187830,
-      "revisionAt": "2026-08-02T17:32:22Z",
+      "revisionId": 191259,
+      "revisionAt": "2026-11-07T17:51:06Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -5432,8 +5532,8 @@
     "241": {
       "name": "Miltank",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Miltank",
-      "revisionId": 190047,
-      "revisionAt": "2026-09-30T20:39:46Z",
+      "revisionId": 191263,
+      "revisionAt": "2026-11-07T17:52:58Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-02-16",
@@ -5443,6 +5543,7 @@
         "raid",
         "egg",
         "research",
+        "go_pass",
         "battle_league"
       ],
       "forms": []
@@ -5558,8 +5659,8 @@
     "248": {
       "name": "Tyranitar",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tyranitar",
-      "revisionId": 188475,
-      "revisionAt": "2026-08-25T15:15:13Z",
+      "revisionId": 190946,
+      "revisionAt": "2026-10-31T10:40:58Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -5582,15 +5683,18 @@
           "shiny": "released",
           "releaseDate": "2023-07-25",
           "shinyDate": "2023-07-25",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "249": {
       "name": "Lugia",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Lugia",
-      "revisionId": 189292,
-      "revisionAt": "2026-09-09T18:54:31Z",
+      "revisionId": 191887,
+      "revisionAt": "2026-11-24T18:13:44Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-07-22",
@@ -5607,8 +5711,8 @@
     "250": {
       "name": "Ho-Oh",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Ho-Oh",
-      "revisionId": 186889,
-      "revisionAt": "2026-07-08T18:36:03Z",
+      "revisionId": 191886,
+      "revisionAt": "2026-11-24T18:13:14Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-11-27",
@@ -5695,7 +5799,10 @@
           "shiny": "released",
           "releaseDate": "2022-12-03",
           "shinyDate": "2022-12-03",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -5760,7 +5867,10 @@
           "shiny": "released",
           "releaseDate": "2022-12-03",
           "shinyDate": "2022-12-03",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -5827,7 +5937,10 @@
           "shiny": "released",
           "releaseDate": "2022-12-03",
           "shinyDate": "2022-12-03",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -6183,8 +6296,8 @@
     "280": {
       "name": "Ralts",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Ralts",
-      "revisionId": 189073,
-      "revisionAt": "2026-09-05T15:30:44Z",
+      "revisionId": 191626,
+      "revisionAt": "2026-11-15T18:43:39Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-12-08",
@@ -6246,7 +6359,11 @@
           "shiny": "released",
           "releaseDate": "2023-02-08",
           "shinyDate": "2023-02-08",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -6336,15 +6453,16 @@
     "288": {
       "name": "Vigoroth",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Vigoroth",
-      "revisionId": 176684,
-      "revisionAt": "2025-10-18T15:18:05Z",
+      "revisionId": 191269,
+      "revisionAt": "2026-11-07T17:57:07Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-12-08",
       "shinyDate": "2019-06-08",
       "methods": [
         "wild",
-        "research"
+        "research",
+        "go_pass"
       ],
       "forms": []
     },
@@ -6508,8 +6626,8 @@
     "299": {
       "name": "Nosepass",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Nosepass",
-      "revisionId": 187804,
-      "revisionAt": "2026-08-01T20:10:52Z",
+      "revisionId": 191693,
+      "revisionAt": "2026-11-16T15:53:39Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-01-23",
@@ -6557,8 +6675,8 @@
     "302": {
       "name": "Sableye",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sableye",
-      "revisionId": 190894,
-      "revisionAt": "2026-10-28T14:12:35Z",
+      "revisionId": 191034,
+      "revisionAt": "2026-11-02T19:00:55Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -6585,15 +6703,19 @@
           "shiny": "released",
           "releaseDate": "2023-06-29",
           "shinyDate": "2023-06-29",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "303": {
       "name": "Mawile",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Mawile",
-      "revisionId": 189436,
-      "revisionAt": "2026-09-13T19:21:25Z",
+      "revisionId": 191458,
+      "revisionAt": "2026-11-11T19:57:49Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -6618,15 +6740,18 @@
           "shiny": "released",
           "releaseDate": "2024-10-12",
           "shinyDate": "2024-10-12",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
     "304": {
       "name": "Aron",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Aron",
-      "revisionId": 189118,
-      "revisionAt": "2026-09-06T16:18:10Z",
+      "revisionId": 191694,
+      "revisionAt": "2026-11-16T15:54:00Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-01-23",
@@ -6658,8 +6783,8 @@
     "306": {
       "name": "Aggron",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Aggron",
-      "revisionId": 189277,
-      "revisionAt": "2026-09-09T18:45:03Z",
+      "revisionId": 191618,
+      "revisionAt": "2026-11-15T18:18:08Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -6682,7 +6807,11 @@
           "shiny": "released",
           "releaseDate": "2022-09-16",
           "shinyDate": "2022-09-16",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -6733,7 +6862,11 @@
           "shiny": "released",
           "releaseDate": "2023-03-08",
           "shinyDate": "2023-03-08",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -6782,7 +6915,11 @@
           "shiny": "released",
           "releaseDate": "2021-03-16",
           "shinyDate": "2021-03-16",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -6949,7 +7086,10 @@
           "shiny": "released",
           "releaseDate": "2025-09-07",
           "shinyDate": "2025-09-07",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -7032,7 +7172,10 @@
           "shiny": "released",
           "releaseDate": "2025-09-28",
           "shinyDate": "2025-09-28",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -7104,8 +7247,8 @@
     "328": {
       "name": "Trapinch",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Trapinch",
-      "revisionId": 187831,
-      "revisionAt": "2026-08-02T17:33:07Z",
+      "revisionId": 191673,
+      "revisionAt": "2026-11-16T15:05:35Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-01-23",
@@ -7139,8 +7282,8 @@
     "330": {
       "name": "Flygon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Flygon",
-      "revisionId": 183671,
-      "revisionAt": "2026-03-20T14:44:00Z",
+      "revisionId": 191606,
+      "revisionAt": "2026-11-15T18:00:33Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-01-23",
@@ -7189,8 +7332,8 @@
     "333": {
       "name": "Swablu",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Swablu",
-      "revisionId": 189493,
-      "revisionAt": "2026-09-14T23:45:05Z",
+      "revisionId": 191674,
+      "revisionAt": "2026-11-16T15:05:44Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-02-09",
@@ -7231,7 +7374,11 @@
           "shiny": "released",
           "releaseDate": "2021-05-15",
           "shinyDate": "2021-05-15",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -7308,8 +7455,8 @@
     "339": {
       "name": "Barboach",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Barboach",
-      "revisionId": 187766,
-      "revisionAt": "2026-08-01T19:46:27Z",
+      "revisionId": 191701,
+      "revisionAt": "2026-11-16T16:03:56Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-12-21",
@@ -7474,8 +7621,8 @@
     "349": {
       "name": "Feebas",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Feebas",
-      "revisionId": 188349,
-      "revisionAt": "2026-08-21T19:11:46Z",
+      "revisionId": 191723,
+      "revisionAt": "2026-11-17T13:41:50Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-12-21",
@@ -7539,8 +7686,8 @@
     "353": {
       "name": "Shuppet",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Shuppet",
-      "revisionId": 189080,
-      "revisionAt": "2026-09-05T15:34:31Z",
+      "revisionId": 191033,
+      "revisionAt": "2026-11-02T18:59:02Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-10-20",
@@ -7580,15 +7727,19 @@
           "shiny": "released",
           "releaseDate": "2022-10-20",
           "shinyDate": "2022-10-20",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "355": {
       "name": "Duskull",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Duskull",
-      "revisionId": 187333,
-      "revisionAt": "2026-07-20T19:26:45Z",
+      "revisionId": 190924,
+      "revisionAt": "2026-10-30T19:01:46Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-10-20",
@@ -7598,6 +7749,7 @@
         "raid",
         "egg",
         "research",
+        "go_pass",
         "battle_league",
         "snapshot"
       ],
@@ -7656,8 +7808,8 @@
     "359": {
       "name": "Absol",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Absol",
-      "revisionId": 189437,
-      "revisionAt": "2026-09-13T19:21:34Z",
+      "revisionId": 191260,
+      "revisionAt": "2026-11-07T17:51:29Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -7683,7 +7835,10 @@
           "shiny": "released",
           "releaseDate": "2021-10-22",
           "shinyDate": "2021-10-22",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -7722,8 +7877,8 @@
     "362": {
       "name": "Glalie",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Glalie",
-      "revisionId": 189152,
-      "revisionAt": "2026-09-06T16:45:56Z",
+      "revisionId": 191895,
+      "revisionAt": "2026-11-24T18:18:53Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -7746,7 +7901,11 @@
           "shiny": "released",
           "releaseDate": "2022-12-15",
           "shinyDate": "2022-12-15",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -7791,8 +7950,8 @@
     "365": {
       "name": "Walrein",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Walrein",
-      "revisionId": 189000,
-      "revisionAt": "2026-09-04T15:53:10Z",
+      "revisionId": 191614,
+      "revisionAt": "2026-11-15T18:13:03Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2017-12-21",
@@ -7885,8 +8044,8 @@
     "371": {
       "name": "Bagon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Bagon",
-      "revisionId": 189134,
-      "revisionAt": "2026-09-06T16:25:03Z",
+      "revisionId": 191457,
+      "revisionAt": "2026-11-11T19:57:38Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-02-09",
@@ -7945,15 +8104,18 @@
           "shiny": "released",
           "releaseDate": "2023-01-10",
           "shinyDate": "2023-01-10",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
     "374": {
       "name": "Beldum",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Beldum",
-      "revisionId": 189762,
-      "revisionAt": "2026-09-20T14:53:41Z",
+      "revisionId": 191627,
+      "revisionAt": "2026-11-15T18:48:30Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-02-09",
@@ -7991,8 +8153,8 @@
     "376": {
       "name": "Metagross",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Metagross",
-      "revisionId": 190702,
-      "revisionAt": "2026-10-19T20:16:58Z",
+      "revisionId": 191607,
+      "revisionAt": "2026-11-15T18:02:21Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -8016,7 +8178,9 @@
           "shiny": "released",
           "releaseDate": "2025-10-04",
           "shinyDate": "2025-10-04",
-          "methods": []
+          "methods": [
+            "raid"
+          ]
         }
       ]
     },
@@ -8077,8 +8241,8 @@
     "380": {
       "name": "Latias",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Latias",
-      "revisionId": 190574,
-      "revisionAt": "2026-10-14T18:00:17Z",
+      "revisionId": 191596,
+      "revisionAt": "2026-11-15T16:37:45Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -8112,8 +8276,8 @@
     "381": {
       "name": "Latios",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Latios",
-      "revisionId": 190575,
-      "revisionAt": "2026-10-14T18:00:49Z",
+      "revisionId": 191597,
+      "revisionAt": "2026-11-15T16:37:48Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -8179,8 +8343,8 @@
     "383": {
       "name": "Groudon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Groudon",
-      "revisionId": 187454,
-      "revisionAt": "2026-07-22T17:58:43Z",
+      "revisionId": 191280,
+      "revisionAt": "2026-11-07T18:06:24Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -8194,6 +8358,7 @@
           "methods": [
             "raid",
             "research",
+            "go_pass",
             "battle_league"
           ]
         },
@@ -8408,8 +8573,8 @@
     "393": {
       "name": "Piplup",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Piplup",
-      "revisionId": 190278,
-      "revisionAt": "2026-10-05T17:31:25Z",
+      "revisionId": 191677,
+      "revisionAt": "2026-11-16T15:10:56Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-10-16",
@@ -8419,6 +8584,7 @@
         "raid",
         "egg",
         "research",
+        "go_pass",
         "battle_league",
         "snapshot"
       ],
@@ -8427,8 +8593,8 @@
     "394": {
       "name": "Prinplup",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Prinplup",
-      "revisionId": 180328,
-      "revisionAt": "2026-01-04T13:38:37Z",
+      "revisionId": 191121,
+      "revisionAt": "2026-11-04T14:22:48Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-10-16",
@@ -8443,8 +8609,8 @@
     "395": {
       "name": "Empoleon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Empoleon",
-      "revisionId": 187574,
-      "revisionAt": "2026-07-27T18:10:22Z",
+      "revisionId": 191615,
+      "revisionAt": "2026-11-15T18:13:58Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-10-16",
@@ -8517,7 +8683,9 @@
           "shiny": "released",
           "releaseDate": "2026-09-19",
           "shinyDate": "2026-09-19",
-          "methods": []
+          "methods": [
+            "raid"
+          ]
         }
       ]
     },
@@ -8701,8 +8869,8 @@
     "410": {
       "name": "Shieldon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Shieldon",
-      "revisionId": 187342,
-      "revisionAt": "2026-07-20T19:35:16Z",
+      "revisionId": 191678,
+      "revisionAt": "2026-11-16T15:11:09Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-01-31",
@@ -8781,8 +8949,8 @@
     "415": {
       "name": "Combee",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Combee",
-      "revisionId": 187792,
-      "revisionAt": "2026-08-01T20:03:16Z",
+      "revisionId": 191274,
+      "revisionAt": "2026-11-07T18:01:37Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-01-31",
@@ -8959,8 +9127,8 @@
     "426": {
       "name": "Drifblim",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Drifblim",
-      "revisionId": 190279,
-      "revisionAt": "2026-10-05T17:33:57Z",
+      "revisionId": 190930,
+      "revisionAt": "2026-10-30T19:17:45Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-10-23",
@@ -8969,6 +9137,7 @@
         "wild",
         "raid",
         "research",
+        "go_pass",
         "battle_league"
       ],
       "forms": []
@@ -9017,7 +9186,11 @@
           "shiny": "released",
           "releaseDate": "2021-04-04",
           "shinyDate": "2021-04-04",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -9132,8 +9305,8 @@
     "436": {
       "name": "Bronzor",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Bronzor",
-      "revisionId": 187332,
-      "revisionAt": "2026-07-20T19:22:22Z",
+      "revisionId": 191680,
+      "revisionAt": "2026-11-16T15:16:51Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-12-18",
@@ -9223,8 +9396,8 @@
     "442": {
       "name": "Spiritomb",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Spiritomb",
-      "revisionId": 177593,
-      "revisionAt": "2025-11-03T15:21:50Z",
+      "revisionId": 191036,
+      "revisionAt": "2026-11-02T19:03:33Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-10-23",
@@ -9238,8 +9411,8 @@
     "443": {
       "name": "Gible",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Gible",
-      "revisionId": 189414,
-      "revisionAt": "2026-09-12T19:05:17Z",
+      "revisionId": 191667,
+      "revisionAt": "2026-11-16T14:57:39Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-05-17",
@@ -9299,7 +9472,10 @@
           "shiny": "released",
           "releaseDate": "2023-11-11",
           "shinyDate": "2023-11-11",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -9334,8 +9510,8 @@
     "448": {
       "name": "Lucario",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Lucario",
-      "revisionId": 187682,
-      "revisionAt": "2026-07-31T19:33:48Z",
+      "revisionId": 191659,
+      "revisionAt": "2026-11-16T14:48:32Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -9351,7 +9527,8 @@
             "raid",
             "research",
             "go_pass",
-            "battle_league"
+            "battle_league",
+            "snapshot"
           ]
         },
         {
@@ -9360,7 +9537,10 @@
           "shiny": "released",
           "releaseDate": "2024-07-27",
           "shinyDate": "2024-07-27",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -9577,7 +9757,11 @@
           "shiny": "released",
           "releaseDate": "2020-12-01",
           "shinyDate": "2020-12-01",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -9599,14 +9783,15 @@
     "462": {
       "name": "Magnezone",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Magnezone",
-      "revisionId": 176192,
-      "revisionAt": "2025-10-08T13:39:13Z",
+      "revisionId": 191608,
+      "revisionAt": "2026-11-15T18:03:54Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-05-17",
       "shinyDate": "2019-05-17",
       "methods": [
-        "evolution"
+        "wild",
+        "research"
       ],
       "forms": []
     },
@@ -9627,8 +9812,8 @@
     "464": {
       "name": "Rhyperior",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Rhyperior",
-      "revisionId": 186546,
-      "revisionAt": "2026-06-30T00:27:17Z",
+      "revisionId": 191469,
+      "revisionAt": "2026-11-12T06:46:54Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-11-14",
@@ -9810,7 +9995,10 @@
           "shiny": "released",
           "releaseDate": "2025-01-11",
           "shinyDate": "2025-01-11",
-          "methods": []
+          "methods": [
+            "raid",
+            "research"
+          ]
         }
       ]
     },
@@ -9859,8 +10047,8 @@
     "479": {
       "name": "Rotom",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Rotom",
-      "revisionId": 186269,
-      "revisionAt": "2026-06-20T18:56:29Z",
+      "revisionId": 191035,
+      "revisionAt": "2026-11-02T19:03:15Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -9982,8 +10170,8 @@
     "483": {
       "name": "Dialga",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Dialga",
-      "revisionId": 189680,
-      "revisionAt": "2026-09-17T18:46:02Z",
+      "revisionId": 191891,
+      "revisionAt": "2026-11-24T18:16:29Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -10804,8 +10992,8 @@
     "529": {
       "name": "Drilbur",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Drilbur",
-      "revisionId": 189563,
-      "revisionAt": "2026-09-15T20:05:17Z",
+      "revisionId": 191681,
+      "revisionAt": "2026-11-16T15:16:59Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -10869,7 +11057,11 @@
           "shiny": "released",
           "releaseDate": "2025-04-05",
           "shinyDate": "2025-04-05",
-          "methods": []
+          "methods": [
+            "raid",
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -10909,13 +11101,14 @@
     "534": {
       "name": "Conkeldurr",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Conkeldurr",
-      "revisionId": 185558,
-      "revisionAt": "2026-06-03T12:40:22Z",
+      "revisionId": 191616,
+      "revisionAt": "2026-11-15T18:15:06Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-01-10",
       "shinyDate": "2020-03-13",
       "methods": [
+        "wild",
         "research"
       ],
       "forms": []
@@ -11453,8 +11646,8 @@
     "562": {
       "name": "Yamask",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Yamask",
-      "revisionId": 190305,
-      "revisionAt": "2026-10-06T15:47:36Z",
+      "revisionId": 191646,
+      "revisionAt": "2026-11-16T08:40:36Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -12078,8 +12271,8 @@
     "597": {
       "name": "Ferroseed",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Ferroseed",
-      "revisionId": 187834,
-      "revisionAt": "2026-08-02T17:37:22Z",
+      "revisionId": 191679,
+      "revisionAt": "2026-11-16T15:11:25Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12096,8 +12289,8 @@
     "598": {
       "name": "Ferrothorn",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Ferrothorn",
-      "revisionId": 189569,
-      "revisionAt": "2026-09-15T20:08:04Z",
+      "revisionId": 191619,
+      "revisionAt": "2026-11-15T18:18:20Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12105,6 +12298,7 @@
       "methods": [
         "wild",
         "raid",
+        "research",
         "go_pass"
       ],
       "forms": []
@@ -12112,8 +12306,8 @@
     "599": {
       "name": "Klink",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Klink",
-      "revisionId": 187351,
-      "revisionAt": "2026-07-20T19:48:34Z",
+      "revisionId": 191695,
+      "revisionAt": "2026-11-16T15:54:36Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12158,8 +12352,8 @@
     "602": {
       "name": "Tynamo",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tynamo",
-      "revisionId": 189090,
-      "revisionAt": "2026-09-05T15:40:18Z",
+      "revisionId": 191702,
+      "revisionAt": "2026-11-16T16:04:55Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2021-03-16",
@@ -12238,8 +12432,8 @@
     "607": {
       "name": "Litwick",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Litwick",
-      "revisionId": 189082,
-      "revisionAt": "2026-09-05T15:36:09Z",
+      "revisionId": 191241,
+      "revisionAt": "2026-11-06T19:47:47Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12274,8 +12468,8 @@
     "609": {
       "name": "Chandelure",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Chandelure",
-      "revisionId": 190542,
-      "revisionAt": "2026-10-13T20:44:36Z",
+      "revisionId": 190931,
+      "revisionAt": "2026-10-31T02:55:50Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -12293,19 +12487,21 @@
         },
         {
           "label": "Mega Chandelure",
-          "release": "unreleased",
-          "shiny": "unreleased",
+          "release": "released",
+          "shiny": "released",
           "releaseDate": "2026-10-31",
           "shinyDate": "2026-10-31",
-          "methods": []
+          "methods": [
+            "raid"
+          ]
         }
       ]
     },
     "610": {
       "name": "Axew",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Axew",
-      "revisionId": 190142,
-      "revisionAt": "2026-10-02T18:59:55Z",
+      "revisionId": 191668,
+      "revisionAt": "2026-11-16T15:00:06Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-01-10",
@@ -12339,13 +12535,14 @@
     "612": {
       "name": "Haxorus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Haxorus",
-      "revisionId": 186400,
-      "revisionAt": "2026-06-25T12:21:00Z",
+      "revisionId": 191609,
+      "revisionAt": "2026-11-15T18:04:50Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-01-10",
       "shinyDate": "2022-06-04",
       "methods": [
+        "wild",
         "research"
       ],
       "forms": []
@@ -12385,8 +12582,8 @@
     "615": {
       "name": "Cryogonal",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Cryogonal",
-      "revisionId": 187702,
-      "revisionAt": "2026-08-01T19:01:00Z",
+      "revisionId": 191809,
+      "revisionAt": "2026-11-22T21:00:16Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-12-24",
@@ -12436,8 +12633,8 @@
     "618": {
       "name": "Stunfisk",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Stunfisk",
-      "revisionId": 189091,
-      "revisionAt": "2026-09-05T15:40:26Z",
+      "revisionId": 191684,
+      "revisionAt": "2026-11-16T15:19:47Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -12546,8 +12743,8 @@
     "623": {
       "name": "Golurk",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Golurk",
-      "revisionId": 185705,
-      "revisionAt": "2026-06-05T15:39:23Z",
+      "revisionId": 191796,
+      "revisionAt": "2026-11-21T17:39:36Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12561,8 +12758,8 @@
     "624": {
       "name": "Pawniard",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Pawniard",
-      "revisionId": 187835,
-      "revisionAt": "2026-08-02T17:38:21Z",
+      "revisionId": 191786,
+      "revisionAt": "2026-11-21T12:35:40Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-10-12",
@@ -12573,15 +12770,16 @@
         "egg",
         "research",
         "go_pass",
-        "battle_league"
+        "battle_league",
+        "snapshot"
       ],
       "forms": []
     },
     "625": {
       "name": "Bisharp",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Bisharp",
-      "revisionId": 182158,
-      "revisionAt": "2026-02-26T19:23:38Z",
+      "revisionId": 191787,
+      "revisionAt": "2026-11-21T12:41:54Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-10-12",
@@ -12697,8 +12895,8 @@
     "631": {
       "name": "Heatmor",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Heatmor",
-      "revisionId": 186247,
-      "revisionAt": "2026-06-19T15:56:27Z",
+      "revisionId": 191703,
+      "revisionAt": "2026-11-16T16:05:06Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12714,8 +12912,8 @@
     "632": {
       "name": "Durant",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Durant",
-      "revisionId": 183773,
-      "revisionAt": "2026-03-24T14:31:32Z",
+      "revisionId": 191696,
+      "revisionAt": "2026-11-16T15:55:00Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12732,8 +12930,8 @@
     "633": {
       "name": "Deino",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Deino",
-      "revisionId": 188907,
-      "revisionAt": "2026-09-03T16:55:49Z",
+      "revisionId": 191629,
+      "revisionAt": "2026-11-15T18:49:38Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12770,8 +12968,8 @@
     "635": {
       "name": "Hydreigon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Hydreigon",
-      "revisionId": 189003,
-      "revisionAt": "2026-09-04T15:55:13Z",
+      "revisionId": 191610,
+      "revisionAt": "2026-11-15T18:05:09Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2019-09-16",
@@ -12865,8 +13063,8 @@
     "641": {
       "name": "Tornadus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tornadus",
-      "revisionId": 190723,
-      "revisionAt": "2026-10-20T16:37:19Z",
+      "revisionId": 191888,
+      "revisionAt": "2026-11-24T18:14:42Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -12900,8 +13098,8 @@
     "642": {
       "name": "Thundurus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Thundurus",
-      "revisionId": 189376,
-      "revisionAt": "2026-09-11T14:59:27Z",
+      "revisionId": 191889,
+      "revisionAt": "2026-11-24T18:15:14Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -12935,8 +13133,8 @@
     "643": {
       "name": "Reshiram",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Reshiram",
-      "revisionId": 190143,
-      "revisionAt": "2026-10-02T19:01:18Z",
+      "revisionId": 191592,
+      "revisionAt": "2026-11-15T16:34:53Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-05-26",
@@ -12950,8 +13148,8 @@
     "644": {
       "name": "Zekrom",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Zekrom",
-      "revisionId": 190150,
-      "revisionAt": "2026-10-02T19:06:12Z",
+      "revisionId": 191593,
+      "revisionAt": "2026-11-15T16:34:59Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-06-16",
@@ -12965,8 +13163,8 @@
     "645": {
       "name": "Landorus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Landorus",
-      "revisionId": 189688,
-      "revisionAt": "2026-09-17T18:56:07Z",
+      "revisionId": 191890,
+      "revisionAt": "2026-11-24T18:15:48Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -13000,8 +13198,8 @@
     "646": {
       "name": "Kyurem",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Kyurem",
-      "revisionId": 187030,
-      "revisionAt": "2026-07-13T19:20:01Z",
+      "revisionId": 191591,
+      "revisionAt": "2026-11-15T16:34:37Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -13231,7 +13429,10 @@
           "shiny": "released",
           "releaseDate": "2026-08-28",
           "shinyDate": "2026-08-28",
-          "methods": []
+          "methods": [
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -13297,15 +13498,18 @@
           "shiny": "released",
           "releaseDate": "2026-08-28",
           "shinyDate": "2026-08-28",
-          "methods": []
+          "methods": [
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
     "656": {
       "name": "Froakie",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Froakie",
-      "revisionId": 190840,
-      "revisionAt": "2026-10-26T20:32:02Z",
+      "revisionId": 191239,
+      "revisionAt": "2026-11-06T19:47:09Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-12-02",
@@ -13363,7 +13567,10 @@
           "shiny": "released",
           "releaseDate": "2026-08-28",
           "shinyDate": "2026-08-28",
-          "methods": []
+          "methods": [
+            "research",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -13673,8 +13880,8 @@
     "677": {
       "name": "Espurr",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Espurr",
-      "revisionId": 190716,
-      "revisionAt": "2026-10-20T14:25:53Z",
+      "revisionId": 191844,
+      "revisionAt": "2026-11-23T19:22:03Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-11-30",
@@ -13684,7 +13891,8 @@
         "raid",
         "egg",
         "research",
-        "go_pass"
+        "go_pass",
+        "max_battle"
       ],
       "forms": []
     },
@@ -13705,8 +13913,8 @@
     "679": {
       "name": "Honedge",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Honedge",
-      "revisionId": 189501,
-      "revisionAt": "2026-09-14T23:50:23Z",
+      "revisionId": 191687,
+      "revisionAt": "2026-11-16T15:51:30Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-07-22",
@@ -13858,7 +14066,10 @@
           "shiny": "released",
           "releaseDate": "2026-02-20",
           "shinyDate": "2026-02-20",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -13897,8 +14108,8 @@
     "690": {
       "name": "Skrelp",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Skrelp",
-      "revisionId": 188424,
-      "revisionAt": "2026-08-23T18:12:52Z",
+      "revisionId": 191675,
+      "revisionAt": "2026-11-16T15:05:57Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2021-04-13",
@@ -13995,8 +14206,8 @@
     "696": {
       "name": "Tyrunt",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tyrunt",
-      "revisionId": 190140,
-      "revisionAt": "2026-10-02T18:58:17Z",
+      "revisionId": 191669,
+      "revisionAt": "2026-11-16T15:00:11Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2022-06-07",
@@ -14027,8 +14238,8 @@
     "698": {
       "name": "Amaura",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Amaura",
-      "revisionId": 190141,
-      "revisionAt": "2026-10-02T18:58:21Z",
+      "revisionId": 191704,
+      "revisionAt": "2026-11-16T16:05:51Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2022-06-07",
@@ -14126,8 +14337,8 @@
     "704": {
       "name": "Goomy",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Goomy",
-      "revisionId": 187507,
-      "revisionAt": "2026-07-24T16:30:16Z",
+      "revisionId": 191660,
+      "revisionAt": "2026-11-16T14:50:27Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2021-05-04",
@@ -14146,8 +14357,8 @@
     "705": {
       "name": "Sliggoo",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sliggoo",
-      "revisionId": 189353,
-      "revisionAt": "2026-09-10T18:09:52Z",
+      "revisionId": 191203,
+      "revisionAt": "2026-11-06T16:17:50Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -14167,19 +14378,21 @@
         },
         {
           "label": "Hisuian Sliggoo",
-          "release": "unreleased",
-          "shiny": "unreleased",
+          "release": "released",
+          "shiny": "released",
           "releaseDate": "2026-11-06",
           "shinyDate": "2026-11-06",
-          "methods": []
+          "methods": [
+            "wild"
+          ]
         }
       ]
     },
     "706": {
       "name": "Goodra",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Goodra",
-      "revisionId": 189354,
-      "revisionAt": "2026-09-10T18:10:31Z",
+      "revisionId": 191621,
+      "revisionAt": "2026-11-15T18:21:58Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -14191,24 +14404,27 @@
           "releaseDate": "2021-05-04",
           "shinyDate": "2023-08-26",
           "methods": [
+            "wild",
             "research"
           ]
         },
         {
           "label": "Hisuian Goodra",
-          "release": "unreleased",
-          "shiny": "unreleased",
+          "release": "released",
+          "shiny": "released",
           "releaseDate": "2026-11-06",
           "shinyDate": "2026-11-06",
-          "methods": []
+          "methods": [
+            "evolution"
+          ]
         }
       ]
     },
     "707": {
       "name": "Klefki",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Klefki",
-      "revisionId": 182684,
-      "revisionAt": "2026-03-04T15:47:58Z",
+      "revisionId": 191688,
+      "revisionAt": "2026-11-16T15:51:33Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-12-02",
@@ -14256,8 +14472,8 @@
     "710": {
       "name": "Pumpkaboo",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Pumpkaboo",
-      "revisionId": 190856,
-      "revisionAt": "2026-10-27T13:55:06Z",
+      "revisionId": 191026,
+      "revisionAt": "2026-11-02T18:43:00Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2021-10-22",
@@ -14339,8 +14555,8 @@
     "714": {
       "name": "Noibat",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Noibat",
-      "revisionId": 189322,
-      "revisionAt": "2026-09-09T19:10:40Z",
+      "revisionId": 191670,
+      "revisionAt": "2026-11-16T15:00:24Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-12-02",
@@ -14359,13 +14575,14 @@
     "715": {
       "name": "Noivern",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Noivern",
-      "revisionId": 186403,
-      "revisionAt": "2026-06-25T12:22:51Z",
+      "revisionId": 191622,
+      "revisionAt": "2026-11-15T18:23:36Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2020-12-02",
       "shinyDate": "2022-10-20",
       "methods": [
+        "wild",
         "research"
       ],
       "forms": []
@@ -14467,7 +14684,9 @@
           "shiny": "released",
           "releaseDate": "2023-08-04",
           "shinyDate": "2026-02-20",
-          "methods": []
+          "methods": [
+            "research"
+          ]
         }
       ]
     },
@@ -14517,8 +14736,8 @@
     "722": {
       "name": "Rowlet",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Rowlet",
-      "revisionId": 190843,
-      "revisionAt": "2026-10-26T20:33:54Z",
+      "revisionId": 191028,
+      "revisionAt": "2026-11-02T18:48:15Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2022-03-01",
@@ -15314,8 +15533,8 @@
     "769": {
       "name": "Sandygast",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sandygast",
-      "revisionId": 190273,
-      "revisionAt": "2026-10-05T16:42:46Z",
+      "revisionId": 191255,
+      "revisionAt": "2026-11-07T17:48:49Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-06-06",
@@ -15376,8 +15595,8 @@
     "774": {
       "name": "Minior",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Minior",
-      "revisionId": 190753,
-      "revisionAt": "2026-10-21T19:10:43Z",
+      "revisionId": 191573,
+      "revisionAt": "2026-11-14T18:26:51Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -15396,9 +15615,12 @@
         },
         {
           "label": "Yellow Core Minior",
-          "release": "unreleased",
+          "release": "released",
           "shiny": "unreleased",
-          "methods": []
+          "releaseDate": "2026-11-14",
+          "methods": [
+            "wild"
+          ]
         },
         {
           "label": "Green Core Minior",
@@ -15449,8 +15671,8 @@
     "776": {
       "name": "Turtonator",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Turtonator",
-      "revisionId": 187346,
-      "revisionAt": "2026-07-20T19:38:07Z",
+      "revisionId": 191671,
+      "revisionAt": "2026-11-16T15:01:46Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-06-29",
@@ -15467,8 +15689,8 @@
     "777": {
       "name": "Togedemaru",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Togedemaru",
-      "revisionId": 188066,
-      "revisionAt": "2026-08-07T23:02:58Z",
+      "revisionId": 191657,
+      "revisionAt": "2026-11-16T14:38:16Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2022-09-16",
@@ -15520,14 +15742,16 @@
     "780": {
       "name": "Drampa",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Drampa",
-      "revisionId": 186888,
-      "revisionAt": "2026-07-08T18:34:44Z",
+      "revisionId": 191725,
+      "revisionAt": "2026-11-17T13:45:34Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-02-05",
       "shinyDate": "2024-02-05",
       "methods": [
+        "wild",
         "raid",
+        "egg",
         "research",
         "go_pass",
         "max_battle"
@@ -15537,8 +15761,8 @@
     "781": {
       "name": "Dhelmise",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Dhelmise",
-      "revisionId": 185756,
-      "revisionAt": "2026-06-06T18:23:48Z",
+      "revisionId": 191264,
+      "revisionAt": "2026-11-07T17:53:28Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-02-11",
@@ -15553,8 +15777,8 @@
     "782": {
       "name": "Jangmo-o",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Jangmo-o",
-      "revisionId": 188078,
-      "revisionAt": "2026-08-07T23:10:11Z",
+      "revisionId": 191661,
+      "revisionAt": "2026-11-16T14:50:33Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2022-03-01",
@@ -15974,8 +16198,8 @@
     "808": {
       "name": "Meltan",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Meltan",
-      "revisionId": 190591,
-      "revisionAt": "2026-10-15T14:49:57Z",
+      "revisionId": 191414,
+      "revisionAt": "2026-11-10T15:37:53Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2018-11-14",
@@ -16004,8 +16228,8 @@
     "810": {
       "name": "Grookey",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Grookey",
-      "revisionId": 187494,
-      "revisionAt": "2026-07-24T16:15:24Z",
+      "revisionId": 191902,
+      "revisionAt": "2026-11-24T19:49:26Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-09-03",
@@ -16059,8 +16283,8 @@
     "813": {
       "name": "Scorbunny",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Scorbunny",
-      "revisionId": 187495,
-      "revisionAt": "2026-07-24T16:15:28Z",
+      "revisionId": 191903,
+      "revisionAt": "2026-11-24T19:49:30Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-09-03",
@@ -16114,8 +16338,8 @@
     "816": {
       "name": "Sobble",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sobble",
-      "revisionId": 188904,
-      "revisionAt": "2026-09-03T16:53:49Z",
+      "revisionId": 191904,
+      "revisionAt": "2026-11-24T19:49:35Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-09-03",
@@ -16203,8 +16427,8 @@
     "821": {
       "name": "Rookidee",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Rookidee",
-      "revisionId": 189302,
-      "revisionAt": "2026-09-09T18:59:02Z",
+      "revisionId": 191697,
+      "revisionAt": "2026-11-16T15:55:19Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-01-21",
@@ -16301,8 +16525,8 @@
     "827": {
       "name": "Nickit",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Nickit",
-      "revisionId": 189544,
-      "revisionAt": "2026-09-15T18:38:36Z",
+      "revisionId": 191258,
+      "revisionAt": "2026-11-07T17:50:34Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-03-19",
@@ -16616,8 +16840,8 @@
     "849": {
       "name": "Toxtricity",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Toxtricity",
-      "revisionId": 189490,
-      "revisionAt": "2026-09-14T23:43:09Z",
+      "revisionId": 191810,
+      "revisionAt": "2026-11-22T21:00:40Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -16629,6 +16853,7 @@
           "releaseDate": "2024-11-16",
           "shinyDate": "2024-11-16",
           "methods": [
+            "wild",
             "raid",
             "research",
             "go_pass",
@@ -16641,8 +16866,8 @@
     "850": {
       "name": "Sizzlipede",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sizzlipede",
-      "revisionId": 189675,
-      "revisionAt": "2026-09-17T18:41:23Z",
+      "revisionId": 191705,
+      "revisionAt": "2026-11-16T16:06:38Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-03-26",
@@ -16701,8 +16926,8 @@
     "854": {
       "name": "Sinistea",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Sinistea",
-      "revisionId": 190883,
-      "revisionAt": "2026-10-28T06:02:08Z",
+      "revisionId": 191244,
+      "revisionAt": "2026-11-06T19:48:49Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-12-03",
@@ -16732,8 +16957,8 @@
     "856": {
       "name": "Hatenna",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Hatenna",
-      "revisionId": 189856,
-      "revisionAt": "2026-09-23T18:28:52Z",
+      "revisionId": 191505,
+      "revisionAt": "2026-11-12T18:57:57Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2024-09-18",
@@ -16780,8 +17005,8 @@
     "859": {
       "name": "Impidimp",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Impidimp",
-      "revisionId": 189443,
-      "revisionAt": "2026-09-13T19:26:27Z",
+      "revisionId": 191256,
+      "revisionAt": "2026-11-07T17:49:26Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-11-07",
@@ -16950,8 +17175,8 @@
     "870": {
       "name": "Falinks",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Falinks",
-      "revisionId": 190011,
-      "revisionAt": "2026-09-30T01:55:39Z",
+      "revisionId": 191896,
+      "revisionAt": "2026-11-24T18:19:16Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -16978,7 +17203,10 @@
           "shiny": "released",
           "releaseDate": "2026-05-23",
           "shinyDate": "2026-05-23",
-          "methods": []
+          "methods": [
+            "raid",
+            "go_pass"
+          ]
         }
       ]
     },
@@ -17140,8 +17368,8 @@
     "884": {
       "name": "Duraludon",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Duraludon",
-      "revisionId": 190417,
-      "revisionAt": "2026-10-08T19:50:54Z",
+      "revisionId": 191726,
+      "revisionAt": "2026-11-17T13:45:47Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -17153,19 +17381,25 @@
           "releaseDate": "2025-09-30",
           "shinyDate": "2025-09-30",
           "methods": [
+            "wild",
             "raid",
+            "egg",
             "research",
+            "go_pass",
             "battle_league",
             "max_battle"
           ]
         },
         {
           "label": "Gigantamax Duraludon",
-          "release": "unreleased",
-          "shiny": "unreleased",
+          "release": "released",
+          "shiny": "released",
           "releaseDate": "2026-11-06",
           "shinyDate": "2026-11-06",
-          "methods": []
+          "methods": [
+            "research",
+            "max_battle"
+          ]
         }
       ]
     },
@@ -17283,8 +17517,8 @@
     "890": {
       "name": "Eternatus",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Eternatus",
-      "revisionId": 190902,
-      "revisionAt": "2026-10-28T17:42:16Z",
+      "revisionId": 191633,
+      "revisionAt": "2026-11-16T04:19:43Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -17373,8 +17607,8 @@
     "895": {
       "name": "Regidrago",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Regidrago",
-      "revisionId": 190572,
-      "revisionAt": "2026-10-14T17:59:21Z",
+      "revisionId": 191885,
+      "revisionAt": "2026-11-24T18:12:39Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-03-11",
@@ -17437,8 +17671,8 @@
     "900": {
       "name": "Kleavor",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Kleavor",
-      "revisionId": 189575,
-      "revisionAt": "2026-09-15T20:11:40Z",
+      "revisionId": 191200,
+      "revisionAt": "2026-11-06T16:00:52Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-05-06",
@@ -17857,8 +18091,8 @@
     "926": {
       "name": "Fidough",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Fidough",
-      "revisionId": 189853,
-      "revisionAt": "2026-09-23T18:21:03Z",
+      "revisionId": 191275,
+      "revisionAt": "2026-11-07T18:02:35Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-01-04",
@@ -18034,8 +18268,8 @@
     "938": {
       "name": "Tadbulb",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tadbulb",
-      "revisionId": 189441,
-      "revisionAt": "2026-09-13T19:24:31Z",
+      "revisionId": 191265,
+      "revisionAt": "2026-11-07T17:53:57Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-11-07",
@@ -18261,8 +18495,8 @@
     "955": {
       "name": "Flittle",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Flittle",
-      "revisionId": 190307,
-      "revisionAt": "2026-10-06T15:48:59Z",
+      "revisionId": 191276,
+      "revisionAt": "2026-11-07T18:03:16Z",
       "release": "released",
       "shiny": "unreleased",
       "releaseDate": "2026-05-12",
@@ -18288,8 +18522,8 @@
     "957": {
       "name": "Tinkatink",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tinkatink",
-      "revisionId": 189860,
-      "revisionAt": "2026-09-23T18:31:03Z",
+      "revisionId": 191698,
+      "revisionAt": "2026-11-16T15:55:31Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-04-16",
@@ -18321,13 +18555,14 @@
     "959": {
       "name": "Tinkaton",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Tinkaton",
-      "revisionId": 188922,
-      "revisionAt": "2026-09-03T17:10:07Z",
+      "revisionId": 191611,
+      "revisionAt": "2026-11-15T18:05:50Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-04-16",
       "shinyDate": "2025-11-07",
       "methods": [
+        "wild",
         "research"
       ],
       "forms": []
@@ -18480,16 +18715,17 @@
     "971": {
       "name": "Greavard",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Greavard",
-      "revisionId": 190380,
-      "revisionAt": "2026-10-08T17:29:40Z",
+      "revisionId": 191266,
+      "revisionAt": "2026-11-07T17:54:26Z",
       "release": "released",
-      "shiny": "unreleased",
+      "shiny": "released",
       "releaseDate": "2023-10-19",
       "shinyDate": "2026-11-01",
       "methods": [
         "wild",
         "raid",
-        "research"
+        "research",
+        "go_pass"
       ],
       "forms": []
     },
@@ -18499,7 +18735,7 @@
       "revisionId": 190381,
       "revisionAt": "2026-10-08T17:30:09Z",
       "release": "released",
-      "shiny": "unreleased",
+      "shiny": "released",
       "releaseDate": "2023-10-19",
       "shinyDate": "2026-11-01",
       "methods": [
@@ -18613,13 +18849,14 @@
     "980": {
       "name": "Clodsire",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Clodsire",
-      "revisionId": 188966,
-      "revisionAt": "2026-09-04T15:05:38Z",
+      "revisionId": 191623,
+      "revisionAt": "2026-11-15T18:24:03Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-11-05",
       "shinyDate": "2023-11-05",
       "methods": [
+        "wild",
         "research"
       ],
       "forms": []
@@ -18651,14 +18888,14 @@
     "983": {
       "name": "Kingambit",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Kingambit",
-      "revisionId": 189280,
-      "revisionAt": "2026-09-09T18:47:21Z",
+      "revisionId": 191789,
+      "revisionAt": "2026-11-21T12:44:01Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2025-05-10",
       "shinyDate": "2025-05-10",
       "methods": [
-        "evolution"
+        "research"
       ],
       "forms": []
     },
@@ -18785,8 +19022,8 @@
     "996": {
       "name": "Frigibax",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Frigibax",
-      "revisionId": 187510,
-      "revisionAt": "2026-07-24T16:31:36Z",
+      "revisionId": 191662,
+      "revisionAt": "2026-11-16T14:55:10Z",
       "release": "released",
       "shiny": "released",
       "releaseDate": "2023-09-10",
@@ -18833,8 +19070,8 @@
     "999": {
       "name": "Gimmighoul",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Gimmighoul",
-      "revisionId": 190567,
-      "revisionAt": "2026-10-14T17:33:16Z",
+      "revisionId": 191413,
+      "revisionAt": "2026-11-10T15:36:18Z",
       "release": "unknown",
       "shiny": "unknown",
       "methods": [],
@@ -18990,8 +19227,8 @@
     "1012": {
       "name": "Poltchageist",
       "sourceUrl": "https://pokemongo.fandom.com/wiki/Poltchageist",
-      "revisionId": 190311,
-      "revisionAt": "2026-10-06T15:52:45Z",
+      "revisionId": 191272,
+      "revisionAt": "2026-11-07T17:58:55Z",
       "release": "released",
       "shiny": "unreleased",
       "releaseDate": "2025-10-21",
